@@ -14,10 +14,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**")
+                .ignoringRequestMatchers("/h2-console/**", "/ws/**")
                 .disable()
             )
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/ws/**").permitAll()  // WebSocket 핸드셰이크
                 .requestMatchers("/**").permitAll()
             )
             .headers(headers -> headers

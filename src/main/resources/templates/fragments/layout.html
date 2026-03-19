@@ -28,6 +28,7 @@
             <a th:href="@{/videos}">🎬 영상</a>
             <a th:href="@{/events}">🎯 이벤트</a>
             <a th:href="@{/projects}">💻 프로젝트</a>
+            <a th:href="@{/chat}">💬 채팅</a>
             <th:block th:if="${session.loginMember == null}">
                 <a th:href="@{/member/login}">로그인</a>
                 <a th:href="@{/member/register}" class="btn btn-primary btn-sm">회원가입</a>

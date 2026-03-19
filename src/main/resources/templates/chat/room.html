@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('채팅')}">
+</head>
+
+<!-- SockJS + STOMP 라이브러리 -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+
+<body style="display:flex; flex-direction:column; height:100vh; overflow:hidden;">
+
+<!-- ── Topbar ── -->
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<!-- ── Chat Layout ─────────────────────────────────────── -->
+<div class="chat-wrap">
+
+  <!-- 사이드바: 방 정보 + 액션 -->
+  <aside class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <a href="/chat" class="btn btn-ghost btn-sm" style="width:100%;">← 방 목록</a>
+    </div>
+
+    <div style="padding:1rem;">
+      <div class="chat-room-icon-lg">
+        <span th:text="${#strings.substring(room.name, 0, 1)}">C</span>
+      </div>
+      <h3 style="font-size:1rem; font-weight:800; margin:.8rem 0 .3rem;" th:text="${room.name}"></h3>
+      <p style="font-size:.82rem; color:var(--muted);" th:text="${room.description}"></p>
+
+      <div style="margin-top:.8rem; font-size:.8rem; color:var(--muted);">
+        <div>👤 <span th:text="${room.creator != null ? room.creator.nickname : '알 수 없음'}"></span> 생성</div>
+        <div style="margin-top:.3rem;" id="activeUsers">
+          🟢 <span id="activeCount" th:text="${room.activeUsers}">0</span>명 참여 중
+        </div>
+      </div>
+
+      <!-- 방장/관리자: 삭제 -->
+      <form th:if="${loginMember != null and (loginMember.role == 'ADMIN' or (room.creator != null and room.creator.id == loginMember.id))}"
+            th:action="@{'/chat/' + ${room.id} + '/delete'}" method="post"
+            style="margin-top:1rem;"
+            onsubmit="return confirm('채팅방을 삭제하시겠습니까?')">
+        <button type="submit" class="btn btn-danger btn-sm" style="width:100%;">🗑 방 삭제</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- 메인: 메시지 영역 + 입력 -->
+  <main class="chat-main">
+
+    <!-- 연결 상태 배너 -->
+    <div id="statusBanner" class="chat-status-banner connecting">
+      ⏳ 서버에 연결 중...
+    </div>
+
+    <!-- 메시지 목록 -->
+    <div class="chat-messages" id="chatMessages">
+
+      <!-- 이전 메시지 (서버사이드 렌더링) -->
+      <div th:each="msg : ${history}" th:with="isMe=${loginMember != null and loginMember.id == msg.senderId}">
+
+        <!-- SYSTEM / JOIN / LEAVE -->
+        <div th:if="${msg.type != 'CHAT'}" class="msg-system">
+          <span th:text="${msg.content}"></span>
+        </div>
+
+        <!-- CHAT: 내 메시지 -->
+        <div th:if="${msg.type == 'CHAT' and isMe}" class="msg-row msg-mine">
+          <div class="msg-bubble msg-bubble-mine">
+            <span th:text="${msg.content}"></span>
+          </div>
+          <div class="msg-time" th:text="${#strings.substring(msg.timestamp, 11, 16)}"></div>
+        </div>
+
+        <!-- CHAT: 상대방 메시지 -->
+        <div th:if="${msg.type == 'CHAT' and !isMe}" class="msg-row msg-other">
+          <div class="msg-avatar" th:text="${#strings.substring(msg.senderNickname, 0, 1)}"></div>
+          <div>
+            <div class="msg-sender" th:text="${msg.senderNickname}"></div>
+            <div class="msg-bubble msg-bubble-other">
+              <span th:text="${msg.content}"></span>
+            </div>
+            <div class="msg-time" th:text="${#strings.substring(msg.timestamp, 11, 16)}"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 입력 영역 -->
+    <div class="chat-input-area">
+      <div th:if="${loginMember == null}" style="text-align:center; padding:.5rem; color:var(--muted);">
+        <a th:href="@{/member/login}">로그인</a> 후 채팅에 참여할 수 있습니다.
+      </div>
+      <div th:if="${loginMember != null}" class="chat-input-row" id="inputArea">
+        <textarea id="messageInput"
+                  class="chat-input"
+                  placeholder="메시지를 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)"
+                  rows="1"
+                  maxlength="500"></textarea>
+        <button id="sendBtn" class="btn btn-primary chat-send-btn" disabled>전송</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+<!-- ── STOMP 클라이언트 스크립트 ── -->
+<script th:inline="javascript">
+  const ROOM_ID     = /*[[${room.id}]]*/ 0;
+  const MY_NICKNAME = /*[[${loginMember != null ? loginMember.nickname : ''}]]*/ '';
+  const MY_ID       = /*[[${loginMember != null ? loginMember.id : -1}]]*/ -1;
+  const IS_LOGGED   = MY_ID !== -1;
+
+  // ── DOM refs ────────────────────────────────────────────────
+  const messagesEl  = document.getElementById('chatMessages');
+  const inputEl     = document.getElementById('messageInput');
+  const sendBtn     = document.getElementById('sendBtn');
+  const statusEl    = document.getElementById('statusBanner');
+  const activeCount = document.getElementById('activeCount');
+
+  // ── STOMP Client ────────────────────────────────────────────
+  const stompClient = new StompJs.Client({
+    webSocketFactory: () => new SockJS('/ws'),
+
+    reconnectDelay: 5000,          // 5초 후 자동 재연결
+
+    onConnect: () => {
+      setStatus('connected', '🟢 연결됨');
+
+      // /topic/chat/{roomId} 구독
+      stompClient.subscribe(`/topic/chat/${ROOM_ID}`, (frame) => {
+        const msg = JSON.parse(frame.body);
+        appendMessage(msg);
+        scrollToBottom();
+      });
+
+      // 입장 알림 전송
+      if (IS_LOGGED) {
+        stompClient.publish({
+          destination: '/app/chat.join',
+          body: JSON.stringify({ type: 'JOIN', roomId: ROOM_ID })
+        });
+        if (sendBtn) sendBtn.disabled = false;
+      }
+    },
+
+    onStompError: (frame) => {
+      setStatus('error', '❌ 연결 오류: ' + frame.headers.message);
+    },
+
+    onDisconnect: () => {
+      setStatus('connecting', '⏳ 재연결 중...');
+      if (sendBtn) sendBtn.disabled = true;
+    }
+  });
+
+  stompClient.activate();
+
+  // ── 메시지 전송 ──────────────────────────────────────────────
+  function sendMessage() {
+    const content = inputEl ? inputEl.value.trim() : '';
+    if (!content || !stompClient.connected) return;
+
+    stompClient.publish({
+      destination: '/app/chat.message',
+      body: JSON.stringify({
+        type: 'CHAT',
+        roomId: ROOM_ID,
+        content: content
+      })
+    });
+
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+  }
+
+  // ── 이벤트 리스너 ────────────────────────────────────────────
+  if (sendBtn) {
+    sendBtn.addEventListener('click', sendMessage);
+  }
+
+  if (inputEl) {
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // 자동 높이 조절
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+    });
+  }
+
+  // 페이지 이탈 시 퇴장 알림
+  window.addEventListener('beforeunload', () => {
+    if (IS_LOGGED && stompClient.connected) {
+      stompClient.publish({
+        destination: '/app/chat.leave',
+        body: JSON.stringify({ type: 'LEAVE', roomId: ROOM_ID })
+      });
+    }
+  });
+
+  // ── 메시지 렌더링 ────────────────────────────────────────────
+  function appendMessage(msg) {
+    const isMine = IS_LOGGED && msg.senderId === MY_ID;
+    let html = '';
+
+    if (msg.type === 'JOIN' || msg.type === 'LEAVE' || msg.type === 'SYSTEM') {
+      html = `<div class="msg-system"><span>${escHtml(msg.content)}</span></div>`;
+
+      // 활성 유저 수 업데이트
+      if (activeCount) {
+        let cnt = parseInt(activeCount.textContent, 10) || 0;
+        if (msg.type === 'JOIN') cnt++;
+        else if (msg.type === 'LEAVE') cnt = Math.max(0, cnt - 1);
+        activeCount.textContent = cnt;
+      }
+    } else if (isMine) {
+      const time = formatTime(msg.timestamp);
+      html = `
+        <div class="msg-row msg-mine">
+          <div class="msg-bubble msg-bubble-mine">${escHtml(msg.content)}</div>
+          <div class="msg-time">${time}</div>
+        </div>`;
+    } else {
+      const initial = (msg.senderNickname || '?').charAt(0);
+      const time = formatTime(msg.timestamp);
+      html = `
+        <div class="msg-row msg-other">
+          <div class="msg-avatar">${escHtml(initial)}</div>
+          <div>
+            <div class="msg-sender">${escHtml(msg.senderNickname || '알 수 없음')}</div>
+            <div class="msg-bubble msg-bubble-other">${escHtml(msg.content)}</div>
+            <div class="msg-time">${time}</div>
+          </div>
+        </div>`;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    messagesEl.appendChild(wrapper.firstElementChild || wrapper);
+  }
+
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function setStatus(state, text) {
+    statusEl.className = 'chat-status-banner ' + state;
+    statusEl.textContent = text;
+    if (state === 'connected') {
+      setTimeout(() => { statusEl.style.display = 'none'; }, 2000);
+    } else {
+      statusEl.style.display = 'block';
+    }
+  }
+
+  function formatTime(ts) {
+    if (!ts) return '';
+    try {
+      const d = new Date(ts);
+      return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+    } catch { return ''; }
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+              .replace(/"/g,'&quot;').replace(/'/g,'&#039;')
+              .replace(/\n/g,'<br>');
+  }
+
+  // 초기 스크롤
+  scrollToBottom();
+</script>
+
+<style>
+/* ── Chat Layout ── */
+.chat-wrap {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 60px - 56px); /* topbar + footer */
+}
+
+/* Sidebar */
+.chat-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.chat-sidebar-header {
+  padding: .8rem;
+  border-bottom: 1px solid var(--border);
+}
+.chat-room-icon-lg {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--primary), #9b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+/* Main */
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* Status Banner */
+.chat-status-banner {
+  padding: .45rem 1.2rem;
+  font-size: .83rem;
+  font-weight: 600;
+  text-align: center;
+  flex-shrink: 0;
+}
+.chat-status-banner.connecting { background: #fef9c3; color: #854d0e; }
+.chat-status-banner.connected  { background: #dcfce7; color: #15803d; }
+.chat-status-banner.error      { background: #fee2e2; color: #991b1b; }
+
+/* Messages */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+/* System message */
+.msg-system {
+  text-align: center;
+  padding: .3rem 1rem;
+  margin: .2rem 0;
+}
+.msg-system span {
+  background: rgba(0,0,0,.06);
+  border-radius: 20px;
+  padding: .2rem .8rem;
+  font-size: .78rem;
+  color: var(--muted);
+}
+
+/* Message rows */
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: .5rem;
+  max-width: 72%;
+}
+.msg-mine {
+  flex-direction: row-reverse;
+  align-self: flex-end;
+}
+.msg-other {
+  align-self: flex-start;
+}
+
+/* Avatar */
+.msg-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Sender nickname */
+.msg-sender { font-size: .75rem; color: var(--muted); margin-bottom: .2rem; }
+
+/* Bubbles */
+.msg-bubble {
+  padding: .6rem .9rem;
+  border-radius: 16px;
+  font-size: .92rem;
+  line-height: 1.55;
+  word-break: break-word;
+  max-width: 100%;
+}
+.msg-bubble-mine {
+  background: var(--primary);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.msg-bubble-other {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+
+/* Timestamp */
+.msg-time {
+  font-size: .7rem;
+  color: var(--muted);
+  flex-shrink: 0;
+  padding-bottom: .1rem;
+}
+
+/* Input */
+.chat-input-area {
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  padding: .75rem 1rem;
+  flex-shrink: 0;
+}
+.chat-input-row {
+  display: flex;
+  gap: .6rem;
+  align-items: flex-end;
+}
+.chat-input {
+  flex: 1;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: .6rem .9rem;
+  font-size: .93rem;
+  font-family: inherit;
+  resize: none;
+  background: var(--bg);
+  color: var(--text);
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.5;
+  transition: border .15s, box-shadow .15s;
+}
+.chat-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,110,247,.15);
+}
+.chat-send-btn {
+  flex-shrink: 0;
+  padding: .6rem 1.2rem;
+  border-radius: 10px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .chat-sidebar { display: none; }
+  .msg-row { max-width: 88%; }
+}
+</style>
+
+</body>
+</html>
