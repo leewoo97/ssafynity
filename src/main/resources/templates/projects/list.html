@@ -18,8 +18,8 @@
   <div class="card" style="margin-bottom:1.2rem; padding:1rem 1.25rem;">
     <form th:action="@{/projects}" method="get" style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
       <input type="text" name="keyword" th:value="${keyword}" placeholder="프로젝트 / 기술 스택 검색..."
-             style="flex:1; min-width:200px; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
-      <select name="sort" style="padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+             style="flex:1; min-width:200px; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
+      <select name="sort" style="padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
         <option value="latest" th:selected="${sort == 'latest'}">최신순</option>
         <option value="popular" th:selected="${sort == 'popular'}">인기순</option>
       </select>

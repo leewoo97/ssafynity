@@ -45,7 +45,7 @@
 
         <!-- 링크 -->
         <div th:if="${project.githubUrl != null or project.demoUrl != null}"
-             style="display:flex; gap:.75rem; margin-top:1.2rem; padding:1rem; background:var(--surface); border-radius:var(--radius); border:1px solid var(--border);">
+             style="display:flex; gap:.75rem; margin-top:1.2rem; padding:1rem; background:var(--card-2); border-radius:var(--radius); border:1px solid var(--border);">
           <a th:if="${project.githubUrl != null}" th:href="${project.githubUrl}" target="_blank" class="btn btn-ghost btn-sm">
             🐱 GitHub
           </a>

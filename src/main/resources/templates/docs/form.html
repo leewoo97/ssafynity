@@ -16,7 +16,7 @@
       <div class="form-group">
         <label>제목 <span style="color:var(--danger);">*</span></label>
         <input type="text" th:field="*{title}" required placeholder="문서 제목을 입력하세요"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text); font-size:.95rem;">
+               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text); font-size:.95rem;">
       </div>
 
       <!-- 카테고리 & 태그 -->
@@ -24,7 +24,7 @@
         <div class="form-group">
           <label>카테고리 <span style="color:var(--danger);">*</span></label>
           <select th:field="*{category}" required
-                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
             <option value="">카테고리 선택</option>
             <option th:each="cat : ${ {'JAVA','SPRING','REACT','DATABASE','ALGORITHM','DEVOPS','NETWORK','ETC'} }"
                     th:value="${cat}" th:text="${cat}"></option>
@@ -33,7 +33,7 @@
         <div class="form-group">
           <label>태그</label>
           <input type="text" th:field="*{tags}" placeholder="Java, Spring Boot, JPA (쉼표 구분)"
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
           <div class="tag-hint">쉼표(,)로 구분하여 최대 10개까지 입력하세요.</div>
         </div>
       </div>
@@ -46,7 +46,7 @@
         </div>
         <textarea th:field="*{content}" id="contentArea" required rows="20"
                   placeholder="Markdown 형식으로 작성하세요.&#10;&#10;## 제목&#10;&#10;내용을 작성하세요.&#10;&#10;```java&#10;// 코드 블록&#10;```"
-                  style="width:100%; padding:.75rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text); font-family:'Consolas',monospace; font-size:.9rem; resize:vertical; line-height:1.6;"></textarea>
+                  style="width:100%; padding:.75rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text); font-family:'Consolas',monospace; font-size:.9rem; resize:vertical; line-height:1.6;"></textarea>
         <div id="mdPreview" class="md-preview markdown-body"></div>
       </div>
 

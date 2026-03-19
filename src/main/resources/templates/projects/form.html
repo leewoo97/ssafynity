@@ -15,14 +15,14 @@
       <div class="form-group">
         <label>프로젝트 이름 <span style="color:var(--danger);">*</span></label>
         <input type="text" th:field="*{title}" required placeholder="프로젝트 이름"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
       </div>
 
       <div class="form-row" style="margin-top:1rem;">
         <div class="form-group">
           <label>상태 <span style="color:var(--danger);">*</span></label>
           <select th:field="*{status}" required
-                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
             <option value="IN_PROGRESS">진행 중</option>
             <option value="COMPLETED">완료</option>
           </select>
@@ -30,14 +30,14 @@
         <div class="form-group">
           <label>팀 규모</label>
           <input type="number" th:field="*{teamSize}" min="1" placeholder="1"
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
         </div>
       </div>
 
       <div class="form-group" style="margin-top:1rem;">
         <label>기술 스택 <span style="color:var(--danger);">*</span></label>
         <input type="text" th:field="*{techStack}" required placeholder="Java, Spring Boot, React, MySQL (쉼표 구분)"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
         <div class="tag-hint">사용한 기술을 쉼표(,)로 구분하여 입력하세요.</div>
       </div>
 
@@ -45,26 +45,26 @@
         <div class="form-group">
           <label>GitHub URL</label>
           <input type="url" th:field="*{githubUrl}" placeholder="https://github.com/..."
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
         </div>
         <div class="form-group">
           <label>데모 URL</label>
           <input type="url" th:field="*{demoUrl}" placeholder="https://demo.example.com"
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
         </div>
       </div>
 
       <div class="form-group" style="margin-top:1rem;">
         <label>썸네일 이미지 URL</label>
         <input type="url" th:field="*{thumbnailUrl}" placeholder="https://..."
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
         <div class="tag-hint">이미지 URL을 입력하면 카드에 썸네일로 표시됩니다.</div>
       </div>
 
       <div class="form-group" style="margin-top:1rem;">
         <label>프로젝트 설명 <span style="color:var(--danger);">*</span></label>
         <textarea th:field="*{description}" required rows="8" placeholder="프로젝트의 목적, 주요 기능, 개발 과정 등을 설명해 주세요."
-                  style="width:100%; padding:.75rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text); resize:vertical;"></textarea>
+                  style="width:100%; padding:.75rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text); resize:vertical;"></textarea>
       </div>
 
       <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.2rem;">

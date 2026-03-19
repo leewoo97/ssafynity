@@ -18,8 +18,8 @@
   <!-- 검색 & 필터 -->
   <div class="card" style="margin-bottom:1.2rem; padding:1rem 1.25rem;">
     <form th:action="@{/docs}" method="get" style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
-      <input type="text" name="keyword" th:value="${keyword}" placeholder="문서 검색..." style="flex:1; min-width:180px; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
-      <select name="category" style="padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+      <input type="text" name="keyword" th:value="${keyword}" placeholder="문서 검색..." style="flex:1; min-width:180px; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
+      <select name="category" style="padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
         <option value="">전체 카테고리</option>
         <option th:each="cat : ${categories}"
                 th:value="${cat}" th:text="${cat}" th:selected="${cat == category}"></option>

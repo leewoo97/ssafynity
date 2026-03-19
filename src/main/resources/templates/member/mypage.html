@@ -9,29 +9,32 @@
 
     <!-- 왼쪽: 프로필 카드 -->
     <aside>
-      <div class="card profile-header">
-        <div class="avatar" th:text="${member.nickname?.substring(0,1)?.toUpperCase()}">U</div>
-        <h2 th:text="${member.nickname}">닉네임</h2>
-        <p style="color:var(--muted); font-size:.9rem;" th:text="${member.username}">@username</p>
-        <p style="margin:.8rem 0; font-size:.95rem;" th:text="${member.bio ?: '자기소개가 없습니다.'}"></p>
-        <p style="font-size:.85rem; color:var(--muted);" th:if="${member.email}" th:text="'✉ ' + ${member.email}"></p>
-        <p style="font-size:.85rem; color:var(--muted); margin-top:.5rem;"
-           th:text="'가입일: ' + ${#temporals.format(member.createdAt, 'yyyy.MM.dd')}"></p>
-        <div style="margin-top:1.2rem; display:flex; gap:.6rem; justify-content:center;">
-          <a th:href="@{/profile/edit}" class="btn btn-primary btn-sm">프로필 편집</a>
+      <div class="card" style="text-align:center;padding:2rem 1.5rem;">
+        <div class="avatar-lg" th:text="${member.nickname?.substring(0,1)?.toUpperCase()}">U</div>
+        <h2 style="font-size:1.3rem;font-weight:900;margin-bottom:.3rem;" th:text="${member.nickname}">닉네임</h2>
+        <p style="color:var(--muted);font-size:.88rem;margin-bottom:.8rem;" th:text="'@' + ${member.username}">@username</p>
+        <p style="font-size:.93rem;line-height:1.65;color:var(--text-sub);margin-bottom:1rem;"
+           th:text="${member.bio ?: '자기소개가 없습니다.'}"></p>
+        <div style="display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin-bottom:1rem;">
+          <span th:if="${member.email}" style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg);border-radius:20px;padding:.3rem .8rem;font-size:.8rem;color:var(--muted);">✉ <span th:text="${member.email}"></span></span>
+          <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg);border-radius:20px;padding:.3rem .8rem;font-size:.8rem;color:var(--muted);">📅 <span th:text="${#temporals.format(member.createdAt, 'yyyy.MM.dd')}"></span></span>
+        </div>
+        <div style="display:flex;gap:.6rem;justify-content:center;">
+          <a th:href="@{/profile/edit}" class="btn btn-primary btn-sm">✏ 프로필 편집</a>
+          <a th:href="@{/bookmarks}" class="btn btn-ghost btn-sm">🔖 북마크</a>
         </div>
       </div>
 
       <div class="sidebar-card" style="margin-top:1rem;">
-        <h4>📊 내 활동</h4>
-        <div style="display:flex; gap:1rem; margin-top:.8rem;">
-          <div style="text-align:center; flex:1;">
-            <div style="font-size:1.4rem; font-weight:700; color:var(--primary);" th:text="${myPosts.size()}">0</div>
-            <div style="font-size:.8rem; color:var(--muted);">게시글</div>
+        <h4>📊 내 활동 통계</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:.8rem;">
+          <div style="text-align:center;background:var(--bg);border-radius:10px;padding:.9rem .5rem;">
+            <div style="font-size:1.6rem;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;" th:text="${myPosts.size()}">0</div>
+            <div style="font-size:.77rem;color:var(--muted);font-weight:700;margin-top:.2rem;">게시글</div>
           </div>
-          <div style="text-align:center; flex:1;">
-            <div style="font-size:1.4rem; font-weight:700; color:var(--primary);" th:text="${myComments.size()}">0</div>
-            <div style="font-size:.8rem; color:var(--muted);">댓글</div>
+          <div style="text-align:center;background:var(--bg);border-radius:10px;padding:.9rem .5rem;">
+            <div style="font-size:1.6rem;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;" th:text="${myComments.size()}">0</div>
+            <div style="font-size:.77rem;color:var(--muted);font-weight:700;margin-top:.2rem;">댓글</div>
           </div>
         </div>
       </div>
@@ -76,19 +79,21 @@
 
       <!-- 내 댓글 -->
       <div class="card">
-        <h3 style="margin-bottom:1rem; font-size:1.1rem;">💬 내 댓글</h3>
-        <div th:if="${myComments.isEmpty()}" style="text-align:center; padding:2rem; color:var(--muted);">
-          작성한 댓글이 없습니다.
-        </div>
-        <div th:each="comment : ${myComments}" class="comment-item" style="border-bottom:1px solid var(--border); padding:.9rem 0;">
-          <div style="font-size:.85rem; color:var(--muted); margin-bottom:.4rem;">
-            <a th:href="@{/posts/{id}(id=${comment.post.id})}"
-               th:text="${comment.post.title}" style="color:var(--primary);"></a>
-            &nbsp;·&nbsp;
-            <span th:text="${#temporals.format(comment.createdAt,'yyyy.MM.dd HH:mm')}"></span>
-          </div>
-          <p style="margin:0;" th:text="${comment.content}"></p>
-        </div>
+        <h3 style="margin-bottom:1rem;font-size:1.1rem;">💬 내 댓글</h3>
+        <div th:if="${myComments.isEmpty()}" class="empty-msg">작성한 댓글이 없습니다.</div>
+        <ul class="comment-list">
+          <li th:each="comment : ${myComments}" class="comment-item">
+            <div class="comment-avatar" th:text="${member.nickname?.substring(0,1)?.toUpperCase()}"></div>
+            <div class="comment-body">
+              <div class="comment-header">
+                <a th:href="@{/posts/{id}(id=${comment.post.id})}"
+                   th:text="${comment.post.title}" style="font-weight:700;color:var(--primary);font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px;display:block;"></a>
+                <span class="comment-date" th:text="${#temporals.format(comment.createdAt,'MM.dd HH:mm')}"></span>
+              </div>
+              <p class="comment-content" th:text="${comment.content}"></p>
+            </div>
+          </li>
+        </ul>
       </div>
     </section>
 

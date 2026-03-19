@@ -21,25 +21,23 @@
       <div th:each="n : ${notifications}"
            class="notif-item"
            th:classappend="${n.isRead} ? '' : ' unread'">
-        <div style="display:flex; align-items:flex-start; gap:.8rem;">
-          <div style="font-size:1.2rem; margin-top:.1rem;">
-            <span th:if="${n.link != null and n.link.startsWith('/posts')}">💬</span>
-            <span th:if="${n.link == null or !n.link.startsWith('/posts')}">📢</span>
-          </div>
-          <div style="flex:1;">
-            <p style="margin:0 0 .3rem;" th:text="${n.message}"></p>
-            <div style="display:flex; align-items:center; gap:1rem;">
-              <span style="font-size:.8rem; color:var(--muted);"
-                    th:text="${#temporals.format(n.createdAt,'yyyy.MM.dd HH:mm')}"></span>
-              <a th:if="${n.link}" th:href="${n.link}"
-                 class="btn btn-ghost btn-sm">바로가기 →</a>
-            </div>
-          </div>
-          <form th:action="@{/notifications/{id}/delete(id=${n.id})}" method="post">
-            <button type="submit" class="btn btn-ghost btn-sm"
-                    style="color:var(--muted);" title="삭제">✕</button>
-          </form>
+        <div class="notif-icon">
+          <span th:if="${n.link != null and n.link.startsWith('/posts')}">💬</span>
+          <span th:if="${n.link != null and n.link.startsWith('/docs')}">📚</span>
+          <span th:if="${n.link != null and n.link.startsWith('/events')}">🎯</span>
+          <span th:if="${n.link != null and n.link.startsWith('/projects')}">💻</span>
+          <span th:if="${n.link == null or (!n.link.startsWith('/posts') and !n.link.startsWith('/docs') and !n.link.startsWith('/events') and !n.link.startsWith('/projects'))}">📢</span>
         </div>
+        <div style="flex:1;">
+          <p class="notif-msg" th:text="${n.message}"></p>
+          <div style="display:flex;align-items:center;gap:1rem;margin-top:.35rem;">
+            <span class="notif-date" th:text="${#temporals.format(n.createdAt,'yyyy.MM.dd HH:mm')}"></span>
+            <a th:if="${n.link}" th:href="${n.link}" class="btn btn-ghost btn-sm">바로가기 →</a>
+          </div>
+        </div>
+        <form th:action="@{/notifications/{id}/delete(id=${n.id})}" method="post">
+          <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--muted);" title="삭제">✕</button>
+        </form>
       </div>
     </div>
   </div>

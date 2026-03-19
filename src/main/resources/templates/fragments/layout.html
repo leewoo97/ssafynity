@@ -3,27 +3,30 @@
 <head th:fragment="head(title)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${title} + ' - SSAFYnity'">SSAFYnity</title>
+    <title th:text="${title} + ' — SSAFYnity'">SSAFYnity</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <!-- highlight.js for code syntax highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <!-- marked.js for markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>⚡</text></svg>">
 </head>
 
-<nav th:fragment="topbar">
-    <header class="topbar">
-        <a href="/" class="brand">SSAFY<span>nity</span></a>
+<th:block th:fragment="topbar">
+    <!-- Reading progress bar -->
+    <div class="reading-progress" id="readingProgress"></div>
 
-        <!-- 글로벌 검색 -->
+    <header class="topbar">
+        <a th:href="@{/}" class="brand">SSAFY<span>nity</span></a>
+
+        <!-- Desktop search -->
         <form class="topbar-search" th:action="@{/search}" method="get">
-            <input type="text" name="q" placeholder="검색..." autocomplete="off">
+            <input type="text" name="q" placeholder="검색어를 입력하세요..." autocomplete="off">
             <button type="submit">🔍</button>
         </form>
 
+        <!-- Desktop nav -->
         <nav>
-            <a th:href="@{/posts}">게시판</a>
+            <a th:href="@{/posts}">📝 게시판</a>
             <a th:href="@{/docs}">📚 문서</a>
             <a th:href="@{/videos}">🎬 영상</a>
             <a th:href="@{/events}">🎯 이벤트</a>
@@ -31,39 +34,119 @@
             <a th:href="@{/chat}">💬 채팅</a>
             <th:block th:if="${session.loginMember == null}">
                 <a th:href="@{/member/login}">로그인</a>
-                <a th:href="@{/member/register}" class="btn btn-primary btn-sm">회원가입</a>
+                <a th:href="@{/member/register}" class="btn btn-primary btn-sm" style="margin-left:.3rem;">회원가입</a>
             </th:block>
             <th:block th:if="${session.loginMember != null}">
-                <a th:href="@{/notifications}">🔔</a>
-                <a th:href="@{/bookmarks}">🔖</a>
+                <a th:href="@{/notifications}" title="알림">🔔</a>
+                <a th:href="@{/bookmarks}" title="북마크">🔖</a>
                 <a th:href="@{/profile/me}">마이페이지</a>
                 <a th:href="@{/member/logout}">로그아웃</a>
                 <th:block th:if="${'ADMIN'.equals(session.loginMember.role)}">
-                    <a th:href="@{/admin}" style="color:#ffd32a; font-weight:700;">⚙ 관리자</a>
+                    <a th:href="@{/admin}" style="color:#fde68a;font-weight:700;">⚙ 관리자</a>
                 </th:block>
-                <span class="user-badge" th:text="${session.loginMember.nickname}"></span>
+                <span class="user-badge" th:text="'👤 ' + ${session.loginMember.nickname}"></span>
             </th:block>
         </nav>
-    </header>
-</nav>
 
-<footer th:fragment="footer">
+        <!-- Mobile hamburger -->
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="메뉴">☰</button>
+    </header>
+
+    <!-- Mobile nav drawer -->
+    <div class="mobile-nav" id="mobileNav">
+        <div class="mobile-nav-backdrop" id="mobileNavBackdrop"></div>
+        <div class="mobile-nav-panel">
+            <button class="mobile-nav-close" id="mobileNavClose">✕</button>
+            <form th:action="@{/search}" method="get" style="margin-bottom:.5rem;">
+                <input type="text" name="q" placeholder="검색..." style="width:100%;padding:.65rem 1rem;border:1.5px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:.93rem;outline:none;font-family:inherit;">
+            </form>
+            <a th:href="@{/posts}">📝 게시판</a>
+            <a th:href="@{/docs}">📚 문서</a>
+            <a th:href="@{/videos}">🎬 영상</a>
+            <a th:href="@{/events}">🎯 이벤트</a>
+            <a th:href="@{/projects}">💻 프로젝트</a>
+            <a th:href="@{/chat}">💬 채팅</a>
+            <hr style="border-color:rgba(255,255,255,.1);margin:.4rem 0;">
+            <th:block th:if="${session.loginMember == null}">
+                <a th:href="@{/member/login}">🔑 로그인</a>
+                <a th:href="@{/member/register}" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-weight:700;border-radius:10px;text-align:center;">🚀 회원가입</a>
+            </th:block>
+            <th:block th:if="${session.loginMember != null}">
+                <a th:href="@{/notifications}">🔔 알림</a>
+                <a th:href="@{/bookmarks}">🔖 북마크</a>
+                <a th:href="@{/profile/me}">👤 마이페이지</a>
+                <th:block th:if="${'ADMIN'.equals(session.loginMember.role)}">
+                    <a th:href="@{/admin}" style="color:#fde68a;">⚙ 관리자</a>
+                </th:block>
+                <a th:href="@{/member/logout}" style="color:rgba(239,68,68,.9);">🚪 로그아웃</a>
+            </th:block>
+        </div>
+    </div>
+
+    <script>
+        (function(){
+            var btn=document.getElementById('mobileMenuBtn');
+            var nav=document.getElementById('mobileNav');
+            var close=document.getElementById('mobileNavClose');
+            var backdrop=document.getElementById('mobileNavBackdrop');
+            if(btn) btn.onclick=function(){nav.classList.add('open');document.body.style.overflow='hidden';};
+            if(close) close.onclick=function(){nav.classList.remove('open');document.body.style.overflow='';};
+            if(backdrop) backdrop.onclick=function(){nav.classList.remove('open');document.body.style.overflow='';};
+            // Reading progress
+            var bar=document.getElementById('readingProgress');
+            if(bar){window.addEventListener('scroll',function(){var s=document.documentElement.scrollTop||document.body.scrollTop;var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;bar.style.width=h>0?Math.round(s/h*100)+'%':'0';});}
+        })();
+    </script>
+</th:block>
+
+<th:block th:fragment="footer">
+    <!-- Back to top -->
+    <a href="#" class="back-to-top" id="backToTop" title="맨 위로">↑</a>
+
     <footer>
         <div class="footer-inner">
-            <div>
-                <strong>SSAFYnity</strong> — 개발자를 위한 커뮤니티
+            <div class="footer-top">
+                <div>
+                    <span class="footer-brand">SSAFY<span>nity</span></span>
+                    <p class="footer-desc">SSAFY 개발자들을 위한 지식 공유·협업 커뮤니티입니다.<br>함께 성장하고, 함께 만들어가는 개발자 생태계.</p>
+                </div>
+                <div class="footer-col">
+                    <h5>커뮤니티</h5>
+                    <a th:href="@{/posts}">게시판</a>
+                    <a th:href="@{/docs}">문서 라이브러리</a>
+                    <a th:href="@{/videos}">영상 자료</a>
+                    <a th:href="@{/chat}">실시간 채팅</a>
+                </div>
+                <div class="footer-col">
+                    <h5>활동</h5>
+                    <a th:href="@{/events}">이벤트</a>
+                    <a th:href="@{/projects}">프로젝트</a>
+                    <a th:href="@{/bookmarks}">북마크</a>
+                    <a th:href="@{/notifications}">알림</a>
+                </div>
+                <div class="footer-col">
+                    <h5>계정</h5>
+                    <a th:if="${session.loginMember == null}" th:href="@{/member/login}">로그인</a>
+                    <a th:if="${session.loginMember == null}" th:href="@{/member/register}">회원가입</a>
+                    <a th:if="${session.loginMember != null}" th:href="@{/profile/me}">마이페이지</a>
+                    <a th:if="${session.loginMember != null}" th:href="@{/member/logout}">로그아웃</a>
+                    <a th:if="${session.loginMember != null and 'ADMIN'.equals(session.loginMember.role)}" th:href="@{/admin}">관리자</a>
+                </div>
             </div>
-            <div style="font-size:.82rem; color:var(--muted); margin-top:.4rem;">
-                © 2026 SSAFYnity. Built with ☕ Spring Boot &amp; 💙 Thymeleaf
-            </div>
-            <div style="margin-top:.6rem; display:flex; gap:1rem; justify-content:center; font-size:.85rem;">
-                <a th:href="@{/posts}">게시판</a>
-                <a th:href="@{/docs}">문서</a>
-                <a th:href="@{/videos}">영상</a>
-                <a th:href="@{/events}">이벤트</a>
-                <a th:href="@{/projects}">프로젝트</a>
+            <div class="footer-bottom">
+                <span>© 2026 SSAFYnity. All rights reserved.</span>
+                <span>Built with ☕ Spring Boot &amp; 💙 Thymeleaf</span>
             </div>
         </div>
     </footer>
-</footer>
+
+    <script>
+        (function(){
+            var btn=document.getElementById('backToTop');
+            if(!btn) return;
+            window.addEventListener('scroll',function(){btn.classList.toggle('visible',window.scrollY>350);});
+            btn.addEventListener('click',function(e){e.preventDefault();window.scrollTo({top:0,behavior:'smooth'});});
+        })();
+    </script>
+</th:block>
 </html>

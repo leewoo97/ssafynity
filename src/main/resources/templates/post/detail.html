@@ -72,23 +72,29 @@
 
         <!-- 댓글 목록 -->
         <ul class="comment-list">
+          <li th:if="${#lists.isEmpty(comments)}">
+            <div class="empty-msg"><p>첫 댓글을 남겨보세요! 💬</p></div>
+          </li>
           <li th:each="comment : ${comments}" class="comment-item">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-              <div>
-                <span class="comment-author">
-                  <a th:href="@{'/profile/' + ${comment.author.id}}" th:text="${comment.author.nickname}" style="color:var(--text);"></a>
-                </span>
-                <span class="comment-date" style="margin-left:.7rem;" th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+            <div class="comment-avatar" th:text="${#strings.substring(comment.author.nickname,0,1)}"></div>
+            <div class="comment-body">
+              <div class="comment-header">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                  <span class="comment-author">
+                    <a th:href="@{'/profile/' + ${comment.author.id}}" th:text="${comment.author.nickname}" style="color:var(--text);"></a>
+                  </span>
+                  <span class="comment-date" th:text="${#temporals.format(comment.createdAt, 'MM-dd HH:mm')}"></span>
+                </div>
+                <th:block th:if="${session.loginMember != null and session.loginMember.id == comment.author.id}">
+                  <form th:action="@{'/comments/' + ${comment.id} + '/delete'}" method="post"
+                        onsubmit="return confirm('댓글을 삭제하시겠습니까?')" style="display:inline;">
+                    <input type="hidden" name="postId" th:value="${post.id}" />
+                    <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                  </form>
+                </th:block>
               </div>
-              <th:block th:if="${session.loginMember != null and session.loginMember.id == comment.author.id}">
-                <form th:action="@{'/comments/' + ${comment.id} + '/delete'}" method="post"
-                      onsubmit="return confirm('삭제하시겠습니까?')">
-                  <input type="hidden" name="postId" th:value="${post.id}" />
-                  <button type="submit" class="btn btn-danger btn-sm">삭제</button>
-                </form>
-              </th:block>
+              <p class="comment-content" th:text="${comment.content}"></p>
             </div>
-            <p class="comment-content" th:text="${comment.content}"></p>
           </li>
         </ul>
       </div>

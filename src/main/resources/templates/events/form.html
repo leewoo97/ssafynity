@@ -15,19 +15,19 @@
       <div class="form-group">
         <label>이벤트 제목 <span style="color:var(--danger);">*</span></label>
         <input type="text" th:field="*{title}" required placeholder="이벤트 제목"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
       </div>
 
       <div class="form-row" style="margin-top:1rem;">
         <div class="form-group">
           <label>시작 일시 <span style="color:var(--danger);">*</span></label>
           <input type="datetime-local" th:field="*{startDate}" required
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
         </div>
         <div class="form-group">
           <label>종료 일시 <span style="color:var(--danger);">*</span></label>
           <input type="datetime-local" th:field="*{endDate}" required
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
         </div>
       </div>
 
@@ -35,7 +35,7 @@
         <div class="form-group">
           <label>이벤트 유형 <span style="color:var(--danger);">*</span></label>
           <select th:field="*{eventType}" required
-                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
             <option value="">유형 선택</option>
             <option th:each="t : ${eventTypes}"
                     th:value="${t}" th:text="${t}"
@@ -45,7 +45,7 @@
         <div class="form-group">
           <label>장소 형태 <span style="color:var(--danger);">*</span></label>
           <select th:field="*{location}" required
-                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
             <option value="ONLINE">온라인</option>
             <option value="OFFLINE">오프라인</option>
             <option value="HYBRID">하이브리드</option>
@@ -56,13 +56,13 @@
       <div class="form-group" style="margin-top:1rem;">
         <label>최대 참가 인원 (0 = 무제한)</label>
         <input type="number" th:field="*{maxParticipants}" min="0" placeholder="0"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);">
+               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
       </div>
 
       <div class="form-group" style="margin-top:1rem;">
         <label>이벤트 설명 <span style="color:var(--danger);">*</span></label>
         <textarea th:field="*{description}" required rows="8" placeholder="이벤트에 대한 자세한 설명을 작성하세요."
-                  style="width:100%; padding:.75rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text); resize:vertical;"></textarea>
+                  style="width:100%; padding:.75rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text); resize:vertical;"></textarea>
       </div>
 
       <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.2rem;">
