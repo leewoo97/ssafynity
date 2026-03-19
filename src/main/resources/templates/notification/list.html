@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('알림')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<div class="container" style="max-width:700px;">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+      <h2>🔔 알림</h2>
+      <span style="font-size:.85rem; color:var(--muted);" th:text="${notifications.size()} + '개'"></span>
+    </div>
+
+    <div th:if="${notifications.isEmpty()}"
+         style="text-align:center; padding:3rem; color:var(--muted);">
+      <div style="font-size:2.5rem; margin-bottom:.8rem;">🔕</div>
+      <p>알림이 없습니다.</p>
+    </div>
+
+    <div class="notif-list">
+      <div th:each="n : ${notifications}"
+           class="notif-item"
+           th:classappend="${n.isRead} ? '' : ' unread'">
+        <div style="display:flex; align-items:flex-start; gap:.8rem;">
+          <div style="font-size:1.2rem; margin-top:.1rem;">
+            <span th:if="${n.link != null and n.link.startsWith('/posts')}">💬</span>
+            <span th:if="${n.link == null or !n.link.startsWith('/posts')}">📢</span>
+          </div>
+          <div style="flex:1;">
+            <p style="margin:0 0 .3rem;" th:text="${n.message}"></p>
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <span style="font-size:.8rem; color:var(--muted);"
+                    th:text="${#temporals.format(n.createdAt,'yyyy.MM.dd HH:mm')}"></span>
+              <a th:if="${n.link}" th:href="${n.link}"
+                 class="btn btn-ghost btn-sm">바로가기 →</a>
+            </div>
+          </div>
+          <form th:action="@{/notifications/{id}/delete(id=${n.id})}" method="post">
+            <button type="submit" class="btn btn-ghost btn-sm"
+                    style="color:var(--muted);" title="삭제">✕</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

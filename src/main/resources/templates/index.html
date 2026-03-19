@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('홈')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<!-- ── Hero ─────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">개발자 커뮤니티</div>
+    <h1>함께 성장하는<br><span>SSAFYnity</span></h1>
+    <p>기술 문서, 강의 영상, 스터디 이벤트, 프로젝트 쇼케이스까지<br>
+       개발자를 위한 모든 것이 여기에 있습니다.</p>
+    <div class="hero-btns">
+      <a th:href="@{/docs}" class="btn btn-primary">📚 문서 탐색</a>
+      <a th:href="@{/posts}" class="btn btn-outline-light">💬 커뮤니티</a>
+      <th:block th:if="${session.loginMember == null}">
+        <a th:href="@{/member/register}" class="btn btn-outline-light">🚀 지금 가입</a>
+      </th:block>
+    </div>
+  </div>
+</section>
+
+<!-- ── Stats Bar ─────────────────────────────────────────── -->
+<section class="stats-bar">
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-item"><span class="stat-num" th:text="${memberCount}">0</span><span class="stat-lbl">👥 멤버</span></div>
+      <div class="stat-item"><span class="stat-num" th:text="${postCount}">0</span><span class="stat-lbl">📄 게시글</span></div>
+      <div class="stat-item"><span class="stat-num" th:text="${docCount}">0</span><span class="stat-lbl">📚 기술문서</span></div>
+      <div class="stat-item"><span class="stat-num" th:text="${videoCount}">0</span><span class="stat-lbl">🎬 영상</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+
+  <!-- ── 빠른 이동 ──────────────────────────────────────── -->
+  <div class="quick-nav">
+    <a th:href="@{/posts}" class="quick-card"><span class="qc-icon">💬</span><strong>커뮤니티</strong><p>질문·정보·잡담</p></a>
+    <a th:href="@{/docs}" class="quick-card"><span class="qc-icon">📚</span><strong>기술 문서</strong><p>튜토리얼·아키텍처</p></a>
+    <a th:href="@{/videos}" class="quick-card"><span class="qc-icon">🎬</span><strong>강의 영상</strong><p>세미나·코드리뷰</p></a>
+    <a th:href="@{/events}" class="quick-card"><span class="qc-icon">🎯</span><strong>이벤트</strong><p>스터디·해커톤</p></a>
+    <a th:href="@{/projects}" class="quick-card"><span class="qc-icon">💻</span><strong>프로젝트</strong><p>포트폴리오·쇼케이스</p></a>
+  </div>
+
+  <!-- ── 2컬럼 메인 ──────────────────────────────────────── -->
+  <div class="two-col" style="margin-top:2rem;">
+    <section>
+      <!-- 인기글 -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="section-hd">
+          <h3>🔥 이번 주 인기글</h3>
+          <a th:href="@{/posts}" class="btn btn-ghost btn-sm">전체보기 →</a>
+        </div>
+        <div th:if="${hotPosts == null or hotPosts.isEmpty()}" class="empty-msg">게시글이 없습니다.</div>
+        <div th:each="post : ${hotPosts}" class="post-row">
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <span class="cat-badge" th:text="${post.category}"></span>
+            <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}" class="post-link"></a>
+          </div>
+          <div class="post-meta">
+            <span th:text="${post.author.nickname}"></span> ·
+            조회 <span th:text="${post.viewCount}"></span> ·
+            추천 <span th:text="${post.likeCount}"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 최신 기술문서 -->
+      <div class="card">
+        <div class="section-hd">
+          <h3>📚 최신 기술 문서</h3>
+          <a th:href="@{/docs}" class="btn btn-ghost btn-sm">전체보기 →</a>
+        </div>
+        <div th:if="${latestDocs == null or latestDocs.isEmpty()}" class="empty-msg">문서가 없습니다.</div>
+        <div th:each="doc : ${latestDocs}" class="post-row">
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <span th:if="${doc.pinned}" style="color:var(--danger);font-size:.8rem;">📌</span>
+            <span class="cat-badge" th:text="${doc.category}"></span>
+            <a th:href="@{/docs/{id}(id=${doc.id})}" th:text="${doc.title}" class="post-link"></a>
+          </div>
+          <div class="post-meta">
+            <span th:text="${doc.author.nickname}"></span> ·
+            조회 <span th:text="${doc.viewCount}"></span>
+            <th:block th:if="${doc.tags != null and !doc.tags.isEmpty()}">
+              · <span th:each="tag,ti : ${doc.tags.split(',')}" th:if="${ti.index < 3}">
+                  <span class="tech-tag" th:text="${#strings.trim(tag)}"></span>
+                </span>
+            </th:block>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 사이드바 -->
+    <aside>
+      <div class="sidebar-card" th:if="${pinnedDocs != null and !pinnedDocs.isEmpty()}">
+        <h4>📌 추천 문서</h4>
+        <div th:each="doc : ${pinnedDocs}" class="sb-row">
+          <a th:href="@{/docs/{id}(id=${doc.id})}" th:text="${doc.title}" class="sb-link"></a>
+          <span class="cat-badge" th:text="${doc.category}" style="font-size:.7rem;"></span>
+        </div>
+      </div>
+
+      <div class="sidebar-card" style="margin-top:1rem;">
+        <h4>🎯 다가오는 이벤트</h4>
+        <div th:if="${upcomingEvents == null or upcomingEvents.isEmpty()}" class="empty-msg" style="font-size:.85rem;">예정된 이벤트가 없습니다.</div>
+        <div th:each="ev : ${upcomingEvents}" class="sb-row">
+          <a th:href="@{/events/{id}(id=${ev.id})}" th:text="${ev.title}" class="sb-link" style="font-weight:600;"></a>
+          <div style="font-size:.78rem;color:var(--muted);">
+            <span class="cat-badge" th:text="${ev.eventType}" style="font-size:.7rem;"></span>
+            <span th:text="${#temporals.format(ev.startDate,'MM.dd HH:mm')}"></span>
+          </div>
+        </div>
+        <a th:href="@{/events}" class="btn btn-ghost btn-sm" style="width:100%;margin-top:.8rem;">전체 이벤트 →</a>
+      </div>
+
+      <div class="sidebar-card" style="margin-top:1rem;">
+        <h4>🎬 최신 영상</h4>
+        <div th:each="vid : ${latestVideos}" class="sb-row">
+          <a th:href="@{/videos/{id}(id=${vid.id})}" th:text="${vid.title}" class="sb-link"></a>
+          <span style="font-size:.78rem;color:var(--muted);" th:text="${vid.category}"></span>
+        </div>
+        <a th:href="@{/videos}" class="btn btn-ghost btn-sm" style="width:100%;margin-top:.8rem;">전체 영상 →</a>
+      </div>
+
+      <div class="sidebar-card" style="margin-top:1rem;">
+        <h4>👍 추천 TOP5</h4>
+        <div th:each="post,pi : ${topLiked}" class="sb-row" style="display:flex;gap:.4rem;align-items:flex-start;">
+          <span style="font-size:.8rem;color:var(--muted);min-width:1.2rem;" th:text="${pi.index+1}+'. '"></span>
+          <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}"
+             style="font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></a>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ── 추천 프로젝트 ──────────────────────────────────── -->
+  <div th:if="${featuredProjects != null and !featuredProjects.isEmpty()}" style="margin-top:2.5rem;">
+    <div class="section-hd">
+      <h3>💻 추천 프로젝트</h3>
+      <a th:href="@{/projects}" class="btn btn-ghost btn-sm">전체보기 →</a>
+    </div>
+    <div class="project-grid">
+      <div th:each="proj : ${featuredProjects}" class="project-card">
+        <div class="project-thumb" th:style="${proj.thumbnailUrl != null} ? 'background-image:url('+proj.thumbnailUrl+');background-size:cover;background-position:center;' : ''">
+          <span th:if="${proj.thumbnailUrl == null}" style="font-size:2.5rem;">💻</span>
+        </div>
+        <div class="project-body">
+          <h4><a th:href="@{/projects/{id}(id=${proj.id})}" th:text="${proj.title}"></a></h4>
+          <p class="project-desc" th:text="${#strings.abbreviate(proj.description, 80)}"></p>
+          <div class="project-tags">
+            <span th:each="tech,ti : ${proj.techStack?.split(',')}" th:if="${ti.index < 4}">
+              <span class="tech-tag" th:text="${#strings.trim(tech)}"></span>
+            </span>
+          </div>
+          <div class="project-meta">
+            <span th:text="${proj.author.nickname}"></span>
+            <span>👍 <span th:text="${proj.likeCount}"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('게시글 관리')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<div class="container">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+    <div>
+      <h2 style="margin:0;">📄 게시글 관리</h2>
+      <p style="margin:.3rem 0 0; color:var(--muted); font-size:.9rem;">
+        총 <strong th:text="${posts.size()}"></strong>개
+      </p>
+    </div>
+    <a th:href="@{/admin}" class="btn btn-ghost btn-sm">← 대시보드</a>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;">ID</th>
+            <th style="width:70px;">카테고리</th>
+            <th>제목</th>
+            <th style="width:110px;">작성자</th>
+            <th style="width:70px;">조회</th>
+            <th style="width:70px;">추천</th>
+            <th style="width:110px;">작성일</th>
+            <th style="width:70px;">관리</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="post : ${posts}">
+            <td style="color:var(--muted); font-size:.85rem;" th:text="${post.id}"></td>
+            <td><span class="cat-badge" th:text="${post.category}"></span></td>
+            <td>
+              <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}"></a>
+            </td>
+            <td>
+              <a th:href="@{/profile/{id}(id=${post.author.id})}"
+                 th:text="${post.author.nickname}" style="font-size:.9rem;"></a>
+            </td>
+            <td style="font-size:.85rem;" th:text="${post.viewCount}"></td>
+            <td style="font-size:.85rem;" th:text="${post.likeCount}"></td>
+            <td style="font-size:.85rem; color:var(--muted);"
+                th:text="${#temporals.format(post.createdAt,'yyyy.MM.dd HH:mm')}"></td>
+            <td>
+              <form th:action="@{/admin/posts/{id}/delete(id=${post.id})}" method="post"
+                    onsubmit="return confirm('이 게시글을 삭제하시겠습니까?')">
+                <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

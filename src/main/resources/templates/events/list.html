@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('이벤트')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<div class="container" style="padding-top:1.5rem;">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1.2rem;">
+    <div>
+      <h2 style="font-size:1.5rem; font-weight:800;">🎯 이벤트</h2>
+      <p style="color:var(--muted); font-size:.88rem; margin-top:.2rem;">스터디, 해커톤, 세미나 이벤트를 확인하세요.</p>
+    </div>
+    <a th:if="${session.loginMember != null and session.loginMember.role == 'ADMIN'}"
+       th:href="@{/events/new}" class="btn btn-primary">+ 이벤트 등록</a>
+  </div>
+
+  <!-- 다가오는 이벤트 (상단 강조) -->
+  <div th:if="${upcomingEvents != null and !upcomingEvents.isEmpty()}" style="margin-bottom:2rem;">
+    <h3 style="font-size:1rem; font-weight:700; color:var(--muted); margin-bottom:.8rem;">📅 다가오는 이벤트</h3>
+    <div class="event-grid">
+      <div th:each="ev : ${upcomingEvents}" class="event-card">
+        <span class="event-status-badge upcoming">📅 UPCOMING</span>
+        <h4><a th:href="@{/events/{id}(id=${ev.id})}" th:text="${ev.title}"></a></h4>
+        <div class="event-info">
+          <div>📍 <span th:text="${ev.location}"></span> · <span class="cat-badge" th:text="${ev.eventType}" style="font-size:.72rem;"></span></div>
+          <div>🕐 <span th:text="${#temporals.format(ev.startDate,'yyyy.MM.dd HH:mm')}"></span></div>
+          <div th:if="${ev.maxParticipants != null}">
+            👥 <span th:text="${ev.currentParticipants}"></span> / <span th:text="${ev.maxParticipants}"></span>명
+          </div>
+        </div>
+        <div th:if="${ev.maxParticipants != null and ev.maxParticipants > 0}" class="event-progress" style="margin-top:.8rem;">
+          <div class="event-progress-bar"
+               th:style="'width:' + ${(ev.currentParticipants * 100 / ev.maxParticipants)} + '%'"></div>
+        </div>
+        <a th:href="@{/events/{id}(id=${ev.id})}" class="btn btn-primary btn-sm" style="margin-top:.9rem;">자세히 보기</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 진행 중인 이벤트 -->
+  <div th:if="${ongoingEvents != null and !ongoingEvents.isEmpty()}" style="margin-bottom:2rem;">
+    <h3 style="font-size:1rem; font-weight:700; color:var(--muted); margin-bottom:.8rem;">🟢 진행 중인 이벤트</h3>
+    <div class="event-grid">
+      <div th:each="ev : ${ongoingEvents}" class="event-card" style="border-left:3px solid #22c55e;">
+        <span class="event-status-badge ongoing">🟢 ONGOING</span>
+        <h4><a th:href="@{/events/{id}(id=${ev.id})}" th:text="${ev.title}"></a></h4>
+        <div class="event-info">
+          <div>📍 <span th:text="${ev.location}"></span> · <span class="cat-badge" th:text="${ev.eventType}" style="font-size:.72rem;"></span></div>
+          <div>🏁 <span th:text="${#temporals.format(ev.endDate,'yyyy.MM.dd HH:mm')}"></span> 종료</div>
+          <div th:if="${ev.maxParticipants != null}">
+            👥 <span th:text="${ev.currentParticipants}"></span> / <span th:text="${ev.maxParticipants}"></span>명
+          </div>
+        </div>
+        <a th:href="@{/events/{id}(id=${ev.id})}" class="btn btn-primary btn-sm" style="margin-top:.9rem;">자세히 보기</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 전체 이벤트 -->
+  <h3 style="font-size:1rem; font-weight:700; color:var(--muted); margin-bottom:.8rem;">📋 전체 이벤트</h3>
+  <div th:if="${allEvents.isEmpty()}" class="card">
+    <div class="empty-msg">
+      <p style="font-size:2rem;">🎯</p>
+      <p>등록된 이벤트가 없습니다.</p>
+    </div>
+  </div>
+
+  <div th:if="${!allEvents.isEmpty()}" class="event-grid">
+    <div th:each="ev : ${allEvents}" class="event-card">
+      <span class="event-status-badge"
+            th:classappend="${ev.status == 'UPCOMING'} ? ' upcoming' : (${ev.status == 'ONGOING'} ? ' ongoing' : (${ev.status == 'COMPLETED'} ? ' completed' : ' cancelled'))"
+            th:text="${ev.status}"></span>
+      <h4><a th:href="@{/events/{id}(id=${ev.id})}" th:text="${ev.title}"></a></h4>
+      <div class="event-info">
+        <div>📍 <span th:text="${ev.location}"></span></div>
+        <div>🕐 <span th:text="${#temporals.format(ev.startDate,'yyyy.MM.dd HH:mm')}"></span></div>
+        <div th:if="${ev.maxParticipants != null}">👥 <span th:text="${ev.currentParticipants}"></span>/<span th:text="${ev.maxParticipants}"></span>명</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

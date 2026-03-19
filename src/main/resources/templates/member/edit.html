@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('프로필 편집')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<div class="container" style="max-width:600px;">
+
+  <!-- 프로필 편집 -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <h2 style="margin-bottom:1.4rem;">✏️ 프로필 편집</h2>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+    <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+
+    <form th:action="@{/profile/edit}" method="post">
+      <div class="form-group">
+        <label>닉네임</label>
+        <input type="text" name="nickname" required
+               th:value="${member.nickname}" placeholder="닉네임">
+      </div>
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" name="email"
+               th:value="${member.email}" placeholder="이메일 주소">
+      </div>
+      <div class="form-group">
+        <label>자기소개</label>
+        <textarea name="bio" rows="4" placeholder="자신을 소개해보세요..."
+                  th:text="${member.bio}"></textarea>
+      </div>
+      <div style="display:flex; gap:.8rem;">
+        <button type="submit" class="btn btn-primary">저장하기</button>
+        <a th:href="@{/profile/me}" class="btn btn-ghost">취소</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- 비밀번호 변경 -->
+  <div class="card">
+    <h2 style="margin-bottom:1.4rem;">🔑 비밀번호 변경</h2>
+    <div class="alert alert-error" th:if="${pwError}" th:text="${pwError}"></div>
+    <div class="alert alert-success" th:if="${pwSuccess}" th:text="${pwSuccess}"></div>
+
+    <form th:action="@{/profile/change-password}" method="post">
+      <div class="form-group">
+        <label>현재 비밀번호</label>
+        <input type="password" name="currentPassword" required placeholder="현재 비밀번호">
+      </div>
+      <div class="form-group">
+        <label>새 비밀번호</label>
+        <input type="password" name="newPassword" required placeholder="새 비밀번호 (8자 이상)">
+      </div>
+      <div class="form-group">
+        <label>새 비밀번호 확인</label>
+        <input type="password" name="confirmPassword" required placeholder="새 비밀번호 다시 입력">
+      </div>
+      <button type="submit" class="btn btn-primary">비밀번호 변경</button>
+    </form>
+  </div>
+
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${project.title})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<div class="container" style="padding-top:1.5rem;">
+  <div class="two-col">
+    <article>
+      <div class="card">
+        <!-- 썸네일 -->
+        <div th:if="${project.thumbnailUrl != null}"
+             style="height:240px; border-radius:var(--radius); overflow:hidden; margin-bottom:1.2rem; background:#1e1e2e;">
+          <img th:src="${project.thumbnailUrl}" th:alt="${project.title}"
+               style="width:100%; height:100%; object-fit:cover;">
+        </div>
+
+        <!-- 상태/메타 -->
+        <div style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-bottom:.7rem;">
+          <span class="cat-badge" th:text="${project.status}"></span>
+          <span th:if="${project.teamSize != null}" style="font-size:.82rem; color:var(--muted);">팀원 <span th:text="${project.teamSize}"></span>명</span>
+        </div>
+
+        <h1 style="font-size:1.6rem; font-weight:800; margin-bottom:.8rem;" th:text="${project.title}"></h1>
+
+        <div style="display:flex; align-items:center; gap:1rem; font-size:.88rem; color:var(--muted); padding:.8rem 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:1.2rem;">
+          <span>✍ <strong th:text="${project.author.nickname}" style="color:var(--text);"></strong></span>
+          <span>📅 <span th:text="${#temporals.format(project.createdAt,'yyyy.MM.dd')}"></span></span>
+          <span>👁 <span th:text="${project.viewCount}"></span></span>
+          <span>👍 <span th:text="${project.likeCount}"></span></span>
+        </div>
+
+        <!-- 기술 스택 -->
+        <div th:if="${project.techStack != null and !project.techStack.isEmpty()}" style="margin-bottom:1.2rem;">
+          <h4 style="font-size:.88rem; font-weight:700; color:var(--muted); margin-bottom:.5rem;">🛠 기술 스택</h4>
+          <div>
+            <span th:each="tech : ${project.techStack.split(',')}">
+              <span class="tech-tag" th:text="${#strings.trim(tech)}" style="font-size:.82rem; padding:.25rem .75rem;"></span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 설명 -->
+        <div style="line-height:1.8; white-space:pre-wrap;" th:text="${project.description}"></div>
+
+        <!-- 링크 -->
+        <div th:if="${project.githubUrl != null or project.demoUrl != null}"
+             style="display:flex; gap:.75rem; margin-top:1.2rem; padding:1rem; background:var(--surface); border-radius:var(--radius); border:1px solid var(--border);">
+          <a th:if="${project.githubUrl != null}" th:href="${project.githubUrl}" target="_blank" class="btn btn-ghost btn-sm">
+            🐱 GitHub
+          </a>
+          <a th:if="${project.demoUrl != null}" th:href="${project.demoUrl}" target="_blank" class="btn btn-primary btn-sm">
+            🚀 데모 보기
+          </a>
+        </div>
+
+        <!-- 액션 -->
+        <div style="display:flex; gap:.5rem; margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border); flex-wrap:wrap; align-items:center;">
+          <a th:href="@{/projects}" class="btn btn-ghost btn-sm">← 목록</a>
+
+          <!-- 좋아요 -->
+          <th:block th:if="${session.loginMember != null}">
+            <form th:action="@{/projects/{id}/like(id=${project.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-ghost btn-sm">👍 좋아요 (<span th:text="${project.likeCount}"></span>)</button>
+            </form>
+            <form th:action="@{/projects/{id}/bookmark(id=${project.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-ghost btn-sm"
+                      th:text="${isBookmarked} ? '🔖 북마크 취소' : '🔖 북마크'"></button>
+            </form>
+          </th:block>
+
+          <th:block th:if="${session.loginMember != null and (session.loginMember.id == project.author.id or session.loginMember.role == 'ADMIN')}">
+            <a th:href="@{/projects/{id}/edit(id=${project.id})}" class="btn btn-ghost btn-sm">✏ 수정</a>
+            <form th:action="@{/projects/{id}/delete(id=${project.id})}" method="post" style="display:inline;"
+                  onsubmit="return confirm('프로젝트를 삭제하시겠습니까?')">
+              <button type="submit" class="btn btn-danger btn-sm">🗑 삭제</button>
+            </form>
+          </th:block>
+        </div>
+      </div>
+    </article>
+
+    <!-- 사이드바 -->
+    <aside>
+      <div class="sidebar-card">
+        <h4>👤 작성자</h4>
+        <div style="display:flex; align-items:center; gap:.7rem; margin-top:.5rem;">
+          <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700;">
+            <span th:text="${#strings.substring(project.author.nickname,0,1)}"></span>
+          </div>
+          <div>
+            <div style="font-weight:700;" th:text="${project.author.nickname}"></div>
+            <a th:href="@{/member/profile/{id}(id=${project.author.id})}" class="btn btn-ghost btn-sm" style="margin-top:.3rem;">프로필 →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-card" style="margin-top:1rem;" th:if="${relatedProjects != null and !relatedProjects.isEmpty()}">
+        <h4>💻 관련 프로젝트</h4>
+        <div th:each="rp : ${relatedProjects}" class="sb-row">
+          <a th:href="@{/projects/{id}(id=${rp.id})}" th:text="${rp.title}" class="sb-link"></a>
+          <div style="font-size:.75rem; color:var(--muted);">👍 <span th:text="${rp.likeCount}"></span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

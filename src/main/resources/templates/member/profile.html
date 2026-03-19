@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('프로필')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<div class="container">
+  <div class="two-col">
+
+    <!-- 프로필 사이드바 -->
+    <aside>
+      <div class="card profile-header">
+        <div class="avatar" th:text="${target.nickname?.substring(0,1)?.toUpperCase()}">U</div>
+        <h2 th:text="${target.nickname}">닉네임</h2>
+        <p style="color:var(--muted); font-size:.9rem;" th:text="'@' + ${target.username}"></p>
+        <p style="margin:.8rem 0; font-size:.95rem; line-height:1.5;"
+           th:text="${target.bio ?: '자기소개가 없습니다.'}"></p>
+        <p style="font-size:.85rem; color:var(--muted);" th:if="${target.email}"
+           th:text="'✉ ' + ${target.email}"></p>
+        <p style="font-size:.85rem; color:var(--muted); margin-top:.5rem;"
+           th:text="'가입일: ' + ${#temporals.format(target.createdAt, 'yyyy.MM.dd')}"></p>
+        <div style="margin-top:1rem;">
+          <span class="cat-badge" th:if="${target.role == 'ADMIN'}"
+                style="background:var(--danger); color:#fff;">ADMIN</span>
+        </div>
+      </div>
+
+      <div class="sidebar-card" style="margin-top:1rem;">
+        <h4>📊 활동 통계</h4>
+        <div style="display:flex; gap:1rem; margin-top:.8rem;">
+          <div style="text-align:center; flex:1;">
+            <div style="font-size:1.4rem; font-weight:700; color:var(--primary);"
+                 th:text="${posts.size()}">0</div>
+            <div style="font-size:.8rem; color:var(--muted);">게시글</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 게시글 목록 -->
+    <section>
+      <div class="card">
+        <h3 style="margin-bottom:1rem; font-size:1.1rem;">
+          📄 <span th:text="${target.nickname}"></span>의 게시글
+        </h3>
+        <div th:if="${posts.isEmpty()}" style="text-align:center; padding:2.5rem; color:var(--muted);">
+          작성한 게시글이 없습니다.
+        </div>
+        <div class="table-wrap" th:if="${!posts.isEmpty()}">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:60px;">카테고리</th>
+                <th>제목</th>
+                <th style="width:70px;">조회</th>
+                <th style="width:70px;">추천</th>
+                <th style="width:100px;">날짜</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="post : ${posts}">
+                <td><span class="cat-badge" th:text="${post.category}"></span></td>
+                <td>
+                  <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}"></a>
+                </td>
+                <td th:text="${post.viewCount}"></td>
+                <td th:text="${post.likeCount}"></td>
+                <td style="color:var(--muted); font-size:.85rem;"
+                    th:text="${#temporals.format(post.createdAt,'yyyy.MM.dd')}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

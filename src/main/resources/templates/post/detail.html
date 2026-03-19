@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${post.title})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<div class="container">
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <!-- 카테고리 & 제목 -->
+        <div style="margin-bottom:.5rem;">
+          <span class="badge-cat" th:text="${post.category}"></span>
+        </div>
+        <h2 th:text="${post.title}" style="font-size:1.5rem; margin-bottom:.5rem;"></h2>
+        <div style="display:flex; gap:1rem; align-items:center; color:var(--muted); font-size:.88rem; margin-bottom:1rem;">
+          <a th:href="@{'/profile/' + ${post.author.id}}" style="color:var(--primary); font-weight:700;" th:text="${post.author.nickname}"></a>
+          <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+          <span>👁 <span th:text="${post.viewCount}"></span></span>
+          <span>❤ <span th:text="${post.likeCount}"></span></span>
+        </div>
+
+        <!-- 본문 -->
+        <div class="post-content" th:text="${post.content}"></div>
+
+        <!-- 액션 -->
+        <div class="post-actions">
+          <!-- 좋아요 -->
+          <form th:action="@{'/posts/' + ${post.id} + '/like'}" method="post" style="display:inline;">
+            <button type="submit" class="like-btn" th:classappend="${liked} ? ' liked' : ''">
+              <span th:text="${liked} ? '❤' : '🤍'"></span>
+              추천 <span th:text="${post.likeCount}"></span>
+            </button>
+          </form>
+
+          <!-- 신고 -->
+          <a th:href="@{/report/form(targetType='POST', targetId=${post.id})}" class="btn btn-ghost btn-sm" th:if="${session.loginMember != null}">🚨 신고</a>
+
+          <!-- 수정/삭제 -->
+          <th:block th:if="${session.loginMember != null and session.loginMember.id == post.author.id}">
+            <a th:href="@{'/posts/' + ${post.id} + '/edit'}" class="btn btn-ghost btn-sm">✏ 수정</a>
+            <form th:action="@{'/posts/' + ${post.id} + '/delete'}" method="post" style="display:inline;"
+                  onsubmit="return confirm('정말 삭제하시겠습니까?')">
+              <button type="submit" class="btn btn-danger btn-sm">🗑 삭제</button>
+            </form>
+          </th:block>
+
+          <a th:href="@{/posts}" class="btn btn-ghost btn-sm" style="margin-left:auto;">← 목록</a>
+        </div>
+
+        <!-- 신고 완료 메시지 -->
+        <div class="alert alert-success" th:if="${param.reported}" style="margin-top:1rem;">
+          신고가 접수되었습니다. 검토 후 조치하겠습니다.
+        </div>
+      </div>
+
+      <!-- 댓글 -->
+      <div class="card">
+        <h3>💬 댓글 <span style="color:var(--muted); font-size:.9rem;" th:text="'(' + ${#lists.size(comments)} + ')'"></span></h3>
+
+        <!-- 댓글 작성 -->
+        <div th:if="${session.loginMember != null}" class="comment-form" style="margin-bottom:1.5rem;">
+          <form th:action="@{/comments/add}" method="post">
+            <input type="hidden" name="postId" th:value="${post.id}" />
+            <textarea name="content" required placeholder="댓글을 입력하세요..." rows="3"></textarea>
+            <button type="submit" class="btn btn-primary">댓글 작성</button>
+          </form>
+        </div>
+        <div th:if="${session.loginMember == null}" style="margin-bottom:1.5rem; color:var(--muted);">
+          <a th:href="@{/member/login}" class="btn btn-ghost btn-sm">로그인 후 댓글 작성</a>
+        </div>
+
+        <!-- 댓글 목록 -->
+        <ul class="comment-list">
+          <li th:each="comment : ${comments}" class="comment-item">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <span class="comment-author">
+                  <a th:href="@{'/profile/' + ${comment.author.id}}" th:text="${comment.author.nickname}" style="color:var(--text);"></a>
+                </span>
+                <span class="comment-date" style="margin-left:.7rem;" th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+              </div>
+              <th:block th:if="${session.loginMember != null and session.loginMember.id == comment.author.id}">
+                <form th:action="@{'/comments/' + ${comment.id} + '/delete'}" method="post"
+                      onsubmit="return confirm('삭제하시겠습니까?')">
+                  <input type="hidden" name="postId" th:value="${post.id}" />
+                  <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                </form>
+              </th:block>
+            </div>
+            <p class="comment-content" th:text="${comment.content}"></p>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 사이드바 -->
+    <aside>
+      <div class="sidebar-card">
+        <h4>✍ 작성자 정보</h4>
+        <div style="display:flex; align-items:center; gap:.8rem; margin-bottom:.8rem;">
+          <div class="avatar" style="width:44px; height:44px; font-size:1.1rem;"
+               th:text="${#strings.substring(post.author.nickname, 0, 1)}"></div>
+          <div>
+            <a th:href="@{'/profile/' + ${post.author.id}}" th:text="${post.author.nickname}" style="font-weight:700; color:var(--text);"></a>
+            <div class="post-meta" th:if="${post.author.bio}" th:text="${post.author.bio}"></div>
+          </div>
+        </div>
+        <a th:href="@{'/profile/' + ${post.author.id}}" class="btn btn-ghost btn-sm" style="width:100%; text-align:center;">프로필 보기</a>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

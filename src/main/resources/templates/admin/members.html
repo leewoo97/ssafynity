@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('회원 관리')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<div class="container">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+    <div>
+      <h2 style="margin:0;">👥 회원 관리</h2>
+      <p style="margin:.3rem 0 0; color:var(--muted); font-size:.9rem;">
+        총 <strong th:text="${members.size()}"></strong>명
+      </p>
+    </div>
+    <a th:href="@{/admin}" class="btn btn-ghost btn-sm">← 대시보드</a>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;">ID</th>
+            <th style="width:120px;">아이디</th>
+            <th style="width:120px;">닉네임</th>
+            <th>이메일</th>
+            <th style="width:70px;">권한</th>
+            <th style="width:110px;">가입일</th>
+            <th style="width:90px;">관리</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="m : ${members}">
+            <td style="color:var(--muted); font-size:.85rem;" th:text="${m.id}"></td>
+            <td th:text="${m.username}"></td>
+            <td>
+              <a th:href="@{/profile/{id}(id=${m.id})}" th:text="${m.nickname}"
+                 style="color:var(--primary);"></a>
+            </td>
+            <td style="font-size:.85rem;" th:text="${m.email ?: '-'}"></td>
+            <td>
+              <span class="cat-badge"
+                    th:style="${m.role == 'ADMIN'} ? 'background:var(--danger);color:#fff;' : ''"
+                    th:text="${m.role}"></span>
+            </td>
+            <td style="font-size:.85rem; color:var(--muted);"
+                th:text="${#temporals.format(m.createdAt,'yyyy.MM.dd')}"></td>
+            <td>
+              <form th:action="@{/admin/members/{id}/delete(id=${m.id})}" method="post"
+                    th:if="${m.role != 'ADMIN'}"
+                    onsubmit="return confirm('정말 탈퇴 처리하시겠습니까?')">
+                <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+              </form>
+              <span th:if="${m.role == 'ADMIN'}" style="font-size:.8rem; color:var(--muted);">보호됨</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

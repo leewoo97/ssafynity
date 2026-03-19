@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('마이페이지')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<div class="container">
+  <div class="two-col">
+
+    <!-- 왼쪽: 프로필 카드 -->
+    <aside>
+      <div class="card profile-header">
+        <div class="avatar" th:text="${member.nickname?.substring(0,1)?.toUpperCase()}">U</div>
+        <h2 th:text="${member.nickname}">닉네임</h2>
+        <p style="color:var(--muted); font-size:.9rem;" th:text="${member.username}">@username</p>
+        <p style="margin:.8rem 0; font-size:.95rem;" th:text="${member.bio ?: '자기소개가 없습니다.'}"></p>
+        <p style="font-size:.85rem; color:var(--muted);" th:if="${member.email}" th:text="'✉ ' + ${member.email}"></p>
+        <p style="font-size:.85rem; color:var(--muted); margin-top:.5rem;"
+           th:text="'가입일: ' + ${#temporals.format(member.createdAt, 'yyyy.MM.dd')}"></p>
+        <div style="margin-top:1.2rem; display:flex; gap:.6rem; justify-content:center;">
+          <a th:href="@{/profile/edit}" class="btn btn-primary btn-sm">프로필 편집</a>
+        </div>
+      </div>
+
+      <div class="sidebar-card" style="margin-top:1rem;">
+        <h4>📊 내 활동</h4>
+        <div style="display:flex; gap:1rem; margin-top:.8rem;">
+          <div style="text-align:center; flex:1;">
+            <div style="font-size:1.4rem; font-weight:700; color:var(--primary);" th:text="${myPosts.size()}">0</div>
+            <div style="font-size:.8rem; color:var(--muted);">게시글</div>
+          </div>
+          <div style="text-align:center; flex:1;">
+            <div style="font-size:1.4rem; font-weight:700; color:var(--primary);" th:text="${myComments.size()}">0</div>
+            <div style="font-size:.8rem; color:var(--muted);">댓글</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 오른쪽: 게시글/댓글 목록 -->
+    <section>
+      <!-- 내 게시글 -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem; font-size:1.1rem;">📄 내 게시글</h3>
+        <div th:if="${myPosts.isEmpty()}" style="text-align:center; padding:2rem; color:var(--muted);">
+          작성한 게시글이 없습니다.
+        </div>
+        <div class="table-wrap" th:if="${!myPosts.isEmpty()}">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:60px;">카테고리</th>
+                <th>제목</th>
+                <th style="width:80px;">조회</th>
+                <th style="width:80px;">추천</th>
+                <th style="width:100px;">날짜</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="post : ${myPosts}">
+                <td>
+                  <span class="cat-badge" th:text="${post.category}"></span>
+                </td>
+                <td>
+                  <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}"></a>
+                </td>
+                <td th:text="${post.viewCount}"></td>
+                <td th:text="${post.likeCount}"></td>
+                <td style="color:var(--muted); font-size:.85rem;"
+                    th:text="${#temporals.format(post.createdAt,'MM.dd')}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 내 댓글 -->
+      <div class="card">
+        <h3 style="margin-bottom:1rem; font-size:1.1rem;">💬 내 댓글</h3>
+        <div th:if="${myComments.isEmpty()}" style="text-align:center; padding:2rem; color:var(--muted);">
+          작성한 댓글이 없습니다.
+        </div>
+        <div th:each="comment : ${myComments}" class="comment-item" style="border-bottom:1px solid var(--border); padding:.9rem 0;">
+          <div style="font-size:.85rem; color:var(--muted); margin-bottom:.4rem;">
+            <a th:href="@{/posts/{id}(id=${comment.post.id})}"
+               th:text="${comment.post.title}" style="color:var(--primary);"></a>
+            &nbsp;·&nbsp;
+            <span th:text="${#temporals.format(comment.createdAt,'yyyy.MM.dd HH:mm')}"></span>
+          </div>
+          <p style="margin:0;" th:text="${comment.content}"></p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

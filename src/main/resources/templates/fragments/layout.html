@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' - SSAFYnity'">SSAFYnity</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- marked.js for markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<nav th:fragment="topbar">
+    <header class="topbar">
+        <a href="/" class="brand">SSAFY<span>nity</span></a>
+
+        <!-- 글로벌 검색 -->
+        <form class="topbar-search" th:action="@{/search}" method="get">
+            <input type="text" name="q" placeholder="검색..." autocomplete="off">
+            <button type="submit">🔍</button>
+        </form>
+
+        <nav>
+            <a th:href="@{/posts}">게시판</a>
+            <a th:href="@{/docs}">📚 문서</a>
+            <a th:href="@{/videos}">🎬 영상</a>
+            <a th:href="@{/events}">🎯 이벤트</a>
+            <a th:href="@{/projects}">💻 프로젝트</a>
+            <th:block th:if="${session.loginMember == null}">
+                <a th:href="@{/member/login}">로그인</a>
+                <a th:href="@{/member/register}" class="btn btn-primary btn-sm">회원가입</a>
+            </th:block>
+            <th:block th:if="${session.loginMember != null}">
+                <a th:href="@{/notifications}">🔔</a>
+                <a th:href="@{/bookmarks}">🔖</a>
+                <a th:href="@{/profile/me}">마이페이지</a>
+                <a th:href="@{/member/logout}">로그아웃</a>
+                <th:block th:if="${'ADMIN'.equals(session.loginMember.role)}">
+                    <a th:href="@{/admin}" style="color:#ffd32a; font-weight:700;">⚙ 관리자</a>
+                </th:block>
+                <span class="user-badge" th:text="${session.loginMember.nickname}"></span>
+            </th:block>
+        </nav>
+    </header>
+</nav>
+
+<footer th:fragment="footer">
+    <footer>
+        <div class="footer-inner">
+            <div>
+                <strong>SSAFYnity</strong> — 개발자를 위한 커뮤니티
+            </div>
+            <div style="font-size:.82rem; color:var(--muted); margin-top:.4rem;">
+                © 2026 SSAFYnity. Built with ☕ Spring Boot &amp; 💙 Thymeleaf
+            </div>
+            <div style="margin-top:.6rem; display:flex; gap:1rem; justify-content:center; font-size:.85rem;">
+                <a th:href="@{/posts}">게시판</a>
+                <a th:href="@{/docs}">문서</a>
+                <a th:href="@{/videos}">영상</a>
+                <a th:href="@{/events}">이벤트</a>
+                <a th:href="@{/projects}">프로젝트</a>
+            </div>
+        </div>
+    </footer>
+</footer>
+</html>

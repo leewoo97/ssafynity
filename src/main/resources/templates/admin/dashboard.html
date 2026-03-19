@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('관리자 대시보드')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<div class="container">
+
+  <!-- 헤더 -->
+  <div style="margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h2 style="margin:0;">⚙️ 관리자 대시보드</h2>
+      <p style="margin:.3rem 0 0; color:var(--muted); font-size:.9rem;">사이트 현황을 한눈에 확인하세요</p>
+    </div>
+    <div style="display:flex; gap:.6rem;">
+      <a th:href="@{/admin/members}" class="btn btn-ghost btn-sm">회원 관리</a>
+      <a th:href="@{/admin/posts}" class="btn btn-ghost btn-sm">게시글 관리</a>
+    </div>
+  </div>
+
+  <!-- 통계 카드 -->
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-icon">👥</div>
+      <div class="stat-value" th:text="${memberCount}">0</div>
+      <div class="stat-label">전체 회원</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">📄</div>
+      <div class="stat-value" th:text="${postCount}">0</div>
+      <div class="stat-label">전체 게시글</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">💬</div>
+      <div class="stat-value" th:text="${commentCount}">0</div>
+      <div class="stat-label">전체 댓글</div>
+    </div>
+    <div class="stat-box" style="border-color:var(--danger);">
+      <div class="stat-icon">🚨</div>
+      <div class="stat-value" style="color:var(--danger);" th:text="${pendingReports.size()}">0</div>
+      <div class="stat-label">미처리 신고</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">📚</div>
+      <div class="stat-value" th:text="${docCount}">0</div>
+      <div class="stat-label">기술 문서</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">🎬</div>
+      <div class="stat-value" th:text="${videoCount}">0</div>
+      <div class="stat-label">강의 영상</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">🎯</div>
+      <div class="stat-value" th:text="${eventCount}">0</div>
+      <div class="stat-label">이벤트</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">💻</div>
+      <div class="stat-value" th:text="${projectCount}">0</div>
+      <div class="stat-label">프로젝트</div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:1.5rem;">
+
+    <!-- 미처리 신고 목록 -->
+    <section>
+      <div class="card">
+        <h3 style="margin-bottom:1rem;">🚨 미처리 신고</h3>
+        <div th:if="${pendingReports.isEmpty()}"
+             style="text-align:center; padding:2rem; color:var(--muted);">
+          처리할 신고가 없습니다. 👍
+        </div>
+        <div th:each="report : ${pendingReports}" class="notif-item unread">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:.8rem;">
+            <div>
+              <p style="margin:0 0 .3rem; font-size:.95rem;">
+                <span class="cat-badge" th:text="${report.targetType}"></span>
+                &nbsp;#<span th:text="${report.targetId}"></span> 신고
+              </p>
+              <p style="margin:0 0 .3rem; font-size:.85rem;">
+                사유: <strong th:text="${report.reason}"></strong>
+              </p>
+              <p style="margin:0; font-size:.8rem; color:var(--muted);">
+                신고자: <span th:text="${report.reporter.nickname}"></span>
+                &nbsp;·&nbsp;
+                <span th:text="${#temporals.format(report.createdAt,'yyyy.MM.dd HH:mm')}"></span>
+              </p>
+            </div>
+            <form th:action="@{/admin/reports/{id}/resolve(id=${report.id})}" method="post">
+              <button type="submit" class="btn btn-primary btn-sm">처리완료</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 인기 게시글 -->
+    <aside>
+      <div class="sidebar-card">
+        <h4>🔥 인기 게시글 (조회)</h4>
+        <div th:each="post : ${topViewed}" style="padding:.5rem 0; border-bottom:1px solid var(--border);">
+          <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}"
+             style="font-size:.9rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></a>
+          <span style="font-size:.8rem; color:var(--muted);">
+            조회 <span th:text="${post.viewCount}"></span>
+          </span>
+        </div>
+      </div>
+      <div class="sidebar-card" style="margin-top:1rem;">
+        <h4>👍 인기 게시글 (추천)</h4>
+        <div th:each="post : ${topLiked}" style="padding:.5rem 0; border-bottom:1px solid var(--border);">
+          <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}"
+             style="font-size:.9rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></a>
+          <span style="font-size:.8rem; color:var(--muted);">
+            추천 <span th:text="${post.likeCount}"></span>
+          </span>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>
