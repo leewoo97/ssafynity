@@ -8,6 +8,21 @@
     <!-- Profile hero -->
     <div class="profile-hero">
       <div class="av av-2xl" th:text="${#strings.substring(member.nickname,0,1)}">U</div>
+      <div class="profile-hero-info">
+        <div style="font-size:1.5rem;font-weight:700;color:var(--t1);letter-spacing:-.025em;"
+             th:text="${member.nickname}"></div>
+        <div style="font-size:.88rem;color:var(--t4);margin-top:4px;" th:text="${member.username}"></div>
+        <div style="font-size:.82rem;color:var(--t5);margin-top:2px;"
+             th:if="${member.email != null}" th:text="${member.email}"></div>
+        <div style="font-size:.88rem;color:var(--t3);margin-top:6px;line-height:1.55;"
+             th:if="${member.bio != null and !#strings.isEmpty(member.bio)}"
+             th:text="${member.bio}"></div>
+      </div>
+      <div style="margin-left:auto;flex-shrink:0;">
+        <a th:href="@{/profile/edit}" class="btn btn-ghost btn-sm">✏️ 프로필 수정</a>
+      </div>
+    </div><div class="profile-hero">
+      <div class="av av-2xl" th:text="${#strings.substring(member.nickname,0,1)}">U</div>
       <div>
         <div style="font-size:1.6rem;font-weight:700;color:var(--t1);" th:text="${member.nickname}"></div>
         <div style="font-size:.9rem;color:var(--t4);margin-top:4px;" th:text="${member.username}"></div>

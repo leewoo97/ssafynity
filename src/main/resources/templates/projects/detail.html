@@ -43,7 +43,7 @@
 
           <div class="post-actions">
             <form th:if="${session.loginMember != null}" th:action="@{/projects/{id}/like(id=${project.id})}" method="post" style="display:inline;">
-              <button type="submit" class="like-btn">❤ <span th:text="${project.likeCount}"></span></button>
+              <button type="submit" class="like-btn"><span>❤</span> <span th:text="${project.likeCount}"></span></button>
             </form>
             <form th:if="${session.loginMember != null}" th:action="@{/projects/{id}/bookmark(id=${project.id})}" method="post" style="display:inline;">
               <button type="submit" class="btn btn-ghost btn-sm"

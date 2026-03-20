@@ -34,9 +34,8 @@
             <span class="pill pill-gray" th:text="${event.eventType}"></span>
           </div>
           <h4><a th:href="@{/events/{id}(id=${event.id})}" th:text="${event.title}"></a></h4>
-          <div class="event-info" th:if="${event.description != null}"
-               th:text="${#strings.abbreviate(event.description,80)}"
-               style="margin-top:8px;margin-bottom:10px;font-size:.8rem;color:var(--t3);line-height:1.5;"></div>
+          <div th:if="${event.description != null}"
+               th:text="${#strings.abbreviate(event.description,80)}" style="margin-bottom:6px;font-size:.8rem;color:var(--t3);line-height:1.5;"></div>
           <div class="event-info">
             <span>📍 <span th:text="${event.location}"></span></span>
             <span>🗓 <span th:text="${#temporals.format(event.startDate,'MM.dd')}"></span>
@@ -69,9 +68,8 @@
             <span class="pill pill-gray" th:text="${event.eventType}"></span>
           </div>
           <h4><a th:href="@{/events/{id}(id=${event.id})}" th:text="${event.title}"></a></h4>
-          <div class="event-info" th:if="${event.description != null}"
-               th:text="${#strings.abbreviate(event.description,80)}"
-               style="margin-top:8px;margin-bottom:10px;font-size:.8rem;color:var(--t3);line-height:1.5;"></div>
+          <div th:if="${event.description != null}"
+               th:text="${#strings.abbreviate(event.description,80)}" style="margin-bottom:6px;font-size:.8rem;color:var(--t3);line-height:1.5;"></div>
           <div class="event-info">
             <span>📍 <span th:text="${event.location}"></span></span>
             <span>🗓 <span th:text="${#temporals.format(event.startDate,'MM.dd HH:mm')}"></span></span>

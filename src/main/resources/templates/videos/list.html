@@ -47,13 +47,12 @@
                  alt="thumbnail">
             <div class="video-overlay">
               <div class="play-btn">▶</div>
-            </div>
+            </div><div class="video-duration" th:if="${video.duration != null}" th:text="${video.duration}"></div>
           </div>
         </a>
         <div class="video-body">
           <div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;">
             <span class="pill pill-gray" th:text="${video.category}"></span>
-            <span th:if="${video.duration != null}" style="font-size:.72rem;color:var(--t5);" th:text="${video.duration}"></span>
           </div>
           <div class="video-title">
             <a th:href="@{/videos/{id}(id=${video.id})}" th:text="${video.title}"></a>

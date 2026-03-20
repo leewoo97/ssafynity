@@ -27,7 +27,7 @@
         <div th:each="notif : ${notifications}"
              class="notif-item" th:classappend="${!notif.read} ? ' unread' : ''">
           <div class="notif-dot" th:if="${!notif.read}"></div>
-          <div class="notif-icon" th:unless="${!notif.read}">🔔</div>
+          <div class="notif-icon" th:if="${notif.read}">🔔</div>
           <div class="notif-content">
             <div class="notif-msg" th:text="${notif.message}"></div>
             <div class="notif-time" th:text="${#temporals.format(notif.createdAt,'yyyy.MM.dd HH:mm')}"></div>

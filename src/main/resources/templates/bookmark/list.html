@@ -36,9 +36,9 @@
       <div class="empty-sub">콘텐츠를 탐색하며 북마크를 추가해보세요</div>
     </div>
 
-    <div class="card" th:unless="${bookmarks == null or bookmarks.isEmpty()}">
+    <div class="card" style="padding:0;overflow:hidden;" th:unless="${bookmarks == null or bookmarks.isEmpty()}">
       <div class="bm-list">
-        <div th:each="bm : ${bookmarks}" class="bm-item">
+        <div th:each="bm : ${bookmarks}" class="bm-item" style="padding-left:20px;padding-right:20px;">
           <div class="bm-icon"
                th:text="${bm.targetType == 'POST'} ? '📝' :
                          (${bm.targetType == 'DOC'} ? '📄' :
