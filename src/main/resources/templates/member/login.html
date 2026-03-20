@@ -5,34 +5,25 @@
 <th:block th:fragment="body-content">
 <div class="auth-wrap">
   <div class="auth-card">
-    <a th:href="@{/}" class="auth-logo">SSAFY<span>nity</span></a>
-    <p class="auth-tagline">개발자 커뮤니티에 오신 것을 환영합니다 👋</p>
-
+    <div class="auth-logo">S</div>
+    <div class="auth-tagline">SSAFYnity</div>
     <h2 class="auth-title">로그인</h2>
 
-    <div class="alert alert-error" th:if="${error}">
-      <span>⚠️</span><span th:text="${error}"></span>
-    </div>
+    <div th:if="${error}" style="margin-bottom:16px;padding:12px 14px;background:rgba(255,59,48,.08);border-radius:var(--r-sm);color:var(--red);font-size:.88rem;" th:text="${error}"></div>
 
     <form th:action="@{/member/login}" method="post">
       <div class="form-group">
         <label class="form-label">아이디</label>
-        <input class="form-input" type="text" name="username" required
-               placeholder="아이디를 입력하세요" autofocus autocomplete="username">
+        <input class="form-input" type="text" name="username" required placeholder="아이디 입력">
       </div>
       <div class="form-group">
         <label class="form-label">비밀번호</label>
-        <input class="form-input" type="password" name="password" required
-               placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+        <input class="form-input" type="password" name="password" required placeholder="비밀번호 입력">
       </div>
-      <button type="submit" class="btn btn-blue btn-lg" style="width:100%;margin-top:4px;">로그인</button>
+      <button type="submit" class="btn btn-blue btn-lg" style="width:100%;margin-top:8px;">로그인</button>
     </form>
-
-    <div class="divider">또는</div>
-
-    <p style="text-align:center;font-size:.88rem;color:var(--t4);">
-      계정이 없으신가요?
-      <a th:href="@{/member/register}" style="font-weight:600;color:var(--blue);">회원가입 →</a>
+    <p style="text-align:center;margin-top:20px;font-size:.88rem;color:var(--t4);">
+      계정이 없으신가요? <a th:href="@{/member/register}" style="color:var(--blue);font-weight:600;">회원가입</a>
     </p>
   </div>
 </div>

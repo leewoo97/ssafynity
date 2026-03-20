@@ -7,9 +7,12 @@
 <div class="page-header">
   <div class="container">
     <div class="page-header-inner">
-      <h1>알림</h1>
+      <div>
+        <h1>알림</h1>
+        <p>활동 알림을 확인하세요</p>
+      </div>
       <form th:action="@{/notifications/read-all}" method="post">
-        <button type="submit" class="btn btn-ghost btn-sm">모두 읽음</button>
+        <button type="submit" class="btn btn-ghost btn-md">모두 읽음 처리</button>
       </form>
     </div>
   </div>
@@ -22,19 +25,24 @@
       <div class="empty-title">알림이 없습니다.</div>
     </div>
 
-    <div class="notif-list">
-      <div th:each="notif : ${notifications}"
-           class="notif-item"
-           th:classappend="${!notif.read} ? ' unread' : ''">
-        <div class="notif-dot" th:if="${!notif.read}"></div>
-        <div class="notif-body">
-          <a th:href="${notif.targetUrl != null ? notif.targetUrl : '#'}"
-             th:text="${notif.message}" class="notif-msg"></a>
-          <div class="notif-time" th:text="${#temporals.format(notif.createdAt,'yyyy.MM.dd HH:mm')}"></div>
+    <div class="card" style="padding:0;overflow:hidden;" th:unless="${notifications == null or notifications.isEmpty()}">
+      <div class="notif-list">
+        <div th:each="notif : ${notifications}"
+             class="notif-item" th:classappend="${!notif.read} ? ' unread' : ''">
+          <div class="notif-dot" th:if="${!notif.read}"></div>
+          <div class="notif-icon" th:unless="${!notif.read}">🔔</div>
+          <div class="notif-content">
+            <div class="notif-msg" th:text="${notif.message}"></div>
+            <div class="notif-time" th:text="${#temporals.format(notif.createdAt,'yyyy.MM.dd HH:mm')}"></div>
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            <a th:if="${notif.link != null and !#strings.isEmpty(notif.link)}"
+               th:href="${notif.link}" class="btn btn-ghost btn-xs">보기</a>
+            <form th:action="@{/notifications/{id}/delete(id=${notif.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--t5);">삭제</button>
+            </form>
+          </div>
         </div>
-        <form th:action="@{'/notifications/' + ${notif.id} + '/delete'}" method="post" style="flex-shrink:0;">
-          <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--t5);">✕</button>
-        </form>
       </div>
     </div>
   </div>

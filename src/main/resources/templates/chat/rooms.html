@@ -8,69 +8,68 @@
   <div class="container">
     <div class="page-header-inner">
       <div>
-        <div class="label" style="margin-bottom:6px;">Real-time</div>
+        <div class="label" style="margin-bottom:6px;">Live Chat</div>
         <h1>채팅방</h1>
-        <p>실시간으로 소통하세요</p>
+        <p>실시간으로 소통하고 질문하세요</p>
       </div>
-      <button class="btn btn-blue btn-md" onclick="document.getElementById('create-modal').style.display='flex'">💬 방 만들기</button>
     </div>
   </div>
 </div>
 
 <div class="section-sm">
-  <div class="container-sm">
-    <div th:if="${rooms == null or rooms.isEmpty()}" class="empty">
-      <div class="empty-icon">💬</div>
-      <div class="empty-title">채팅방이 없습니다.</div>
-      <div class="empty-sub" style="margin-top:16px;">
-        <button class="btn btn-blue btn-md" onclick="document.getElementById('create-modal').style.display='flex'">첫 채팅방 만들기</button>
-      </div>
-    </div>
-
-    <div class="room-list">
-      <a th:each="room : ${rooms}" th:href="@{/chat/room/{id}(id=${room.id})}" class="room-item">
-        <div class="room-icon">💬</div>
-        <div class="room-item-body">
-          <div class="room-item-name" th:text="${room.name}"></div>
-          <div class="room-item-meta">
-            <span th:text="${room.memberCount ?: 0} + '명 참여중'"></span>
-            <span th:if="${room.lastMessage != null}">·</span>
-            <span th:if="${room.lastMessage != null}" th:text="${room.lastMessage}"></span>
+  <div class="container">
+    <div class="two-col">
+      <div>
+        <div th:if="${rooms == null or rooms.isEmpty()}" class="empty">
+          <div class="empty-icon">💬</div>
+          <div class="empty-title">채팅방이 없습니다.</div>
+          <div class="empty-sub">첫 채팅방을 만들어보세요</div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;" th:unless="${rooms == null or rooms.isEmpty()}">
+          <div class="room-list">
+            <a th:each="room : ${rooms}"
+               th:href="@{/chat/{id}(id=${room.id})}"
+               class="room-item">
+              <i class="room-icon">💬</i>
+              <div class="room-info">
+                <div class="room-name" th:text="${room.name}"></div>
+                <div class="room-desc" th:if="${room.description != null and !#strings.isEmpty(room.description)}"
+                     th:text="${room.description}"></div>
+              </div>
+              <div class="room-meta">
+                <span class="status-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:4px;"></span>
+                <span th:text="${room.activeUsers}"></span>명 접속 중
+                <div style="margin-top:2px;color:var(--t5);">by <span th:text="${room.creator.nickname}"></span></div>
+              </div>
+              <div class="room-arr">›</div>
+            </a>
           </div>
         </div>
-        <div style="color:var(--t5);font-size:.78rem;" th:text="${#temporals.format(room.createdAt,'MM.dd')}"></div>
-      </a>
-    </div>
-  </div>
-</div>
+      </div>
 
-<!-- Create modal -->
-<div id="create-modal" class="modal-backdrop" style="display:none;">
-  <div class="modal" style="max-width:400px;">
-    <div class="modal-head">
-      <div class="modal-title">새 채팅방</div>
-      <button class="modal-close" onclick="document.getElementById('create-modal').style.display='none'">✕</button>
-    </div>
-    <div class="modal-body">
-      <form th:action="@{/chat/rooms}" method="post">
-        <div class="form-group">
-          <label class="form-label">방 이름</label>
-          <input class="form-input" type="text" name="name" required placeholder="채팅방 이름">
+      <aside>
+        <div class="card" th:if="${session.loginMember != null}">
+          <div style="font-size:.95rem;font-weight:600;color:var(--t2);margin-bottom:16px;">새 채팅방 만들기</div>
+          <form th:action="@{/chat}" method="post">
+            <div class="form-group">
+              <label class="form-label">방 이름</label>
+              <input class="form-input" type="text" name="name" required placeholder="채팅방 이름">
+            </div>
+            <div class="form-group">
+              <label class="form-label">설명 <span style="font-weight:400;color:var(--t5);">(선택)</span></label>
+              <input class="form-input" type="text" name="description" placeholder="간단한 설명">
+            </div>
+            <button type="submit" class="btn btn-blue btn-md" style="width:100%;">방 만들기</button>
+          </form>
         </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button type="button" class="btn btn-ghost btn-sm"
-                  onclick="document.getElementById('create-modal').style.display='none'">취소</button>
-          <button type="submit" class="btn btn-blue btn-sm">만들기</button>
+        <div class="card" th:unless="${session.loginMember != null}"
+             style="text-align:center;color:var(--t4);font-size:.88rem;">
+          <a th:href="@{/member/login}" style="color:var(--blue);">로그인</a>하고 채팅에 참여하세요
         </div>
-      </form>
+      </aside>
     </div>
   </div>
 </div>
-<script>
-  document.getElementById('create-modal').addEventListener('click', function(e) {
-    if (e.target === this) this.style.display = 'none';
-  });
-</script>
 
 </th:block>
 </body>

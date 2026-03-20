@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/layout :: layout(${video != null} ? '영상 수정' : '영상 등록', ~{::body-content})}">
+      th:replace="~{fragments/layout :: layout(${video != null and video.id != null} ? '영상 수정' : '영상 등록', ~{::body-content})}">
 <body>
 <th:block th:fragment="body-content">
 
 <div class="page-header">
   <div class="container">
-    <h1 th:text="${video != null} ? '영상 수정' : '영상 등록'"></h1>
+    <h1 th:text="${video != null and video.id != null} ? '영상 수정' : '영상 등록'"></h1>
   </div>
 </div>
 
 <div class="section-sm">
   <div class="container-sm">
     <div class="card">
-      <form th:action="${video != null} ? @{'/videos/' + ${video.id} + '/edit'} : @{/videos}" method="post">
+      <form th:action="${video != null and video.id != null} ? @{/videos/{id}/edit(id=${video.id})} : @{/videos}" method="post">
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">카테고리</label>
@@ -22,6 +22,11 @@
                       th:value="${cat}" th:text="${cat}"
                       th:selected="${video != null and video.category == cat}"></option>
             </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">길이 <span style="font-weight:400;color:var(--t5);">(선택, 예: 15:30)</span></label>
+            <input class="form-input" type="text" name="duration"
+                   th:value="${video?.duration}" placeholder="15:30">
           </div>
         </div>
         <div class="form-group">
@@ -32,7 +37,13 @@
         <div class="form-group">
           <label class="form-label">YouTube URL</label>
           <input class="form-input" type="url" name="youtubeUrl"
-                 th:value="${video?.youtubeUrl}" placeholder="https://www.youtube.com/watch?v=...">
+                 th:value="${video != null and video.youtubeId != null} ? 'https://youtu.be/' + ${video.youtubeId} : ''"
+                 required placeholder="https://www.youtube.com/watch?v=...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">태그 <span style="font-weight:400;color:var(--t5);">(쉼표 구분)</span></label>
+          <input class="form-input" type="text" name="tags"
+                 th:value="${video?.tags}" placeholder="Java, Spring, React">
         </div>
         <div class="form-group">
           <label class="form-label">설명</label>
@@ -41,9 +52,9 @@
                     th:text="${video?.description}"></textarea>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <a th:href="${video != null} ? @{'/videos/' + ${video.id}} : @{/videos}" class="btn btn-ghost btn-md">취소</a>
+          <a th:href="${video != null and video.id != null} ? @{/videos/{id}(id=${video.id})} : @{/videos}" class="btn btn-ghost btn-md">취소</a>
           <button type="submit" class="btn btn-blue btn-md"
-                  th:text="${video != null} ? '수정하기' : '등록하기'"></button>
+                  th:text="${video != null and video.id != null} ? '수정하기' : '등록하기'"></button>
         </div>
       </form>
     </div>

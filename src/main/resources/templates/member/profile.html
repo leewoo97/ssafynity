@@ -3,49 +3,33 @@
       th:replace="~{fragments/layout :: layout(${member.nickname} + ' 프로필', ~{::body-content})}">
 <body>
 <th:block th:fragment="body-content">
-
 <div class="section-sm">
   <div class="container">
     <div class="two-col">
       <div>
-        <!-- Profile card -->
         <div class="card" style="text-align:center;padding:40px 28px;">
-          <div class="av av-2xl"
-               style="margin:0 auto 16px;"
-               th:text="${member.name != null ? #strings.substring(member.name,0,1) : member.nickname.substring(0,1)}">U</div>
+          <div class="av av-2xl" style="margin:0 auto 16px;"
+               th:text="${#strings.substring(member.nickname,0,1)}">U</div>
           <div style="font-size:1.4rem;font-weight:700;color:var(--t1);" th:text="${member.nickname}"></div>
-          <div style="font-size:.88rem;color:var(--t4);margin-top:4px;" th:text="${member.name}"></div>
-          <div style="margin-top:16px;display:flex;justify-content:center;gap:32px;">
+          <div style="font-size:.88rem;color:var(--t4);margin-top:4px;" th:text="${member.username}"></div>
+          <div style="font-size:.88rem;color:var(--t3);margin-top:8px;line-height:1.5;"
+               th:if="${member.bio != null and !#strings.isEmpty(member.bio)}" th:text="${member.bio}"></div>
+          <div style="margin-top:20px;display:flex;justify-content:center;gap:32px;">
             <div>
-              <div style="font-size:1.2rem;font-weight:700;color:var(--t1);" th:text="${postCount ?: 0}">0</div>
+              <div style="font-size:1.2rem;font-weight:700;color:var(--t1);" th:text="${posts != null ? posts.size() : 0}">0</div>
               <div style="font-size:.78rem;color:var(--t4);">게시글</div>
-            </div>
-            <div>
-              <div style="font-size:1.2rem;font-weight:700;color:var(--t1);" th:text="${commentCount ?: 0}">0</div>
-              <div style="font-size:.78rem;color:var(--t4);">댓글</div>
             </div>
           </div>
         </div>
       </div>
-
       <div>
         <div class="sidebar-block">
           <div class="sidebar-block-head">최근 게시글</div>
           <div class="sidebar-block-body">
-            <div th:if="${recentPosts == null or recentPosts.isEmpty()}" style="padding:16px 18px;color:var(--t4);font-size:.85rem;">게시글이 없습니다.</div>
-            <div th:each="post : ${recentPosts}" class="sidebar-row">
+            <div th:if="${posts == null or posts.isEmpty()}" style="padding:16px 18px;color:var(--t4);font-size:.85rem;">게시글이 없습니다.</div>
+            <div th:each="post : ${posts}" class="sidebar-row">
               <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}" class="sidebar-row-title"></a>
               <span class="sidebar-row-meta" th:text="${#temporals.format(post.createdAt,'MM.dd')}"></span>
-            </div>
-          </div>
-        </div>
-        <div class="sidebar-block">
-          <div class="sidebar-block-head">최근 댓글</div>
-          <div class="sidebar-block-body">
-            <div th:if="${recentComments == null or recentComments.isEmpty()}" style="padding:16px 18px;color:var(--t4);font-size:.85rem;">댓글이 없습니다.</div>
-            <div th:each="comment : ${recentComments}" class="sidebar-row">
-              <a th:href="@{/posts/{id}(id=${comment.post.id})}" th:text="${comment.content}" class="sidebar-row-title"></a>
-              <span class="sidebar-row-meta" th:text="${#temporals.format(comment.createdAt,'MM.dd')}"></span>
             </div>
           </div>
         </div>
@@ -53,7 +37,6 @@
     </div>
   </div>
 </div>
-
 </th:block>
 </body>
 </html>

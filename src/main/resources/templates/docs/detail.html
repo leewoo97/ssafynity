@@ -20,7 +20,7 @@
             <h1 class="post-title" th:text="${doc.title}"></h1>
             <div class="post-attrs">
               <span class="post-attr">
-                <a th:href="@{'/member/profile/' + ${doc.author.id}}"
+                <a th:href="@{/profile/{id}(id=${doc.author.id})}"
                    style="font-weight:600;color:var(--blue);"
                    th:text="${doc.author.nickname}"></a>
               </span>
@@ -29,18 +29,25 @@
             </div>
           </div>
 
-          <div class="post-body md-body" th:utext="${docHtml != null ? docHtml : doc.content}"></div>
+          <div class="post-body md-body" th:text="${doc.content}"></div>
 
           <div class="post-actions">
+            <!-- Bookmark -->
+            <form th:if="${session.loginMember != null}" th:action="@{/docs/{id}/bookmark(id=${doc.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-ghost btn-sm"
+                      th:text="${isBookmarked} ? '🔖 북마크 해제' : '🔖 북마크'"></button>
+            </form>
+            <!-- Owner actions -->
             <th:block th:if="${session.loginMember != null and session.loginMember.id == doc.author.id}">
-              <a th:href="@{'/docs/' + ${doc.id} + '/edit'}" class="btn btn-ghost btn-sm">수정</a>
-              <form th:action="@{'/docs/' + ${doc.id} + '/delete'}" method="post" style="display:inline;"
+              <a th:href="@{/docs/{id}/edit(id=${doc.id})}" class="btn btn-ghost btn-sm">수정</a>
+              <form th:action="@{/docs/{id}/delete(id=${doc.id})}" method="post" style="display:inline;"
                     onsubmit="return confirm('삭제하시겠습니까?')">
                 <button type="submit" class="btn btn-danger btn-sm">삭제</button>
               </form>
             </th:block>
-            <th:block th:if="${session.loginMember != null and session.loginMember.role?.name() == 'ADMIN'}">
-              <form th:action="@{'/docs/' + ${doc.id} + '/pin'}" method="post" style="display:inline;">
+            <!-- Admin pin -->
+            <th:block th:if="${session.loginMember != null and session.loginMember.role == 'ADMIN'}">
+              <form th:action="@{/docs/{id}/pin(id=${doc.id})}" method="post" style="display:inline;">
                 <button type="submit" class="btn-pin" th:classappend="${doc.pinned} ? ' pinned' : ''">
                   📌 <span th:text="${doc.pinned} ? '추천 해제' : '추천'"></span>
                 </button>
@@ -51,16 +58,14 @@
         </div>
       </div>
 
-      <!-- Sidebar -->
       <aside>
         <div class="sidebar-block">
           <div class="sidebar-block-head">📄 작성자</div>
           <div class="sidebar-block-body">
             <div style="padding:16px 18px;display:flex;align-items:center;gap:12px;">
-              <div class="av av-md" th:text="${doc.author.name != null ? #strings.substring(doc.author.name,0,1) : 'U'}">U</div>
+              <div class="av av-md" th:text="${#strings.substring(doc.author.nickname,0,1)}">U</div>
               <div>
                 <div style="font-size:.9rem;font-weight:600;color:var(--t1);" th:text="${doc.author.nickname}"></div>
-                <div style="font-size:.76rem;color:var(--t4);margin-top:2px;" th:text="${doc.author.name}"></div>
               </div>
             </div>
           </div>
@@ -69,9 +74,7 @@
           <div class="sidebar-block-head">관련 문서</div>
           <div class="sidebar-block-body">
             <div th:each="d : ${relatedDocs}" class="sidebar-row">
-              <div style="flex:1;min-width:0;">
-                <a th:href="@{/docs/{id}(id=${d.id})}" th:text="${d.title}" class="sidebar-row-title"></a>
-              </div>
+              <a th:href="@{/docs/{id}(id=${d.id})}" th:text="${d.title}" class="sidebar-row-title"></a>
             </div>
           </div>
         </div>

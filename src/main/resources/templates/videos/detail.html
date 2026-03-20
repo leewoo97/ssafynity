@@ -9,21 +9,23 @@
     <div class="two-col">
       <div>
         <div class="card">
-          <!-- YouTube embed -->
-          <div class="yt-wrap" th:if="${youtubeId != null}">
-            <iframe th:src="'https://www.youtube.com/embed/' + ${youtubeId}"
+          <!-- YouTube embed using video.youtubeId -->
+          <div class="yt-wrap">
+            <iframe th:src="'https://www.youtube.com/embed/' + ${video.youtubeId}"
                     frameborder="0" allowfullscreen
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
           </div>
 
           <div class="post-header" style="margin-top:20px;">
-            <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
               <span class="pill pill-gray" th:text="${video.category}"></span>
+              <span th:if="${video.duration != null}" class="pill pill-gray" th:text="${video.duration}"></span>
+              <span th:if="${video.pinned}" class="pill pill-orange">📌 추천</span>
             </div>
             <h1 class="post-title" th:text="${video.title}"></h1>
             <div class="post-attrs">
               <span class="post-attr">
-                <a th:href="@{'/member/profile/' + ${video.author.id}}"
+                <a th:href="@{/profile/{id}(id=${video.author.id})}"
                    style="font-weight:600;color:var(--blue);"
                    th:text="${video.author.nickname}"></a>
               </span>
@@ -36,11 +38,22 @@
                th:text="${video.description}"></div>
 
           <div class="post-actions">
+            <form th:if="${session.loginMember != null}" th:action="@{/videos/{id}/bookmark(id=${video.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-ghost btn-sm"
+                      th:text="${isBookmarked} ? '🔖 북마크 해제' : '🔖 북마크'"></button>
+            </form>
             <th:block th:if="${session.loginMember != null and session.loginMember.id == video.author.id}">
-              <a th:href="@{'/videos/' + ${video.id} + '/edit'}" class="btn btn-ghost btn-sm">수정</a>
-              <form th:action="@{'/videos/' + ${video.id} + '/delete'}" method="post" style="display:inline;"
+              <a th:href="@{/videos/{id}/edit(id=${video.id})}" class="btn btn-ghost btn-sm">수정</a>
+              <form th:action="@{/videos/{id}/delete(id=${video.id})}" method="post" style="display:inline;"
                     onsubmit="return confirm('삭제하시겠습니까?')">
                 <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+              </form>
+            </th:block>
+            <th:block th:if="${session.loginMember != null and session.loginMember.role == 'ADMIN'}">
+              <form th:action="@{/videos/{id}/pin(id=${video.id})}" method="post" style="display:inline;">
+                <button type="submit" class="btn-pin" th:classappend="${video.pinned} ? ' pinned' : ''">
+                  📌 <span th:text="${video.pinned} ? '추천 해제' : '추천'"></span>
+                </button>
               </form>
             </th:block>
             <a th:href="@{/videos}" class="btn btn-ghost btn-sm" style="margin-left:auto;">목록</a>
@@ -53,10 +66,9 @@
           <div class="sidebar-block-head">🎬 등록자</div>
           <div class="sidebar-block-body">
             <div style="padding:16px 18px;display:flex;align-items:center;gap:12px;">
-              <div class="av av-md" th:text="${video.author.name != null ? #strings.substring(video.author.name,0,1) : 'U'}">U</div>
+              <div class="av av-md" th:text="${#strings.substring(video.author.nickname,0,1)}">U</div>
               <div>
                 <div style="font-size:.9rem;font-weight:600;color:var(--t1);" th:text="${video.author.nickname}"></div>
-                <div style="font-size:.76rem;color:var(--t4);margin-top:2px;" th:text="${video.author.name}"></div>
               </div>
             </div>
           </div>

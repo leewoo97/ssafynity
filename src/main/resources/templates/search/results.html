@@ -1,69 +1,117 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/layout :: layout('검색', ~{::body-content})}">
+      th:replace="~{fragments/layout :: layout('검색 결과', ~{::body-content})}">
 <body>
 <th:block th:fragment="body-content">
 
-<div style="background:var(--surface-2);border-bottom:1px solid var(--b1);padding:36px 0 28px;">
-  <div class="container-sm">
-    <form th:action="@{/search}" method="get">
-      <div style="display:flex;gap:8px;">
-        <input class="form-input" type="text" name="keyword" th:value="${keyword}"
-               placeholder="검색어를 입력하세요..." style="flex:1;font-size:1.1rem;height:50px;">
-        <button type="submit" class="btn btn-blue btn-md" style="height:50px;padding:0 24px;">검색</button>
-      </div>
-    </form>
-    <div th:if="${keyword != null and !#strings.isEmpty(keyword)}"
-         style="margin-top:12px;font-size:.88rem;color:var(--t4);">
-      <span style="color:var(--t2);font-weight:600;" th:text="'&quot;' + ${keyword} + '&quot;'"></span>
-      에 대한 검색 결과
-      <span style="color:var(--blue);font-weight:600;" th:text="${totalCount ?: 0}"></span>건
-    </div>
+<div class="page-header">
+  <div class="container">
+    <h1>검색 결과</h1>
+    <p>
+      "<span th:text="${q}"></span>" 에 대한 검색 결과
+      <span style="color:var(--blue);font-weight:600;" th:text="${totalCount}"></span>건
+    </p>
   </div>
 </div>
 
 <div class="section-sm">
-  <div class="container-sm">
-    <!-- Type tabs -->
-    <div class="tabs" th:if="${keyword != null and !#strings.isEmpty(keyword)}">
-      <a th:href="@{/search(keyword=${keyword})}" class="tab"
-         th:classappend="${type == null} ? ' active' : ''">전체</a>
-      <a th:href="@{/search(keyword=${keyword},type='post')}" class="tab"
-         th:classappend="${type == 'post'} ? ' active' : ''">게시글</a>
-      <a th:href="@{/search(keyword=${keyword},type='doc')}" class="tab"
-         th:classappend="${type == 'doc'} ? ' active' : ''">문서</a>
-      <a th:href="@{/search(keyword=${keyword},type='project')}" class="tab"
-         th:classappend="${type == 'project'} ? ' active' : ''">프로젝트</a>
-      <a th:href="@{/search(keyword=${keyword},type='event')}" class="tab"
-         th:classappend="${type == 'event'} ? ' active' : ''">이벤트</a>
-    </div>
+  <div class="container">
+    <!-- Search bar -->
+    <form th:action="@{/search}" method="get" class="search-row" style="margin-bottom:32px;">
+      <input type="text" name="q" th:value="${q}" placeholder="검색어를 입력하세요..." class="search-input" style="flex:1;">
+      <button type="submit" class="btn btn-blue btn-md">검색</button>
+    </form>
 
-    <div th:if="${keyword == null or #strings.isEmpty(keyword)}" class="empty" style="margin-top:40px;">
-      <div class="empty-icon">🔍</div>
-      <div class="empty-title">검색어를 입력하세요</div>
-    </div>
-
-    <div th:if="${keyword != null and !#strings.isEmpty(keyword) and (results == null or results.isEmpty())}"
-         class="empty" style="margin-top:40px;">
-      <div class="empty-icon">😶</div>
-      <div class="empty-title">검색 결과가 없습니다.</div>
-      <div class="empty-sub">다른 검색어를 시도해보세요</div>
-    </div>
-
-    <div class="search-results">
-      <div th:each="result : ${results}" class="search-result-item">
-        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
-          <span class="pill pill-gray" th:text="${result.type}"></span>
-          <span class="pill pill-gray" th:if="${result.category != null}" th:text="${result.category}"></span>
-        </div>
-        <a th:href="${result.url}" class="search-result-title" th:text="${result.title}"></a>
-        <div class="search-result-snippet" th:if="${result.snippet != null}" th:text="${result.snippet}"></div>
-        <div class="search-result-meta">
-          <span th:text="${result.authorNickname}"></span>
-          <span>·</span>
-          <span th:text="${#temporals.format(result.createdAt,'yyyy.MM.dd')}"></span>
+    <!-- Posts -->
+    <div th:if="${posts != null and !posts.isEmpty()}" class="search-section">
+      <div class="search-section-head">📝 게시글 (<span th:text="${posts.size()}"></span>)</div>
+      <div class="card card-flush">
+        <div class="table-wrap">
+          <table class="table">
+            <tbody>
+              <tr th:each="p : ${posts}">
+                <td>
+                  <a th:href="@{/posts/{id}(id=${p.id})}" th:text="${p.title}" class="table-link"></a>
+                </td>
+                <td style="width:80px;"><span class="pill pill-gray" th:text="${p.category}"></span></td>
+                <td style="width:90px;" th:text="${p.author.nickname}"></td>
+                <td style="width:70px;font-size:.78rem;color:var(--t5);" th:text="${#temporals.format(p.createdAt,'MM.dd')}"></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
+    </div>
+
+    <!-- Docs -->
+    <div th:if="${docs != null and !docs.isEmpty()}" class="search-section">
+      <div class="search-section-head">📄 기술 문서 (<span th:text="${docs.size()}"></span>)</div>
+      <div class="card card-flush">
+        <div class="table-wrap">
+          <table class="table">
+            <tbody>
+              <tr th:each="d : ${docs}">
+                <td>
+                  <a th:href="@{/docs/{id}(id=${d.id})}" th:text="${d.title}" class="table-link"></a>
+                </td>
+                <td style="width:80px;"><span class="pill pill-gray" th:text="${d.category}"></span></td>
+                <td style="width:90px;" th:text="${d.author.nickname}"></td>
+                <td style="width:70px;font-size:.78rem;color:var(--t5);" th:text="${#temporals.format(d.createdAt,'MM.dd')}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Videos -->
+    <div th:if="${videos != null and !videos.isEmpty()}" class="search-section">
+      <div class="search-section-head">🎬 영상 (<span th:text="${videos.size()}"></span>)</div>
+      <div class="card card-flush">
+        <div class="table-wrap">
+          <table class="table">
+            <tbody>
+              <tr th:each="v : ${videos}">
+                <td>
+                  <a th:href="@{/videos/{id}(id=${v.id})}" th:text="${v.title}" class="table-link"></a>
+                </td>
+                <td style="width:80px;"><span class="pill pill-gray" th:text="${v.category}"></span></td>
+                <td style="width:90px;" th:text="${v.author.nickname}"></td>
+                <td style="width:70px;font-size:.78rem;color:var(--t5);" th:text="${#temporals.format(v.createdAt,'MM.dd')}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects -->
+    <div th:if="${projects != null and !projects.isEmpty()}" class="search-section">
+      <div class="search-section-head">🚀 프로젝트 (<span th:text="${projects.size()}"></span>)</div>
+      <div class="card card-flush">
+        <div class="table-wrap">
+          <table class="table">
+            <tbody>
+              <tr th:each="p : ${projects}">
+                <td>
+                  <a th:href="@{/projects/{id}(id=${p.id})}" th:text="${p.title}" class="table-link"></a>
+                </td>
+                <td style="width:90px;"><span class="pill" th:classappend="${p.status == 'IN_PROGRESS'} ? ' pill-blue' : ' pill-gray'"
+                      th:text="${p.status == 'IN_PROGRESS'} ? '진행 중' : '완료'"></span></td>
+                <td style="width:90px;" th:text="${p.author.nickname}"></td>
+                <td style="width:70px;font-size:.78rem;color:var(--t5);" th:text="${#temporals.format(p.createdAt,'MM.dd')}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div th:if="${(posts == null or posts.isEmpty()) and (docs == null or docs.isEmpty()) and (videos == null or videos.isEmpty()) and (projects == null or projects.isEmpty())}"
+         class="empty">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-title">"<span th:text="${q}"></span>"에 대한 결과가 없습니다.</div>
+      <div class="empty-sub">다른 검색어를 시도해보세요</div>
     </div>
   </div>
 </div>

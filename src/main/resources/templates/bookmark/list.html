@@ -6,31 +6,61 @@
 
 <div class="page-header">
   <div class="container">
-    <h1>북마크</h1>
+    <div class="page-header-inner">
+      <div>
+        <h1>북마크</h1>
+        <p>저장한 콘텐츠를 모아보세요</p>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="section-sm">
   <div class="container-sm">
-    <div th:if="${bookmarks == null or bookmarks.isEmpty()}" class="empty">
-      <div class="empty-icon">🔖</div>
-      <div class="empty-title">북마크한 항목이 없습니다.</div>
-      <div class="empty-sub">관심 있는 게시글에 🔖 를 눌러 저장하세요</div>
+    <div class="tabs" style="margin-bottom:20px;">
+      <a th:href="@{/bookmarks}" class="tab"
+         th:classappend="${activeFilter == null or activeFilter == ''} ? ' active' : ''">전체</a>
+      <a th:href="@{/bookmarks(type='POST')}" class="tab"
+         th:classappend="${activeFilter == 'POST'} ? ' active' : ''">게시글</a>
+      <a th:href="@{/bookmarks(type='DOC')}" class="tab"
+         th:classappend="${activeFilter == 'DOC'} ? ' active' : ''">문서</a>
+      <a th:href="@{/bookmarks(type='VIDEO')}" class="tab"
+         th:classappend="${activeFilter == 'VIDEO'} ? ' active' : ''">영상</a>
+      <a th:href="@{/bookmarks(type='PROJECT')}" class="tab"
+         th:classappend="${activeFilter == 'PROJECT'} ? ' active' : ''">프로젝트</a>
     </div>
 
-    <div class="bm-list">
-      <div th:each="bm : ${bookmarks}" class="bm-item">
-        <div class="bm-icon">🔖</div>
-        <div class="bm-body">
-          <div class="bm-type">
-            <span class="pill pill-gray" th:text="${bm.type}"></span>
+    <div th:if="${bookmarks == null or bookmarks.isEmpty()}" class="empty">
+      <div class="empty-icon">🔖</div>
+      <div class="empty-title">북마크가 없습니다.</div>
+      <div class="empty-sub">콘텐츠를 탐색하며 북마크를 추가해보세요</div>
+    </div>
+
+    <div class="card" th:unless="${bookmarks == null or bookmarks.isEmpty()}">
+      <div class="bm-list">
+        <div th:each="bm : ${bookmarks}" class="bm-item">
+          <div class="bm-icon"
+               th:text="${bm.targetType == 'POST'} ? '📝' :
+                         (${bm.targetType == 'DOC'} ? '📄' :
+                         (${bm.targetType == 'VIDEO'} ? '🎬' : '🚀'))"></div>
+          <div class="bm-body">
+            <a class="bm-title"
+               th:href="${bm.targetType == 'POST'} ? @{/posts/{id}(id=${bm.targetId})} :
+                         (${bm.targetType == 'DOC'} ? @{/docs/{id}(id=${bm.targetId})} :
+                         (${bm.targetType == 'VIDEO'} ? @{/videos/{id}(id=${bm.targetId})} : @{/projects/{id}(id=${bm.targetId})}))"
+               th:text="${bm.targetTitle}"></a>
+            <div class="bm-meta">
+              <span class="pill pill-gray" style="font-size:.7rem;"
+                    th:text="${bm.targetType == 'POST'} ? '게시글' :
+                              (${bm.targetType == 'DOC'} ? '문서' :
+                              (${bm.targetType == 'VIDEO'} ? '영상' : '프로젝트'))"></span>
+              <span th:text="${#temporals.format(bm.createdAt,'yyyy.MM.dd')}"></span>
+            </div>
           </div>
-          <a th:href="${bm.targetUrl}" th:text="${bm.title}" class="bm-title"></a>
-          <div class="bm-meta" th:text="${#temporals.format(bm.createdAt,'yyyy.MM.dd')}"></div>
+          <form th:action="@{/bookmarks/{id}/delete(id=${bm.id})}" method="post">
+            <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--t5);">삭제</button>
+          </form>
         </div>
-        <form th:action="@{'/bookmarks/' + ${bm.id} + '/delete'}" method="post" style="flex-shrink:0;">
-          <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--t5);">✕</button>
-        </form>
       </div>
     </div>
   </div>

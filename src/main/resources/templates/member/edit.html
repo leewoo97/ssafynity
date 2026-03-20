@@ -3,27 +3,19 @@
       th:replace="~{fragments/layout :: layout('프로필 수정', ~{::body-content})}">
 <body>
 <th:block th:fragment="body-content">
-
 <div class="page-header">
   <div class="container">
     <h1>프로필 수정</h1>
   </div>
 </div>
-
 <div class="section-sm">
   <div class="container-sm">
     <div class="card">
-      <div th:if="${error}" style="margin-bottom:16px;padding:12px 16px;background:rgba(255,59,48,.08);border-radius:var(--r-sm);color:var(--red);font-size:.88rem;" th:text="${error}"></div>
-
-      <form th:action="@{/member/edit}" method="post">
+      <div th:if="${pwError}" style="margin-bottom:16px;padding:12px 16px;background:rgba(255,59,48,.08);border-radius:var(--r-sm);color:var(--red);font-size:.88rem;" th:text="${pwError}"></div>
+      <form th:action="@{/profile/edit}" method="post">
         <div class="form-group">
           <label class="form-label">아이디</label>
-          <input class="form-input" type="text" th:value="${member.loginId}" disabled
-                 style="opacity:.6;cursor:not-allowed;">
-        </div>
-        <div class="form-group">
-          <label class="form-label">이름</label>
-          <input class="form-input" type="text" name="name" th:value="${member.name}" required>
+          <input class="form-input" type="text" th:value="${member.username}" disabled style="opacity:.6;cursor:not-allowed;">
         </div>
         <div class="form-group">
           <label class="form-label">닉네임</label>
@@ -33,25 +25,33 @@
           <label class="form-label">이메일</label>
           <input class="form-input" type="email" name="email" th:value="${member.email}">
         </div>
-        <hr style="border:none;border-top:1px solid var(--b1);margin:20px 0;">
-        <div style="font-size:.82rem;font-weight:600;color:var(--t4);margin-bottom:12px;">비밀번호 변경 (변경 시에만 입력)</div>
         <div class="form-group">
-          <label class="form-label">새 비밀번호</label>
-          <input class="form-input" type="password" name="newPassword" placeholder="새 비밀번호 (8자 이상)">
-        </div>
-        <div class="form-group">
-          <label class="form-label">새 비밀번호 확인</label>
-          <input class="form-input" type="password" name="confirmPassword" placeholder="새 비밀번호 확인">
+          <label class="form-label">자기소개</label>
+          <textarea class="form-textarea" name="bio" rows="4" placeholder="간단한 자기소개를 입력하세요" th:text="${member.bio}"></textarea>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <a th:href="@{/member/mypage}" class="btn btn-ghost btn-md">취소</a>
+          <a th:href="@{/profile/me}" class="btn btn-ghost btn-md">취소</a>
           <button type="submit" class="btn btn-blue btn-md">저장하기</button>
+        </div>
+      </form>
+      <hr style="border:none;border-top:1px solid var(--b1);margin:24px 0;">
+      <div style="font-size:.9rem;font-weight:600;color:var(--t2);margin-bottom:16px;">비밀번호 변경</div>
+      <form th:action="@{/profile/change-password}" method="post">
+        <div class="form-group">
+          <label class="form-label">현재 비밀번호</label>
+          <input class="form-input" type="password" name="currentPassword" required placeholder="현재 비밀번호">
+        </div>
+        <div class="form-group">
+          <label class="form-label">새 비밀번호</label>
+          <input class="form-input" type="password" name="newPassword" required placeholder="새 비밀번호 (8자 이상)">
+        </div>
+        <div style="display:flex;justify-content:flex-end;">
+          <button type="submit" class="btn btn-ghost btn-md">비밀번호 변경</button>
         </div>
       </form>
     </div>
   </div>
 </div>
-
 </th:block>
 </body>
 </html>

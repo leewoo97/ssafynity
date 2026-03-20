@@ -6,43 +6,41 @@
 
 <div class="page-header">
   <div class="container">
-    <h1>신고하기</h1>
+    <h1>콘텐츠 신고</h1>
+    <p>문제가 있는 콘텐츠를 신고해주세요</p>
   </div>
 </div>
 
 <div class="section-sm">
   <div class="container-sm">
     <div class="card">
-      <div style="padding:12px 16px;background:rgba(255,149,0,.08);border-radius:var(--r-sm);border:1px solid rgba(255,149,0,.2);margin-bottom:20px;font-size:.85rem;color:var(--orange);">
-        ⚠️ 허위 신고 시 불이익이 발생할 수 있습니다.
-      </div>
       <form th:action="@{/report}" method="post">
         <input type="hidden" name="targetType" th:value="${targetType}">
         <input type="hidden" name="targetId" th:value="${targetId}">
+
         <div class="form-group">
           <label class="form-label">신고 대상</label>
-          <input class="form-input" type="text" th:value="${targetTitle}" disabled
-                 style="opacity:.7;cursor:not-allowed;">
+          <div style="padding:10px 14px;background:var(--surface-2);border-radius:var(--r-sm);font-size:.88rem;color:var(--t3);">
+            <span th:text="${targetType}"></span> #<span th:text="${targetId}"></span>
+          </div>
         </div>
+
         <div class="form-group">
           <label class="form-label">신고 사유</label>
           <select name="reason" class="form-select" required>
-            <option value="" disabled selected>신고 사유를 선택하세요</option>
-            <option value="SPAM">스팸 / 홍보</option>
+            <option value="">-- 사유를 선택하세요 --</option>
+            <option value="SPAM">스팸 / 광고</option>
             <option value="INAPPROPRIATE">부적절한 내용</option>
-            <option value="HARASSMENT">욕설 / 비방</option>
+            <option value="HARASSMENT">혐오 / 욕설</option>
             <option value="COPYRIGHT">저작권 침해</option>
+            <option value="MISINFORMATION">허위 정보</option>
             <option value="OTHER">기타</option>
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">상세 내용 <span style="font-weight:400;color:var(--t5);">(선택)</span></label>
-          <textarea class="form-textarea" name="detail" rows="5"
-                    placeholder="신고 내용을 자세히 입력하면 더 빠른 처리가 가능합니다"></textarea>
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <a href="javascript:history.back()" class="btn btn-ghost btn-md">취소</a>
-          <button type="submit" class="btn btn-danger-solid btn-md">신고 제출</button>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:24px;">
+          <a href="javascript:history.back();" class="btn btn-ghost btn-md">취소</a>
+          <button type="submit" class="btn btn-danger btn-md">신고하기</button>
         </div>
       </form>
     </div>

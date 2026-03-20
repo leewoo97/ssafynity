@@ -19,10 +19,21 @@
 
 <div class="section-sm">
   <div class="container">
+    <!-- Pinned -->
+    <div th:if="${pinnedDocs != null and !pinnedDocs.isEmpty()}" style="margin-bottom:24px;">
+      <div class="label" style="margin-bottom:10px;">📌 추천 문서</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a th:each="d : ${pinnedDocs}"
+           th:href="@{/docs/{id}(id=${d.id})}"
+           th:text="${d.title}"
+           class="btn btn-tinted btn-sm"></a>
+      </div>
+    </div>
+
     <!-- Tabs -->
     <div class="tabs">
-      <a th:href="@{/docs(keyword=${keyword})}"
-         class="tab" th:classappend="${category == null or category == ''} ? ' active' : ''">전체</a>
+      <a th:href="@{/docs(keyword=${keyword})}" class="tab"
+         th:classappend="${category == null or category == ''} ? ' active' : ''">전체</a>
       <a th:each="cat : ${categories}"
          th:href="@{/docs(category=${cat},keyword=${keyword})}"
          th:text="${cat}" class="tab"
@@ -36,8 +47,7 @@
       <button type="submit" class="btn btn-blue btn-md">검색</button>
     </form>
 
-    <!-- Grid -->
-    <div th:if="${docs == null or docs.content.isEmpty()}" class="empty">
+    <div th:if="${docs == null or docs.isEmpty()}" class="empty">
       <div class="empty-icon">📄</div>
       <div class="empty-title">문서가 없습니다.</div>
       <div class="empty-sub" style="margin-top:16px;">
@@ -46,15 +56,15 @@
     </div>
 
     <div class="doc-grid">
-      <div th:each="doc : ${docs.content}" class="doc-card">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div th:each="doc : ${docs}" class="doc-card">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
           <span class="pill pill-gray" th:text="${doc.category}"></span>
           <span th:if="${doc.pinned}" class="pill pill-orange">📌 추천</span>
         </div>
         <div class="doc-card-title">
           <a th:href="@{/docs/{id}(id=${doc.id})}" th:text="${doc.title}"></a>
         </div>
-        <div class="doc-card-tags" th:if="${doc.tags != null and !doc.tags.isEmpty()}">
+        <div class="doc-card-tags" th:if="${doc.tags != null and !#strings.isEmpty(doc.tags)}">
           <span th:each="tag,ti : ${doc.tags.split(',')}" th:if="${ti.index < 4}">
             <span class="tag" th:text="${#strings.trim(tag)}"></span>
           </span>
@@ -69,14 +79,16 @@
       </div>
     </div>
 
-    <!-- Pagination -->
-    <div class="pagination" th:if="${docs != null and docs.totalPages > 1}">
-      <a th:if="${docs.hasPreviousPage}" th:href="@{/docs(page=${docs.number-1},category=${category},keyword=${keyword})}">‹</a>
-      <th:block th:each="i : ${#numbers.sequence(0, docs.totalPages - 1)}">
+    <!-- Pagination: totalPages + currentPage -->
+    <div class="pagination" th:if="${totalPages != null and totalPages > 1}">
+      <a th:if="${currentPage > 0}"
+         th:href="@{/docs(page=${currentPage-1},category=${category},keyword=${keyword})}">‹</a>
+      <th:block th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
         <a th:href="@{/docs(page=${i},category=${category},keyword=${keyword})}"
-           th:text="${i+1}" th:classappend="${i == docs.number} ? ' active' : ''"></a>
+           th:text="${i+1}" th:classappend="${i == currentPage} ? ' active' : ''"></a>
       </th:block>
-      <a th:if="${docs.hasNextPage}" th:href="@{/docs(page=${docs.number+1},category=${category},keyword=${keyword})}">›</a>
+      <a th:if="${currentPage < totalPages - 1}"
+         th:href="@{/docs(page=${currentPage+1},category=${category},keyword=${keyword})}">›</a>
     </div>
   </div>
 </div>

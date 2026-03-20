@@ -11,51 +11,35 @@
         <div class="card">
           <div class="post-header">
             <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-              <span class="pill pill-gray" th:text="${event.category}"></span>
-              <span class="event-status"
-                    th:classappend="${event.status?.name() == 'UPCOMING'} ? ' status-upcoming' : (${event.status?.name() == 'ONGOING'} ? ' status-ongoing' : ' status-completed')"
-                    th:text="${event.status?.name() == 'UPCOMING'} ? '예정' : (${event.status?.name() == 'ONGOING'} ? '진행중' : '종료')">상태</span>
+              <span class="pill pill-gray" th:text="${event.eventType}"></span>
+              <span class="pill pill-gray" th:text="${event.location}"></span>
+              <span class="pill"
+                    th:classappend="${event.status == 'ONGOING'} ? ' pill-green' : (${event.status == 'UPCOMING'} ? ' pill-blue' : ' pill-gray')"
+                    th:text="${event.status == 'ONGOING'} ? '진행 중' : (${event.status == 'UPCOMING'} ? '예정' : (${event.status == 'COMPLETED'} ? '종료' : '취소'))">
+              </span>
             </div>
             <h1 class="post-title" th:text="${event.title}"></h1>
             <div class="post-attrs">
               <span class="post-attr">
-                <a th:href="@{'/member/profile/' + ${event.author.id}}"
+                주최: <a th:href="@{/profile/{id}(id=${event.organizer.id})}"
                    style="font-weight:600;color:var(--blue);"
-                   th:text="${event.author.nickname}"></a>
+                   th:text="${event.organizer.nickname}"></a>
               </span>
-              <span class="post-attr">📅 <span th:text="${#temporals.format(event.startDate,'yyyy.MM.dd')}"></span> ~ <span th:text="${#temporals.format(event.endDate,'yyyy.MM.dd')}"></span></span>
-              <span class="post-attr" th:if="${event.location != null}">📍 <span th:text="${event.location}"></span></span>
+              <span class="post-attr">🗓 시작: <span th:text="${#temporals.format(event.startDate,'yyyy.MM.dd HH:mm')}"></span></span>
+              <span class="post-attr">🗓 종료: <span th:text="${#temporals.format(event.endDate,'yyyy.MM.dd HH:mm')}"></span></span>
+              <span class="post-attr">👥 <span th:text="${event.currentParticipants}"></span>/<span th:text="${event.maxParticipants}"></span> 참가</span>
             </div>
           </div>
 
-          <div th:if="${event.maxParticipants != null}" style="margin-bottom:20px;padding:16px;background:var(--surface-2);border-radius:var(--r);border:1px solid var(--b1);">
-            <div style="font-size:.82rem;font-weight:600;color:var(--t3);margin-bottom:8px;">참가 현황</div>
-            <div class="event-progress">
-              <div class="event-progress-bar">
-                <div class="event-progress-fill"
-                     th:style="'width:' + ${event.currentParticipants * 100 / event.maxParticipants} + '%'"></div>
-              </div>
-              <div class="event-progress-label">
-                <span><span th:text="${event.currentParticipants}"></span>/<span th:text="${event.maxParticipants}"></span>명 참가중</span>
-                <span th:text="${event.maxParticipants - event.currentParticipants} + '자리 남음'"></span>
-              </div>
-            </div>
-          </div>
-
-          <div class="post-body" th:text="${event.content}"></div>
+          <div class="post-body" th:text="${event.description}"></div>
 
           <div class="post-actions">
-            <th:block th:if="${session.loginMember != null and event.status?.name() != 'COMPLETED'}">
-              <form th:if="${!isParticipating}" th:action="@{'/events/' + ${event.id} + '/join'}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-blue btn-sm">참가 신청</button>
-              </form>
-              <form th:if="${isParticipating}" th:action="@{'/events/' + ${event.id} + '/leave'}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-ghost btn-sm">참가 취소</button>
-              </form>
-            </th:block>
-            <th:block th:if="${session.loginMember != null and session.loginMember.id == event.author.id}">
-              <a th:href="@{'/events/' + ${event.id} + '/edit'}" class="btn btn-ghost btn-sm">수정</a>
-              <form th:action="@{'/events/' + ${event.id} + '/delete'}" method="post" style="display:inline;"
+            <a th:if="${session.loginMember != null}"
+               th:href="@{/report/form(targetType='EVENT',targetId=${event.id})}"
+               class="btn btn-ghost btn-sm">신고</a>
+            <th:block th:if="${session.loginMember != null and session.loginMember.id == event.organizer.id}">
+              <a th:href="@{/events/{id}/edit(id=${event.id})}" class="btn btn-ghost btn-sm">수정</a>
+              <form th:action="@{/events/{id}/delete(id=${event.id})}" method="post" style="display:inline;"
                     onsubmit="return confirm('삭제하시겠습니까?')">
                 <button type="submit" class="btn btn-danger btn-sm">삭제</button>
               </form>
@@ -67,27 +51,33 @@
 
       <aside>
         <div class="sidebar-block">
-          <div class="sidebar-block-head">📅 이벤트 정보</div>
+          <div class="sidebar-block-head">👤 주최자</div>
           <div class="sidebar-block-body">
-            <div class="sidebar-row">
-              <span style="font-size:.8rem;color:var(--t4);">주최자</span>
-              <span style="font-size:.85rem;font-weight:600;" th:text="${event.author.nickname}"></span>
+            <div style="padding:16px 18px;display:flex;align-items:center;gap:12px;">
+              <div class="av av-md" th:text="${#strings.substring(event.organizer.nickname,0,1)}">U</div>
+              <div>
+                <div style="font-size:.9rem;font-weight:600;color:var(--t1);" th:text="${event.organizer.nickname}"></div>
+              </div>
             </div>
-            <div class="sidebar-row">
-              <span style="font-size:.8rem;color:var(--t4);">시작일</span>
-              <span style="font-size:.85rem;" th:text="${#temporals.format(event.startDate,'yyyy.MM.dd')}"></span>
+          </div>
+        </div>
+        <div class="sidebar-block">
+          <div class="sidebar-block-head">📋 이벤트 정보</div>
+          <div class="sidebar-block-body" style="padding:16px 18px;">
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:.85rem;color:var(--t3);">
+              <div>📍 <strong>장소:</strong> <span th:text="${event.location}"></span></div>
+              <div>🗓 <strong>시작:</strong> <span th:text="${#temporals.format(event.startDate,'yyyy.MM.dd HH:mm')}"></span></div>
+              <div>🗓 <strong>종료:</strong> <span th:text="${#temporals.format(event.endDate,'yyyy.MM.dd HH:mm')}"></span></div>
+              <div>👥 <strong>참가:</strong> <span th:text="${event.currentParticipants}"></span> / <span th:text="${event.maxParticipants}"></span></div>
             </div>
-            <div class="sidebar-row">
-              <span style="font-size:.8rem;color:var(--t4);">종료일</span>
-              <span style="font-size:.85rem;" th:text="${#temporals.format(event.endDate,'yyyy.MM.dd')}"></span>
-            </div>
-            <div class="sidebar-row" th:if="${event.location != null}">
-              <span style="font-size:.8rem;color:var(--t4);">장소</span>
-              <span style="font-size:.85rem;" th:text="${event.location}"></span>
-            </div>
-            <div class="sidebar-row" th:if="${event.maxParticipants != null}">
-              <span style="font-size:.8rem;color:var(--t4);">정원</span>
-              <span style="font-size:.85rem;" th:text="${event.currentParticipants} + '/' + ${event.maxParticipants} + '명'"></span>
+          </div>
+        </div>
+        <div class="sidebar-block" th:if="${otherEvents != null and !otherEvents.isEmpty()}">
+          <div class="sidebar-block-head">다른 이벤트</div>
+          <div class="sidebar-block-body">
+            <div th:each="e : ${otherEvents}" class="sidebar-row">
+              <a th:href="@{/events/{id}(id=${e.id})}" th:text="${e.title}" class="sidebar-row-title"></a>
+              <span class="sidebar-row-meta" th:text="${#temporals.format(e.startDate,'MM.dd')}"></span>
             </div>
           </div>
         </div>

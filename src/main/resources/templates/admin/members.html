@@ -6,32 +6,32 @@
 
 <div class="page-header">
   <div class="container">
-    <h1>회원 관리</h1>
+    <div class="page-header-inner">
+      <div>
+        <div class="label" style="margin-bottom:6px;">Admin</div>
+        <h1>회원 관리</h1>
+        <p th:text="${members != null ? members.size() + '명' : '0명'}">0명</p>
+      </div>
+      <a th:href="@{/admin}" class="btn btn-ghost btn-md">← 대시보드</a>
+    </div>
   </div>
 </div>
 
 <div class="section-sm">
   <div class="container">
-    <div class="tabs" style="margin-bottom:20px;">
-      <a th:href="@{/admin}" class="tab">대시보드</a>
-      <a th:href="@{/admin/members}" class="tab active">회원 관리</a>
-      <a th:href="@{/admin/posts}" class="tab">게시글 관리</a>
+    <div th:if="${members == null or members.isEmpty()}" class="empty">
+      <div class="empty-icon">👥</div>
+      <div class="empty-title">등록된 회원이 없습니다.</div>
     </div>
 
-    <!-- Search -->
-    <form th:action="@{/admin/members}" method="get" class="search-row" style="margin-bottom:16px;">
-      <input type="text" name="keyword" th:value="${keyword}" placeholder="닉네임 또는 아이디 검색..." class="search-input">
-      <button type="submit" class="btn btn-blue btn-md">검색</button>
-    </form>
-
-    <div class="card card-flush">
+    <div class="card card-flush" th:unless="${members == null or members.isEmpty()}">
       <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
+              <th>ID</th>
               <th>아이디</th>
               <th>닉네임</th>
-              <th>이름</th>
               <th>이메일</th>
               <th>역할</th>
               <th>가입일</th>
@@ -40,43 +40,31 @@
           </thead>
           <tbody>
             <tr th:each="m : ${members}">
-              <td style="font-size:.82rem;color:var(--t4);" th:text="${m.loginId}"></td>
-              <td style="font-weight:600;" th:text="${m.nickname}"></td>
-              <td th:text="${m.name}"></td>
-              <td style="font-size:.82rem;color:var(--t4);" th:text="${m.email}"></td>
+              <td style="color:var(--t5);font-size:.8rem;" th:text="${m.id}"></td>
+              <td th:text="${m.username}"></td>
+              <td>
+                <a th:href="@{/profile/{id}(id=${m.id})}"
+                   style="font-weight:600;color:var(--blue);"
+                   th:text="${m.nickname}"></a>
+              </td>
+              <td style="font-size:.85rem;color:var(--t3);" th:text="${m.email}"></td>
               <td>
                 <span class="pill"
-                      th:classappend="${m.role?.name() == 'ADMIN'} ? ' pill-blue' : ' pill-gray'"
+                      th:classappend="${m.role == 'ADMIN'} ? ' pill-orange' : ' pill-gray'"
                       th:text="${m.role}"></span>
               </td>
-              <td style="font-size:.82rem;color:var(--t4);" th:text="${#temporals.format(m.createdAt,'yyyy.MM.dd')}"></td>
+              <td style="font-size:.78rem;color:var(--t5);"
+                  th:text="${#temporals.format(m.createdAt,'yyyy.MM.dd')}"></td>
               <td>
-                <div style="display:flex;gap:4px;">
-                  <form th:action="@{'/admin/members/' + ${m.id} + '/role'}" method="post" style="display:inline;">
-                    <input type="hidden" name="role"
-                           th:value="${m.role?.name() == 'ADMIN'} ? 'USER' : 'ADMIN'">
-                    <button type="submit" class="btn btn-ghost btn-xs"
-                            th:text="${m.role?.name() == 'ADMIN'} ? '강등' : '관리자'"></button>
-                  </form>
-                  <form th:action="@{'/admin/members/' + ${m.id} + '/delete'}" method="post" style="display:inline;"
-                        onsubmit="return confirm('정말 삭제하시겠습니까?')">
-                    <button type="submit" class="btn btn-danger btn-xs">삭제</button>
-                  </form>
-                </div>
+                <form th:action="@{/admin/members/{id}/delete(id=${m.id})}" method="post" style="display:inline;"
+                      onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                  <button type="submit" class="btn btn-danger btn-xs">삭제</button>
+                </form>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
-
-    <div class="pagination" th:if="${members != null and members.totalPages > 1}">
-      <a th:if="${members.hasPreviousPage}" th:href="@{/admin/members(page=${members.number-1},keyword=${keyword})}">‹</a>
-      <th:block th:each="i : ${#numbers.sequence(0, members.totalPages - 1)}">
-        <a th:href="@{/admin/members(page=${i},keyword=${keyword})}"
-           th:text="${i+1}" th:classappend="${i == members.number} ? ' active' : ''"></a>
-      </th:block>
-      <a th:if="${members.hasNextPage}" th:href="@{/admin/members(page=${members.number+1},keyword=${keyword})}">›</a>
     </div>
   </div>
 </div>

@@ -6,14 +6,14 @@
 
 <div class="page-header">
   <div class="container">
-    <h1 th:text="${post != null} ? '게시글 수정' : '새 게시글 작성'"></h1>
+    <h1 th:text="${post != null} ? '게시글 수정' : '새 게시글'"></h1>
   </div>
 </div>
 
 <div class="section-sm">
   <div class="container-sm">
     <div class="card">
-      <form th:action="${post != null} ? @{'/posts/' + ${post.id} + '/edit'} : @{/posts}" method="post">
+      <form th:action="${post != null} ? @{/posts/{id}/edit(id=${post.id})} : @{/posts}" method="post">
         <div class="form-group">
           <label class="form-label">카테고리</label>
           <select name="category" class="form-select">
@@ -29,14 +29,13 @@
         </div>
         <div class="form-group">
           <label class="form-label">내용</label>
-          <textarea class="form-textarea" name="content" required
-                    rows="14" placeholder="내용을 입력하세요..."
-                    th:text="${post?.content}"></textarea>
+          <textarea class="form-textarea" name="content" rows="16" required
+                    placeholder="내용을 입력하세요" th:text="${post?.content}"></textarea>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <a th:href="${post != null} ? @{'/posts/' + ${post.id}} : @{/posts}" class="btn btn-ghost btn-md">취소</a>
+          <a th:href="${post != null} ? @{/posts/{id}(id=${post.id})} : @{/posts}" class="btn btn-ghost btn-md">취소</a>
           <button type="submit" class="btn btn-blue btn-md"
-                  th:text="${post != null} ? '수정하기' : '작성하기'"></button>
+                  th:text="${post != null} ? '수정하기' : '등록하기'"></button>
         </div>
       </form>
     </div>

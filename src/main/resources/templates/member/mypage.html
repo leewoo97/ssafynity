@@ -3,47 +3,38 @@
       th:replace="~{fragments/layout :: layout('마이페이지', ~{::body-content})}">
 <body>
 <th:block th:fragment="body-content">
-
 <div class="section-sm">
   <div class="container">
     <!-- Profile hero -->
     <div class="profile-hero">
-      <div class="av av-2xl" th:text="${member.name != null ? #strings.substring(member.name,0,1) : member.nickname.substring(0,1)}">U</div>
+      <div class="av av-2xl" th:text="${#strings.substring(member.nickname,0,1)}">U</div>
       <div>
         <div style="font-size:1.6rem;font-weight:700;color:var(--t1);" th:text="${member.nickname}"></div>
-        <div style="font-size:.9rem;color:var(--t4);margin-top:4px;" th:text="${member.name}"></div>
-        <div style="font-size:.82rem;color:var(--t5);margin-top:2px;" th:text="${member.email}"></div>
+        <div style="font-size:.9rem;color:var(--t4);margin-top:4px;" th:text="${member.username}"></div>
+        <div style="font-size:.82rem;color:var(--t5);margin-top:2px;" th:if="${member.email != null}" th:text="${member.email}"></div>
+        <div style="font-size:.88rem;color:var(--t3);margin-top:6px;" th:if="${member.bio != null and !#strings.isEmpty(member.bio)}" th:text="${member.bio}"></div>
       </div>
       <div style="margin-left:auto;display:flex;gap:8px;">
-        <a th:href="@{/member/edit}" class="btn btn-ghost btn-sm">프로필 수정</a>
+        <a th:href="@{/profile/edit}" class="btn btn-ghost btn-sm">프로필 수정</a>
       </div>
     </div>
 
     <!-- Stats -->
     <div class="profile-stat-row">
       <div class="profile-stat">
-        <div class="profile-stat-num" th:text="${postCount ?: 0}">0</div>
+        <div class="profile-stat-num" th:text="${myPosts != null ? myPosts.size() : 0}">0</div>
         <div class="profile-stat-lbl">게시글</div>
       </div>
       <div class="profile-stat">
-        <div class="profile-stat-num" th:text="${commentCount ?: 0}">0</div>
+        <div class="profile-stat-num" th:text="${myComments != null ? myComments.size() : 0}">0</div>
         <div class="profile-stat-lbl">댓글</div>
-      </div>
-      <div class="profile-stat">
-        <div class="profile-stat-num" th:text="${bookmarkCount ?: 0}">0</div>
-        <div class="profile-stat-lbl">북마크</div>
-      </div>
-      <div class="profile-stat">
-        <div class="profile-stat-num" th:text="${likeCount ?: 0}">0</div>
-        <div class="profile-stat-lbl">받은 좋아요</div>
       </div>
     </div>
 
-    <!-- Content tabs -->
+    <!-- Tabs -->
     <div class="tabs" style="margin-top:24px;">
       <a href="?tab=posts" class="tab" th:classappend="${tab == null or tab == 'posts'} ? ' active' : ''">내 게시글</a>
       <a href="?tab=comments" class="tab" th:classappend="${tab == 'comments'} ? ' active' : ''">내 댓글</a>
-      <a href="?tab=bookmarks" class="tab" th:classappend="${tab == 'bookmarks'} ? ' active' : ''">북마크</a>
     </div>
 
     <!-- Posts tab -->
@@ -54,9 +45,7 @@
       </div>
       <div class="card card-flush" th:unless="${myPosts == null or myPosts.isEmpty()}" style="margin-top:16px;">
         <table class="table">
-          <thead>
-            <tr><th>제목</th><th>카테고리</th><th>작성일</th><th>조회</th></tr>
-          </thead>
+          <thead><tr><th>제목</th><th>카테고리</th><th>작성일</th><th>조회</th></tr></thead>
           <tbody>
             <tr th:each="post : ${myPosts}">
               <td><a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}" class="table-link"></a></td>
@@ -77,9 +66,7 @@
       </div>
       <div class="card card-flush" th:unless="${myComments == null or myComments.isEmpty()}" style="margin-top:16px;">
         <table class="table">
-          <thead>
-            <tr><th>댓글 내용</th><th>게시글</th><th>작성일</th></tr>
-          </thead>
+          <thead><tr><th>댓글 내용</th><th>게시글</th><th>작성일</th></tr></thead>
           <tbody>
             <tr th:each="comment : ${myComments}">
               <td th:text="${comment.content}"></td>
@@ -90,31 +77,8 @@
         </table>
       </div>
     </div>
-
-    <!-- Bookmarks tab -->
-    <div th:if="${tab == 'bookmarks'}">
-      <div th:if="${myBookmarks == null or myBookmarks.isEmpty()}" class="empty" style="margin-top:24px;">
-        <div class="empty-icon">🔖</div>
-        <div class="empty-title">북마크한 항목이 없습니다.</div>
-      </div>
-      <div class="card card-flush" th:unless="${myBookmarks == null or myBookmarks.isEmpty()}" style="margin-top:16px;">
-        <table class="table">
-          <thead>
-            <tr><th>제목</th><th>구분</th><th>저장일</th></tr>
-          </thead>
-          <tbody>
-            <tr th:each="bm : ${myBookmarks}">
-              <td><a th:href="${bm.targetUrl}" th:text="${bm.title}" class="table-link"></a></td>
-              <td><span class="pill pill-gray" th:text="${bm.type}"></span></td>
-              <td th:text="${#temporals.format(bm.createdAt,'yyyy.MM.dd')}"></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
   </div>
 </div>
-
 </th:block>
 </body>
 </html>

@@ -8,80 +8,123 @@
   <div class="container">
     <div class="page-header-inner">
       <div>
-        <div class="label" style="margin-bottom:6px;">Community</div>
+        <div class="label" style="margin-bottom:6px;">Events</div>
         <h1>이벤트</h1>
-        <p>스터디, 해커톤, 세미나 소식을 공유하세요</p>
+        <p>해커톤, 세미나, 스터디 모임 정보를 확인하세요</p>
       </div>
-      <a th:href="@{/events/new}" class="btn btn-blue btn-md">📅 이벤트 등록</a>
+      <a th:href="@{/events/new}" class="btn btn-blue btn-md"
+         th:if="${session.loginMember != null}">📅 이벤트 등록</a>
     </div>
   </div>
 </div>
 
 <div class="section-sm">
   <div class="container">
-    <!-- Status tabs -->
-    <div class="tabs">
-      <a th:href="@{/events}" class="tab" th:classappend="${status == null} ? ' active' : ''">전체</a>
-      <a th:href="@{/events(status='UPCOMING')}" class="tab"
-         th:classappend="${status == 'UPCOMING'} ? ' active' : ''">예정</a>
-      <a th:href="@{/events(status='ONGOING')}" class="tab"
-         th:classappend="${status == 'ONGOING'} ? ' active' : ''">진행중</a>
-      <a th:href="@{/events(status='COMPLETED')}" class="tab"
-         th:classappend="${status == 'COMPLETED'} ? ' active' : ''">종료</a>
+
+    <!-- 진행 중 -->
+    <div th:if="${ongoingEvents != null and !ongoingEvents.isEmpty()}" style="margin-bottom:32px;">
+      <div class="label" style="margin-bottom:14px;">🟢 진행 중</div>
+      <div class="event-grid">
+        <div th:each="event : ${ongoingEvents}" class="event-card">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <span class="event-status" style="color:var(--green);">
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);"></span>
+              진행 중
+            </span>
+            <span class="pill pill-gray" th:text="${event.eventType}"></span>
+          </div>
+          <h4><a th:href="@{/events/{id}(id=${event.id})}" th:text="${event.title}"></a></h4>
+          <div class="event-info" th:if="${event.description != null}"
+               th:text="${#strings.abbreviate(event.description,80)}"
+               style="margin-top:8px;margin-bottom:10px;font-size:.8rem;color:var(--t3);line-height:1.5;"></div>
+          <div class="event-info">
+            <span>📍 <span th:text="${event.location}"></span></span>
+            <span>🗓 <span th:text="${#temporals.format(event.startDate,'MM.dd')}"></span>
+              — <span th:text="${#temporals.format(event.endDate,'MM.dd')}"></span></span>
+            <span th:if="${event.maxParticipants > 0}">
+              👥 <span th:text="${event.currentParticipants}"></span>/<span th:text="${event.maxParticipants}"></span>명
+            </span>
+          </div>
+          <div th:if="${event.maxParticipants > 0}" class="event-progress" style="margin-top:10px;">
+            <div class="event-progress-bar"
+                 th:style="'width:' + ${event.currentParticipants * 100 / event.maxParticipants} + '%'"></div>
+          </div>
+          <div style="margin-top:12px;font-size:.78rem;color:var(--t5);">
+            by <span th:text="${event.organizer.nickname}"></span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div th:if="${events == null or events.content.isEmpty()}" class="empty">
+    <!-- 예정 -->
+    <div th:if="${upcomingEvents != null and !upcomingEvents.isEmpty()}" style="margin-bottom:32px;">
+      <div class="label" style="margin-bottom:14px;">⏳ 예정된 이벤트</div>
+      <div class="event-grid">
+        <div th:each="event : ${upcomingEvents}" class="event-card">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <span class="event-status" style="color:var(--blue);">
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--blue);"></span>
+              예정
+            </span>
+            <span class="pill pill-gray" th:text="${event.eventType}"></span>
+          </div>
+          <h4><a th:href="@{/events/{id}(id=${event.id})}" th:text="${event.title}"></a></h4>
+          <div class="event-info" th:if="${event.description != null}"
+               th:text="${#strings.abbreviate(event.description,80)}"
+               style="margin-top:8px;margin-bottom:10px;font-size:.8rem;color:var(--t3);line-height:1.5;"></div>
+          <div class="event-info">
+            <span>📍 <span th:text="${event.location}"></span></span>
+            <span>🗓 <span th:text="${#temporals.format(event.startDate,'MM.dd HH:mm')}"></span></span>
+            <span th:if="${event.maxParticipants > 0}">
+              👥 <span th:text="${event.currentParticipants}"></span>/<span th:text="${event.maxParticipants}"></span>명
+            </span>
+          </div>
+          <div style="margin-top:12px;font-size:.78rem;color:var(--t5);">
+            by <span th:text="${event.organizer.nickname}"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 전체 테이블 -->
+    <div class="label" style="margin-bottom:12px;">📋 전체 이벤트</div>
+    <div th:if="${allEvents == null or allEvents.isEmpty()}" class="empty">
       <div class="empty-icon">📅</div>
-      <div class="empty-title">등록된 이벤트가 없습니다.</div>
-      <div class="empty-sub" style="margin-top:16px;">
+      <div class="empty-title">이벤트가 없습니다.</div>
+      <div class="empty-sub" style="margin-top:16px;" th:if="${session.loginMember != null}">
         <a th:href="@{/events/new}" class="btn btn-blue btn-md">이벤트 등록하기</a>
       </div>
     </div>
-
-    <div class="event-grid">
-      <div th:each="event : ${events.content}" class="event-card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px;">
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <span class="pill pill-gray" th:text="${event.category}"></span>
-          </div>
-          <span class="event-status"
-                th:classappend="${event.status?.name() == 'UPCOMING'} ? ' status-upcoming' : (${event.status?.name() == 'ONGOING'} ? ' status-ongoing' : ' status-completed')"
-                th:text="${event.status?.name() == 'UPCOMING'} ? '예정' : (${event.status?.name() == 'ONGOING'} ? '진행중' : '종료')">상태</span>
-        </div>
-        <div class="event-card-title">
-          <a th:href="@{/events/{id}(id=${event.id})}" th:text="${event.title}"></a>
-        </div>
-        <div class="event-card-dates">
-          <span>📅 <span th:text="${#temporals.format(event.startDate,'MM/dd')}"></span></span>
-          <span>→</span>
-          <span th:text="${#temporals.format(event.endDate,'MM/dd')}"></span>
-        </div>
-        <div th:if="${event.maxParticipants != null}" class="event-progress">
-          <div class="event-progress-bar">
-            <div class="event-progress-fill"
-                 th:style="'width:' + ${event.currentParticipants * 100 / event.maxParticipants} + '%'"></div>
-          </div>
-          <div class="event-progress-label">
-            <span><span th:text="${event.currentParticipants}"></span>/<span th:text="${event.maxParticipants}"></span>명</span>
-            <span th:text="${event.maxParticipants - event.currentParticipants} + '자리 남음'"></span>
-          </div>
-        </div>
-        <div class="event-card-meta">
-          <span th:text="${event.author.nickname}"></span>
-          <span>·</span>
-          <span th:text="${#temporals.format(event.createdAt,'yyyy.MM.dd')}"></span>
-        </div>
+    <div class="card card-flush" th:unless="${allEvents == null or allEvents.isEmpty()}">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>제목</th><th>유형</th><th>위치</th><th>시작일</th><th>상태</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="event : ${allEvents}">
+              <td>
+                <a th:href="@{/events/{id}(id=${event.id})}" th:text="${event.title}" class="table-link"></a>
+              </td>
+              <td><span class="pill pill-gray" th:text="${event.eventType}"></span></td>
+              <td th:text="${event.location}"></td>
+              <td style="font-size:.78rem;color:var(--t5);"
+                  th:text="${#temporals.format(event.startDate,'MM.dd')}"></td>
+              <td>
+                <span class="pill"
+                      th:classappend="${event.status == 'UPCOMING'} ? ' pill-blue' :
+                                      (${event.status == 'ONGOING'} ? ' pill-green' :
+                                      (${event.status == 'COMPLETED'} ? ' pill-gray' : ' pill-red'))"
+                      th:text="${event.status == 'UPCOMING'} ? '예정' :
+                                (${event.status == 'ONGOING'} ? '진행 중' :
+                                (${event.status == 'COMPLETED'} ? '완료' : '취소'))"></span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <div class="pagination" th:if="${events != null and events.totalPages > 1}">
-      <a th:if="${events.hasPreviousPage}" th:href="@{/events(page=${events.number-1},status=${status})}">‹</a>
-      <th:block th:each="i : ${#numbers.sequence(0, events.totalPages - 1)}">
-        <a th:href="@{/events(page=${i},status=${status})}"
-           th:text="${i+1}" th:classappend="${i == events.number} ? ' active' : ''"></a>
-      </th:block>
-      <a th:if="${events.hasNextPage}" th:href="@{/events(page=${events.number+1},status=${status})}">›</a>
-    </div>
   </div>
 </div>
 
