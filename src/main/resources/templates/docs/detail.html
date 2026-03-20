@@ -1,135 +1,85 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${doc.title})}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(${doc.title}, ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="padding-top:1.5rem;">
-  <div class="two-col">
+<div class="section-sm">
+  <div class="container">
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <div class="post-header">
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+              <span class="pill pill-gray" th:text="${doc.category}"></span>
+              <span th:if="${doc.pinned}" class="pill pill-orange">📌 추천</span>
+              <span th:each="tag,ti : ${doc.tags?.split(',')}" th:if="${ti.index < 3}">
+                <span class="tag" th:text="${#strings.trim(tag)}"></span>
+              </span>
+            </div>
+            <h1 class="post-title" th:text="${doc.title}"></h1>
+            <div class="post-attrs">
+              <span class="post-attr">
+                <a th:href="@{'/member/profile/' + ${doc.author.id}}"
+                   style="font-weight:600;color:var(--blue);"
+                   th:text="${doc.author.nickname}"></a>
+              </span>
+              <span class="post-attr">🕐 <span th:text="${#temporals.format(doc.createdAt,'yyyy.MM.dd HH:mm')}"></span></span>
+              <span class="post-attr">👁 <span th:text="${doc.viewCount}"></span></span>
+            </div>
+          </div>
 
-    <!-- 메인 콘텐츠 -->
-    <article>
-      <div class="card">
-        <!-- 상단 메타 -->
-        <div style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-bottom:1rem;">
-          <a th:href="@{/docs}" style="color:var(--muted); font-size:.85rem;">📚 문서</a>
-          <span style="color:var(--muted);">/</span>
-          <span class="cat-badge" th:text="${doc.category}"></span>
-          <span th:if="${doc.pinned}" style="color:#ef4444; font-size:.85rem;">📌 고정됨</span>
-        </div>
+          <div class="post-body md-body" th:utext="${docHtml != null ? docHtml : doc.content}"></div>
 
-        <h1 style="font-size:1.6rem; font-weight:800; margin-bottom:.8rem;" th:text="${doc.title}"></h1>
-
-        <!-- 작성자 & 날짜 -->
-        <div style="display:flex; align-items:center; gap:1rem; padding:.8rem 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:1.5rem;">
-          <div style="font-size:.88rem;">
-            <strong th:text="${doc.author.nickname}"></strong>
-            <span style="color:var(--muted);"> · </span>
-            <span style="color:var(--muted);" th:text="${#temporals.format(doc.createdAt,'yyyy.MM.dd HH:mm')}"></span>
-            <th:block th:if="${doc.updatedAt != null}">
-              <span style="color:var(--muted);"> (수정됨)</span>
+          <div class="post-actions">
+            <th:block th:if="${session.loginMember != null and session.loginMember.id == doc.author.id}">
+              <a th:href="@{'/docs/' + ${doc.id} + '/edit'}" class="btn btn-ghost btn-sm">수정</a>
+              <form th:action="@{'/docs/' + ${doc.id} + '/delete'}" method="post" style="display:inline;"
+                    onsubmit="return confirm('삭제하시겠습니까?')">
+                <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+              </form>
             </th:block>
-          </div>
-          <div style="margin-left:auto; display:flex; gap:.5rem; font-size:.82rem; color:var(--muted);">
-            <span>👁 <span th:text="${doc.viewCount}"></span></span>
-          </div>
-        </div>
-
-        <!-- 태그 -->
-        <div th:if="${doc.tags != null and !doc.tags.isEmpty()}" style="margin-bottom:1.2rem;">
-          <span th:each="tag : ${doc.tags.split(',')}">
-            <span class="tech-tag" th:text="${#strings.trim(tag)}"></span>
-          </span>
-        </div>
-
-        <!-- 마크다운 본문 -->
-        <div id="md-content" class="markdown-body" th:attr="data-md=${doc.content}">
-          <!-- JS로 렌더링 -->
-        </div>
-
-        <!-- 액션 버튼 -->
-        <div style="display:flex; gap:.5rem; margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border);">
-          <a th:href="@{/docs}" class="btn btn-ghost btn-sm">← 목록</a>
-
-          <!-- 북마크 -->
-          <th:block th:if="${session.loginMember != null}">
-            <form th:action="@{/docs/{id}/bookmark(id=${doc.id})}" method="post" style="display:inline;">
-              <button type="submit" class="btn btn-ghost btn-sm"
-                      th:text="${isBookmarked} ? '🔖 북마크 취소' : '🔖 북마크'"></button>
-            </form>
-          </th:block>
-
-          <!-- 핀 (관리자) -->
-          <th:block th:if="${session.loginMember != null and session.loginMember.role == 'ADMIN'}">
-            <form th:action="@{/docs/{id}/pin(id=${doc.id})}" method="post" style="display:inline;">
-              <button type="submit" class="btn-pin" th:classappend="${doc.pinned} ? ' pinned' : ''"
-                      th:text="${doc.pinned} ? '📌 고정 해제' : '📌 고정'"></button>
-            </form>
-          </th:block>
-
-          <!-- 수정/삭제 (작성자 or 관리자) -->
-          <th:block th:if="${session.loginMember != null and (session.loginMember.id == doc.author.id or session.loginMember.role == 'ADMIN')}">
-            <a th:href="@{/docs/{id}/edit(id=${doc.id})}" class="btn btn-ghost btn-sm">✏ 수정</a>
-            <form th:action="@{/docs/{id}/delete(id=${doc.id})}" method="post" style="display:inline;"
-                  onsubmit="return confirm('문서를 삭제하시겠습니까?')">
-              <button type="submit" class="btn btn-danger btn-sm">🗑 삭제</button>
-            </form>
-          </th:block>
-        </div>
-      </div>
-    </article>
-
-    <!-- 사이드바 -->
-    <aside>
-      <!-- 작성자 카드 -->
-      <div class="sidebar-card">
-        <h4>✍ 작성자</h4>
-        <div style="display:flex;align-items:center;gap:.8rem;margin-top:.5rem;">
-          <div class="avatar-sm" th:text="${#strings.substring(doc.author.nickname, 0, 1)}"></div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:800;font-size:.93rem;" th:text="${doc.author.nickname}"></div>
-            <a th:href="@{/profile/{id}(id=${doc.author.id})}" class="btn btn-ghost btn-sm" style="margin-top:.35rem;width:100%;text-align:center;">프로필 보기</a>
+            <th:block th:if="${session.loginMember != null and session.loginMember.role?.name() == 'ADMIN'}">
+              <form th:action="@{'/docs/' + ${doc.id} + '/pin'}" method="post" style="display:inline;">
+                <button type="submit" class="btn-pin" th:classappend="${doc.pinned} ? ' pinned' : ''">
+                  📌 <span th:text="${doc.pinned} ? '추천 해제' : '추천'"></span>
+                </button>
+              </form>
+            </th:block>
+            <a th:href="@{/docs}" class="btn btn-ghost btn-sm" style="margin-left:auto;">목록</a>
           </div>
         </div>
       </div>
 
-      <!-- 관련 문서 (같은 카테고리) -->
-      <div class="sidebar-card" style="margin-top:1rem;" th:if="${relatedDocs != null and !relatedDocs.isEmpty()}">
-        <h4>📄 관련 문서</h4>
-        <div th:each="rd : ${relatedDocs}" class="sb-row">
-          <a th:href="@{/docs/{id}(id=${rd.id})}" th:text="${rd.title}" class="sb-link"></a>
-          <span style="font-size:.75rem; color:var(--muted);">조회 <span th:text="${rd.viewCount}"></span></span>
+      <!-- Sidebar -->
+      <aside>
+        <div class="sidebar-block">
+          <div class="sidebar-block-head">📄 작성자</div>
+          <div class="sidebar-block-body">
+            <div style="padding:16px 18px;display:flex;align-items:center;gap:12px;">
+              <div class="av av-md" th:text="${doc.author.name != null ? #strings.substring(doc.author.name,0,1) : 'U'}">U</div>
+              <div>
+                <div style="font-size:.9rem;font-weight:600;color:var(--t1);" th:text="${doc.author.nickname}"></div>
+                <div style="font-size:.76rem;color:var(--t4);margin-top:2px;" th:text="${doc.author.name}"></div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <!-- 문서 정보 -->
-      <div class="sidebar-card" style="margin-top:1rem;">
-        <h4>ℹ 문서 정보</h4>
-        <table style="width:100%; font-size:.85rem; border-collapse:collapse; margin-top:.4rem;">
-          <tr><td style="color:var(--muted); padding:.3rem 0; width:60px;">카테고리</td><td><span class="cat-badge" th:text="${doc.category}"></span></td></tr>
-          <tr><td style="color:var(--muted); padding:.3rem 0;">조회수</td><td th:text="${doc.viewCount}"></td></tr>
-          <tr><td style="color:var(--muted); padding:.3rem 0;">작성일</td><td th:text="${#temporals.format(doc.createdAt,'yyyy.MM.dd')}"></td></tr>
-        </table>
-      </div>
-    </aside>
-
+        <div class="sidebar-block" th:if="${relatedDocs != null and !relatedDocs.isEmpty()}">
+          <div class="sidebar-block-head">관련 문서</div>
+          <div class="sidebar-block-body">
+            <div th:each="d : ${relatedDocs}" class="sidebar-row">
+              <div style="flex:1;min-width:0;">
+                <a th:href="@{/docs/{id}(id=${d.id})}" th:text="${d.title}" class="sidebar-row-title"></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
   </div>
 </div>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
-
-<script>
-  // marked.js로 마크다운 렌더링
-  (function() {
-    const el = document.getElementById('md-content');
-    if (el && typeof marked !== 'undefined') {
-      el.innerHTML = marked.parse(el.getAttribute('data-md') || '');
-    }
-    // highlight.js 적용
-    if (typeof hljs !== 'undefined') {
-      document.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
-    }
-  })();
-</script>
+</th:block>
 </body>
 </html>

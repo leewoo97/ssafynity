@@ -1,90 +1,79 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${video.title})}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(${video.title}, ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="padding-top:1.5rem;">
-  <div class="two-col">
-    <div>
-      <!-- YouTube 임베드 -->
-      <div class="yt-wrap" style="margin-bottom:1.5rem;">
-        <iframe th:src="'https://www.youtube.com/embed/' + ${video.youtubeId} + '?rel=0'"
-                allowfullscreen allow="autoplay; encrypted-media"></iframe>
-      </div>
+<div class="section-sm">
+  <div class="container">
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <!-- YouTube embed -->
+          <div class="yt-wrap" th:if="${youtubeId != null}">
+            <iframe th:src="'https://www.youtube.com/embed/' + ${youtubeId}"
+                    frameborder="0" allowfullscreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+          </div>
 
-      <div class="card">
-        <!-- 제목 & 메타 -->
-        <div style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-bottom:.6rem;">
-          <span class="cat-badge" th:text="${video.category}"></span>
-          <span th:if="${video.pinned}" style="color:#ef4444; font-size:.82rem;">📌 추천영상</span>
-        </div>
-        <h1 style="font-size:1.4rem; font-weight:800; margin-bottom:.8rem;" th:text="${video.title}"></h1>
+          <div class="post-header" style="margin-top:20px;">
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+              <span class="pill pill-gray" th:text="${video.category}"></span>
+            </div>
+            <h1 class="post-title" th:text="${video.title}"></h1>
+            <div class="post-attrs">
+              <span class="post-attr">
+                <a th:href="@{'/member/profile/' + ${video.author.id}}"
+                   style="font-weight:600;color:var(--blue);"
+                   th:text="${video.author.nickname}"></a>
+              </span>
+              <span class="post-attr">🕐 <span th:text="${#temporals.format(video.createdAt,'yyyy.MM.dd HH:mm')}"></span></span>
+              <span class="post-attr">👁 <span th:text="${video.viewCount}"></span></span>
+            </div>
+          </div>
 
-        <div style="display:flex; align-items:center; gap:1rem; font-size:.88rem; color:var(--muted); padding:.8rem 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:1rem;">
-          <span>✍ <strong th:text="${video.author.nickname}" style="color:var(--text);"></strong></span>
-          <span>📅 <span th:text="${#temporals.format(video.createdAt,'yyyy.MM.dd')}"></span></span>
-          <span>👁 <span th:text="${video.viewCount}"></span></span>
-          <span th:if="${video.duration != null}">⏱ <span th:text="${video.duration}"></span></span>
-        </div>
+          <div class="post-body" th:if="${video.description != null and !#strings.isEmpty(video.description)}"
+               th:text="${video.description}"></div>
 
-        <!-- 태그 -->
-        <div th:if="${video.tags != null and !video.tags.isEmpty()}" style="margin-bottom:1rem;">
-          <span th:each="tag : ${video.tags.split(',')}">
-            <span class="tech-tag" th:text="${#strings.trim(tag)}"></span>
-          </span>
-        </div>
-
-        <!-- 설명 -->
-        <div style="line-height:1.8; white-space:pre-wrap; font-size:.93rem;" th:text="${video.description}"></div>
-
-        <!-- 액션 -->
-        <div style="display:flex; gap:.5rem; margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border);">
-          <a th:href="@{/videos}" class="btn btn-ghost btn-sm">← 목록</a>
-
-          <th:block th:if="${session.loginMember != null}">
-            <form th:action="@{/videos/{id}/bookmark(id=${video.id})}" method="post" style="display:inline;">
-              <button type="submit" class="btn btn-ghost btn-sm"
-                      th:text="${isBookmarked} ? '🔖 북마크 취소' : '🔖 북마크'"></button>
-            </form>
-          </th:block>
-
-          <th:block th:if="${session.loginMember != null and session.loginMember.role == 'ADMIN'}">
-            <form th:action="@{/videos/{id}/pin(id=${video.id})}" method="post" style="display:inline;">
-              <button type="submit" class="btn-pin" th:classappend="${video.pinned} ? ' pinned' : ''"
-                      th:text="${video.pinned} ? '📌 핀 해제' : '📌 핀'"></button>
-            </form>
-            <a th:href="@{/videos/{id}/edit(id=${video.id})}" class="btn btn-ghost btn-sm">✏ 수정</a>
-            <form th:action="@{/videos/{id}/delete(id=${video.id})}" method="post" style="display:inline;"
-                  onsubmit="return confirm('영상을 삭제하시겠습니까?')">
-              <button type="submit" class="btn btn-danger btn-sm">🗑 삭제</button>
-            </form>
-          </th:block>
-        </div>
-      </div>
-    </div>
-
-    <!-- 사이드바 -->
-    <aside>
-      <div class="sidebar-card">
-        <h4>🎬 관련 영상</h4>
-        <div th:if="${relatedVideos == null or relatedVideos.isEmpty()}" class="empty-msg" style="font-size:.82rem;">관련 영상 없음</div>
-        <div th:each="rv : ${relatedVideos}" style="padding:.5rem 0; border-bottom:1px solid var(--border); display:flex; gap:.6rem; align-items:flex-start;">
-          <a th:href="@{/videos/{id}(id=${rv.id})}">
-            <img th:src="'https://img.youtube.com/vi/' + ${rv.youtubeId} + '/default.jpg'"
-                 style="width:80px; border-radius:4px; flex-shrink:0;" th:alt="${rv.title}">
-          </a>
-          <div>
-            <a th:href="@{/videos/{id}(id=${rv.id})}" th:text="${rv.title}"
-               style="font-size:.82rem; font-weight:600; color:var(--text); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;"></a>
-            <div style="font-size:.75rem; color:var(--muted);" th:text="${rv.author.nickname}"></div>
+          <div class="post-actions">
+            <th:block th:if="${session.loginMember != null and session.loginMember.id == video.author.id}">
+              <a th:href="@{'/videos/' + ${video.id} + '/edit'}" class="btn btn-ghost btn-sm">수정</a>
+              <form th:action="@{'/videos/' + ${video.id} + '/delete'}" method="post" style="display:inline;"
+                    onsubmit="return confirm('삭제하시겠습니까?')">
+                <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+              </form>
+            </th:block>
+            <a th:href="@{/videos}" class="btn btn-ghost btn-sm" style="margin-left:auto;">목록</a>
           </div>
         </div>
-        <a th:href="@{/videos}" class="btn btn-ghost btn-sm" style="width:100%; margin-top:.8rem;">전체 영상 →</a>
       </div>
-    </aside>
+
+      <aside>
+        <div class="sidebar-block">
+          <div class="sidebar-block-head">🎬 등록자</div>
+          <div class="sidebar-block-body">
+            <div style="padding:16px 18px;display:flex;align-items:center;gap:12px;">
+              <div class="av av-md" th:text="${video.author.name != null ? #strings.substring(video.author.name,0,1) : 'U'}">U</div>
+              <div>
+                <div style="font-size:.9rem;font-weight:600;color:var(--t1);" th:text="${video.author.nickname}"></div>
+                <div style="font-size:.76rem;color:var(--t4);margin-top:2px;" th:text="${video.author.name}"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-block" th:if="${relatedVideos != null and !relatedVideos.isEmpty()}">
+          <div class="sidebar-block-head">관련 영상</div>
+          <div class="sidebar-block-body">
+            <div th:each="v : ${relatedVideos}" class="sidebar-row">
+              <a th:href="@{/videos/{id}(id=${v.id})}" th:text="${v.title}" class="sidebar-row-title"></a>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
   </div>
 </div>
-<div th:replace="~{fragments/layout :: footer}"></div>
+
+</th:block>
 </body>
 </html>

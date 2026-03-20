@@ -1,48 +1,45 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('알림')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('알림', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="max-width:700px;">
-  <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
-      <h2>🔔 알림</h2>
-      <span style="font-size:.85rem; color:var(--muted);" th:text="${notifications.size()} + '개'"></span>
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <h1>알림</h1>
+      <form th:action="@{/notifications/read-all}" method="post">
+        <button type="submit" class="btn btn-ghost btn-sm">모두 읽음</button>
+      </form>
     </div>
+  </div>
+</div>
 
-    <div th:if="${notifications.isEmpty()}"
-         style="text-align:center; padding:3rem; color:var(--muted);">
-      <div style="font-size:2.5rem; margin-bottom:.8rem;">🔕</div>
-      <p>알림이 없습니다.</p>
+<div class="section-sm">
+  <div class="container-sm">
+    <div th:if="${notifications == null or notifications.isEmpty()}" class="empty">
+      <div class="empty-icon">🔔</div>
+      <div class="empty-title">알림이 없습니다.</div>
     </div>
 
     <div class="notif-list">
-      <div th:each="n : ${notifications}"
+      <div th:each="notif : ${notifications}"
            class="notif-item"
-           th:classappend="${n.isRead} ? '' : ' unread'">
-        <div class="notif-icon">
-          <span th:if="${n.link != null and n.link.startsWith('/posts')}">💬</span>
-          <span th:if="${n.link != null and n.link.startsWith('/docs')}">📚</span>
-          <span th:if="${n.link != null and n.link.startsWith('/events')}">🎯</span>
-          <span th:if="${n.link != null and n.link.startsWith('/projects')}">💻</span>
-          <span th:if="${n.link == null or (!n.link.startsWith('/posts') and !n.link.startsWith('/docs') and !n.link.startsWith('/events') and !n.link.startsWith('/projects'))}">📢</span>
+           th:classappend="${!notif.read} ? ' unread' : ''">
+        <div class="notif-dot" th:if="${!notif.read}"></div>
+        <div class="notif-body">
+          <a th:href="${notif.targetUrl != null ? notif.targetUrl : '#'}"
+             th:text="${notif.message}" class="notif-msg"></a>
+          <div class="notif-time" th:text="${#temporals.format(notif.createdAt,'yyyy.MM.dd HH:mm')}"></div>
         </div>
-        <div style="flex:1;">
-          <p class="notif-msg" th:text="${n.message}"></p>
-          <div style="display:flex;align-items:center;gap:1rem;margin-top:.35rem;">
-            <span class="notif-date" th:text="${#temporals.format(n.createdAt,'yyyy.MM.dd HH:mm')}"></span>
-            <a th:if="${n.link}" th:href="${n.link}" class="btn btn-ghost btn-sm">바로가기 →</a>
-          </div>
-        </div>
-        <form th:action="@{/notifications/{id}/delete(id=${n.id})}" method="post">
-          <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--muted);" title="삭제">✕</button>
+        <form th:action="@{'/notifications/' + ${notif.id} + '/delete'}" method="post" style="flex-shrink:0;">
+          <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--t5);">✕</button>
         </form>
       </div>
     </div>
   </div>
 </div>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
+</th:block>
 </body>
 </html>

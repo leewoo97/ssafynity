@@ -1,105 +1,101 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${event.title})}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(${event.title}, ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="padding-top:1.5rem;">
-  <div class="two-col">
-    <article>
-      <div class="card">
-        <!-- 상태 배지 -->
-        <span class="event-status-badge"
-              th:classappend="${event.status == 'UPCOMING'} ? ' upcoming' : (${event.status == 'ONGOING'} ? ' ongoing' : (${event.status == 'COMPLETED'} ? ' completed' : ' cancelled'))"
-              th:text="${event.status}" style="margin-bottom:1rem; display:inline-block;"></span>
+<div class="section-sm">
+  <div class="container">
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <div class="post-header">
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+              <span class="pill pill-gray" th:text="${event.category}"></span>
+              <span class="event-status"
+                    th:classappend="${event.status?.name() == 'UPCOMING'} ? ' status-upcoming' : (${event.status?.name() == 'ONGOING'} ? ' status-ongoing' : ' status-completed')"
+                    th:text="${event.status?.name() == 'UPCOMING'} ? '예정' : (${event.status?.name() == 'ONGOING'} ? '진행중' : '종료')">상태</span>
+            </div>
+            <h1 class="post-title" th:text="${event.title}"></h1>
+            <div class="post-attrs">
+              <span class="post-attr">
+                <a th:href="@{'/member/profile/' + ${event.author.id}}"
+                   style="font-weight:600;color:var(--blue);"
+                   th:text="${event.author.nickname}"></a>
+              </span>
+              <span class="post-attr">📅 <span th:text="${#temporals.format(event.startDate,'yyyy.MM.dd')}"></span> ~ <span th:text="${#temporals.format(event.endDate,'yyyy.MM.dd')}"></span></span>
+              <span class="post-attr" th:if="${event.location != null}">📍 <span th:text="${event.location}"></span></span>
+            </div>
+          </div>
 
-        <h1 style="font-size:1.5rem; font-weight:800; margin-bottom:1rem;" th:text="${event.title}"></h1>
+          <div th:if="${event.maxParticipants != null}" style="margin-bottom:20px;padding:16px;background:var(--surface-2);border-radius:var(--r);border:1px solid var(--b1);">
+            <div style="font-size:.82rem;font-weight:600;color:var(--t3);margin-bottom:8px;">참가 현황</div>
+            <div class="event-progress">
+              <div class="event-progress-bar">
+                <div class="event-progress-fill"
+                     th:style="'width:' + ${event.currentParticipants * 100 / event.maxParticipants} + '%'"></div>
+              </div>
+              <div class="event-progress-label">
+                <span><span th:text="${event.currentParticipants}"></span>/<span th:text="${event.maxParticipants}"></span>명 참가중</span>
+                <span th:text="${event.maxParticipants - event.currentParticipants} + '자리 남음'"></span>
+              </div>
+            </div>
+          </div>
 
-        <!-- 이벤트 정보 테이블 -->
-        <div style="background:var(--card-2); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; margin-bottom:1.5rem;">
-          <table style="width:100%; font-size:.9rem; border-collapse:collapse;">
-            <tr style="border-bottom:1px solid var(--border);">
-              <td style="padding:.6rem .4rem; color:var(--muted); width:100px; font-weight:600;">📅 시작</td>
-              <td style="padding:.6rem;" th:text="${#temporals.format(event.startDate,'yyyy년 MM월 dd일 HH:mm')}"></td>
-            </tr>
-            <tr style="border-bottom:1px solid var(--border);">
-              <td style="padding:.6rem .4rem; color:var(--muted); font-weight:600;">🏁 종료</td>
-              <td style="padding:.6rem;" th:text="${#temporals.format(event.endDate,'yyyy년 MM월 dd일 HH:mm')}"></td>
-            </tr>
-            <tr style="border-bottom:1px solid var(--border);">
-              <td style="padding:.6rem .4rem; color:var(--muted); font-weight:600;">📍 장소</td>
-              <td style="padding:.6rem;" th:text="${event.location}"></td>
-            </tr>
-            <tr style="border-bottom:1px solid var(--border);">
-              <td style="padding:.6rem .4rem; color:var(--muted); font-weight:600;">🏷 유형</td>
-              <td style="padding:.6rem;"><span class="cat-badge" th:text="${event.eventType}"></span></td>
-            </tr>
-            <tr th:if="${event.maxParticipants != null}">
-              <td style="padding:.6rem .4rem; color:var(--muted); font-weight:600;">👥 참가</td>
-              <td style="padding:.6rem;">
-                <span th:text="${event.currentParticipants}"></span>
-                <span th:if="${event.maxParticipants > 0}"> / <span th:text="${event.maxParticipants}"></span>명</span>
-                <div th:if="${event.maxParticipants > 0}" class="event-progress" style="max-width:200px; margin-top:.3rem;">
-                  <div class="event-progress-bar"
-                       th:style="'width:' + ${(event.currentParticipants * 100 / event.maxParticipants)} + '%'"></div>
-                </div>
-              </td>
-            </tr>
-          </table>
-        </div>
+          <div class="post-body" th:text="${event.content}"></div>
 
-        <!-- 설명 -->
-        <div style="line-height:1.8; white-space:pre-wrap;" th:text="${event.description}"></div>
-
-        <!-- 참가 버튼 -->
-        <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border); display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
-          <a th:href="@{/events}" class="btn btn-ghost btn-sm">← 목록</a>
-
-          <th:block th:if="${session.loginMember != null and event.status == 'UPCOMING'}">
-            <th:block th:if="${event.maxParticipants == null or event.currentParticipants < event.maxParticipants}">
-              <form th:action="@{/events/{id}/join(id=${event.id})}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-primary">🙋 참가 신청</button>
+          <div class="post-actions">
+            <th:block th:if="${session.loginMember != null and event.status?.name() != 'COMPLETED'}">
+              <form th:if="${!isParticipating}" th:action="@{'/events/' + ${event.id} + '/join'}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-blue btn-sm">참가 신청</button>
+              </form>
+              <form th:if="${isParticipating}" th:action="@{'/events/' + ${event.id} + '/leave'}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-ghost btn-sm">참가 취소</button>
               </form>
             </th:block>
-            <th:block th:if="${event.maxParticipants != null and event.currentParticipants >= event.maxParticipants}">
-              <button class="btn btn-ghost" disabled style="opacity:.5; cursor:not-allowed;">마감됨</button>
+            <th:block th:if="${session.loginMember != null and session.loginMember.id == event.author.id}">
+              <a th:href="@{'/events/' + ${event.id} + '/edit'}" class="btn btn-ghost btn-sm">수정</a>
+              <form th:action="@{'/events/' + ${event.id} + '/delete'}" method="post" style="display:inline;"
+                    onsubmit="return confirm('삭제하시겠습니까?')">
+                <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+              </form>
             </th:block>
-          </th:block>
+            <a th:href="@{/events}" class="btn btn-ghost btn-sm" style="margin-left:auto;">목록</a>
+          </div>
+        </div>
+      </div>
 
-          <!-- 관리자 액션 -->
-          <th:block th:if="${session.loginMember != null and session.loginMember.role == 'ADMIN'}">
-            <a th:href="@{/events/{id}/edit(id=${event.id})}" class="btn btn-ghost btn-sm">✏ 수정</a>
-            <form th:action="@{/events/{id}/delete(id=${event.id})}" method="post" style="display:inline;"
-                  onsubmit="return confirm('이벤트를 삭제하시겠습니까?')">
-              <button type="submit" class="btn btn-danger btn-sm">🗑 삭제</button>
-            </form>
-          </th:block>
+      <aside>
+        <div class="sidebar-block">
+          <div class="sidebar-block-head">📅 이벤트 정보</div>
+          <div class="sidebar-block-body">
+            <div class="sidebar-row">
+              <span style="font-size:.8rem;color:var(--t4);">주최자</span>
+              <span style="font-size:.85rem;font-weight:600;" th:text="${event.author.nickname}"></span>
+            </div>
+            <div class="sidebar-row">
+              <span style="font-size:.8rem;color:var(--t4);">시작일</span>
+              <span style="font-size:.85rem;" th:text="${#temporals.format(event.startDate,'yyyy.MM.dd')}"></span>
+            </div>
+            <div class="sidebar-row">
+              <span style="font-size:.8rem;color:var(--t4);">종료일</span>
+              <span style="font-size:.85rem;" th:text="${#temporals.format(event.endDate,'yyyy.MM.dd')}"></span>
+            </div>
+            <div class="sidebar-row" th:if="${event.location != null}">
+              <span style="font-size:.8rem;color:var(--t4);">장소</span>
+              <span style="font-size:.85rem;" th:text="${event.location}"></span>
+            </div>
+            <div class="sidebar-row" th:if="${event.maxParticipants != null}">
+              <span style="font-size:.8rem;color:var(--t4);">정원</span>
+              <span style="font-size:.85rem;" th:text="${event.currentParticipants} + '/' + ${event.maxParticipants} + '명'"></span>
+            </div>
+          </div>
         </div>
-      </div>
-    </article>
-
-    <aside>
-      <div class="sidebar-card">
-        <h4>🎯 이벤트 정보</h4>
-        <div style="font-size:.88rem; margin-top:.5rem; line-height:2;">
-          <div>주최: <strong th:text="${event.organizer.nickname}"></strong></div>
-          <div>상태: <span class="event-status-badge"
-                           th:classappend="${event.status == 'UPCOMING'} ? ' upcoming' : (${event.status == 'ONGOING'} ? ' ongoing' : ' completed')"
-                           th:text="${event.status}" style="margin:0;"></span></div>
-        </div>
-      </div>
-      <div class="sidebar-card" style="margin-top:1rem;">
-        <h4>📅 다른 이벤트</h4>
-        <div th:if="${otherEvents == null or otherEvents.isEmpty()}" class="empty-msg" style="font-size:.82rem;">다른 이벤트 없음</div>
-        <div th:each="oe : ${otherEvents}" class="sb-row">
-          <a th:href="@{/events/{id}(id=${oe.id})}" th:text="${oe.title}" class="sb-link"></a>
-          <span style="font-size:.75rem; color:var(--muted);" th:text="${#temporals.format(oe.startDate,'MM.dd')}"></span>
-        </div>
-        <a th:href="@{/events}" class="btn btn-ghost btn-sm" style="width:100%; margin-top:.8rem;">전체 이벤트 →</a>
-      </div>
-    </aside>
+      </aside>
+    </div>
   </div>
 </div>
-<div th:replace="~{fragments/layout :: footer}"></div>
+
+</th:block>
 </body>
 </html>

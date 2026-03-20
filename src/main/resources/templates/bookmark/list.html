@@ -1,82 +1,41 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('내 북마크')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('북마크', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="padding-top:1.5rem;">
-
-  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1.2rem;">
-    <div>
-      <h2 style="font-size:1.5rem; font-weight:800;">🔖 내 북마크</h2>
-      <p style="color:var(--muted); font-size:.88rem; margin-top:.2rem;">
-        총 <strong th:text="${bookmarks.size()}"></strong>개의 북마크
-      </p>
-    </div>
+<div class="page-header">
+  <div class="container">
+    <h1>북마크</h1>
   </div>
-
-  <!-- 빈 상태 -->
-  <div th:if="${bookmarks.isEmpty()}" class="card" style="text-align:center; padding:3rem;">
-    <p style="font-size:3rem;">🔖</p>
-    <h3>북마크가 없습니다</h3>
-    <p style="color:var(--muted); margin-top:.5rem;">게시글, 문서, 영상, 프로젝트를 북마크해보세요.</p>
-    <div style="display:flex; gap:.5rem; justify-content:center; margin-top:1.2rem; flex-wrap:wrap;">
-      <a th:href="@{/posts}" class="btn btn-ghost">💬 게시판</a>
-      <a th:href="@{/docs}" class="btn btn-ghost">📚 문서</a>
-      <a th:href="@{/videos}" class="btn btn-ghost">🎬 영상</a>
-      <a th:href="@{/projects}" class="btn btn-ghost">💻 프로젝트</a>
-    </div>
-  </div>
-
-  <!-- 북마크 타입별 필터 -->
-  <div th:if="${!bookmarks.isEmpty()}" style="margin-bottom:1rem;">
-    <div class="cat-tabs-wrap">
-      <a th:href="@{/bookmarks}" class="cat-tab" th:classappend="${activeFilter == null} ? ' active' : ''">전체</a>
-      <a th:href="@{/bookmarks(type='POST')}" class="cat-tab" th:classappend="${activeFilter == 'POST'} ? ' active' : ''">💬 게시글</a>
-      <a th:href="@{/bookmarks(type='DOC')}" class="cat-tab" th:classappend="${activeFilter == 'DOC'} ? ' active' : ''">📚 문서</a>
-      <a th:href="@{/bookmarks(type='VIDEO')}" class="cat-tab" th:classappend="${activeFilter == 'VIDEO'} ? ' active' : ''">🎬 영상</a>
-      <a th:href="@{/bookmarks(type='PROJECT')}" class="cat-tab" th:classappend="${activeFilter == 'PROJECT'} ? ' active' : ''">💻 프로젝트</a>
-    </div>
-  </div>
-
-  <!-- 북마크 그리드 -->
-  <div th:if="${!bookmarks.isEmpty()}" class="bm-grid">
-    <div th:each="bm : ${bookmarks}" class="bm-item">
-      <!-- 타입별 아이콘 -->
-      <div class="bm-icon">
-        <th:block th:switch="${bm.targetType}">
-          <span th:case="'POST'">💬</span>
-          <span th:case="'DOC'">📚</span>
-          <span th:case="'VIDEO'">🎬</span>
-          <span th:case="'PROJECT'">💻</span>
-          <span th:case="*">🔖</span>
-        </th:block>
-      </div>
-
-      <div class="bm-body">
-        <!-- 타입별 링크 -->
-        <th:block th:switch="${bm.targetType}">
-          <a th:case="'POST'" th:href="@{/posts/{id}(id=${bm.targetId})}" th:text="${bm.targetTitle}"></a>
-          <a th:case="'DOC'" th:href="@{/docs/{id}(id=${bm.targetId})}" th:text="${bm.targetTitle}"></a>
-          <a th:case="'VIDEO'" th:href="@{/videos/{id}(id=${bm.targetId})}" th:text="${bm.targetTitle}"></a>
-          <a th:case="'PROJECT'" th:href="@{/projects/{id}(id=${bm.targetId})}" th:text="${bm.targetTitle}"></a>
-          <span th:case="*" th:text="${bm.targetTitle}" style="font-weight:600;"></span>
-        </th:block>
-        <div class="bm-type">
-          <span th:text="${bm.targetType}"></span> ·
-          <span th:text="${#temporals.format(bm.createdAt,'yyyy.MM.dd')}"></span>
-        </div>
-      </div>
-
-      <!-- 삭제 -->
-      <form th:action="@{/bookmarks/{id}/delete(id=${bm.id})}" method="post"
-            onsubmit="return confirm('북마크를 삭제하시겠습니까?')">
-        <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger);" title="북마크 삭제">✕</button>
-      </form>
-    </div>
-  </div>
-
 </div>
-<div th:replace="~{fragments/layout :: footer}"></div>
+
+<div class="section-sm">
+  <div class="container-sm">
+    <div th:if="${bookmarks == null or bookmarks.isEmpty()}" class="empty">
+      <div class="empty-icon">🔖</div>
+      <div class="empty-title">북마크한 항목이 없습니다.</div>
+      <div class="empty-sub">관심 있는 게시글에 🔖 를 눌러 저장하세요</div>
+    </div>
+
+    <div class="bm-list">
+      <div th:each="bm : ${bookmarks}" class="bm-item">
+        <div class="bm-icon">🔖</div>
+        <div class="bm-body">
+          <div class="bm-type">
+            <span class="pill pill-gray" th:text="${bm.type}"></span>
+          </div>
+          <a th:href="${bm.targetUrl}" th:text="${bm.title}" class="bm-title"></a>
+          <div class="bm-meta" th:text="${#temporals.format(bm.createdAt,'yyyy.MM.dd')}"></div>
+        </div>
+        <form th:action="@{'/bookmarks/' + ${bm.id} + '/delete'}" method="post" style="flex-shrink:0;">
+          <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--t5);">✕</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+</th:block>
 </body>
 </html>

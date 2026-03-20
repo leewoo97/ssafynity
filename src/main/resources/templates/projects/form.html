@@ -1,81 +1,72 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${project.id == null ? '프로젝트 등록' : '프로젝트 수정'})}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(${project != null} ? '프로젝트 수정' : '프로젝트 등록', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="padding-top:1.5rem; max-width:760px;">
-  <div class="card">
-    <h2 style="font-size:1.3rem; font-weight:800; margin-bottom:1.5rem;"
-        th:text="${project.id == null ? '💻 프로젝트 등록' : '💻 프로젝트 수정'}"></h2>
-
-    <form th:action="${project.id == null ? '/projects/new' : '/projects/' + project.id + '/edit'}"
-          th:object="${project}" method="post">
-
-      <div class="form-group">
-        <label>프로젝트 이름 <span style="color:var(--danger);">*</span></label>
-        <input type="text" th:field="*{title}" required placeholder="프로젝트 이름"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-      </div>
-
-      <div class="form-row" style="margin-top:1rem;">
-        <div class="form-group">
-          <label>상태 <span style="color:var(--danger);">*</span></label>
-          <select th:field="*{status}" required
-                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-            <option value="IN_PROGRESS">진행 중</option>
-            <option value="COMPLETED">완료</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>팀 규모</label>
-          <input type="number" th:field="*{teamSize}" min="1" placeholder="1"
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-top:1rem;">
-        <label>기술 스택 <span style="color:var(--danger);">*</span></label>
-        <input type="text" th:field="*{techStack}" required placeholder="Java, Spring Boot, React, MySQL (쉼표 구분)"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        <div class="tag-hint">사용한 기술을 쉼표(,)로 구분하여 입력하세요.</div>
-      </div>
-
-      <div class="form-row" style="margin-top:1rem;">
-        <div class="form-group">
-          <label>GitHub URL</label>
-          <input type="url" th:field="*{githubUrl}" placeholder="https://github.com/..."
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        </div>
-        <div class="form-group">
-          <label>데모 URL</label>
-          <input type="url" th:field="*{demoUrl}" placeholder="https://demo.example.com"
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-top:1rem;">
-        <label>썸네일 이미지 URL</label>
-        <input type="url" th:field="*{thumbnailUrl}" placeholder="https://..."
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        <div class="tag-hint">이미지 URL을 입력하면 카드에 썸네일로 표시됩니다.</div>
-      </div>
-
-      <div class="form-group" style="margin-top:1rem;">
-        <label>프로젝트 설명 <span style="color:var(--danger);">*</span></label>
-        <textarea th:field="*{description}" required rows="8" placeholder="프로젝트의 목적, 주요 기능, 개발 과정 등을 설명해 주세요."
-                  style="width:100%; padding:.75rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text); resize:vertical;"></textarea>
-      </div>
-
-      <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.2rem;">
-        <a th:href="@{/projects}" class="btn btn-ghost">취소</a>
-        <button type="submit" class="btn btn-primary"
-                th:text="${project.id == null ? '📤 등록' : '✅ 수정 완료'}"></button>
-      </div>
-    </form>
+<div class="page-header">
+  <div class="container">
+    <h1 th:text="${project != null} ? '프로젝트 수정' : '프로젝트 등록'"></h1>
   </div>
 </div>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
+<div class="section-sm">
+  <div class="container-sm">
+    <div class="card">
+      <form th:action="${project != null} ? @{'/projects/' + ${project.id} + '/edit'} : @{/projects}" method="post">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">카테고리</label>
+            <select name="category" class="form-select">
+              <option th:each="cat : ${categories}"
+                      th:value="${cat}" th:text="${cat}"
+                      th:selected="${project != null and project.category == cat}"></option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">기술 스택 <span style="font-weight:400;color:var(--t5);">(쉼표 구분)</span></label>
+            <input class="form-input" type="text" name="techStack"
+                   th:value="${project?.techStack}" placeholder="React, Spring Boot, MySQL">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">제목</label>
+          <input class="form-input" type="text" name="title"
+                 th:value="${project?.title}" required placeholder="프로젝트 이름을 입력하세요">
+        </div>
+        <div class="form-group">
+          <label class="form-label">한 줄 소개</label>
+          <input class="form-input" type="text" name="summary"
+                 th:value="${project?.summary}" placeholder="프로젝트를 한 문장으로 소개하세요">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">GitHub URL</label>
+            <input class="form-input" type="url" name="githubUrl"
+                   th:value="${project?.githubUrl}" placeholder="https://github.com/...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Demo URL</label>
+            <input class="form-input" type="url" name="demoUrl"
+                   th:value="${project?.demoUrl}" placeholder="https://...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">내용</label>
+          <textarea class="form-textarea" name="content" rows="12" required
+                    placeholder="프로젝트 설명, 개발 과정, 결과 등을 공유하세요"
+                    th:text="${project?.content}"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <a th:href="${project != null} ? @{'/projects/' + ${project.id}} : @{/projects}" class="btn btn-ghost btn-md">취소</a>
+          <button type="submit" class="btn btn-blue btn-md"
+                  th:text="${project != null} ? '수정하기' : '등록하기'"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+</th:block>
 </body>
 </html>

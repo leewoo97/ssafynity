@@ -1,142 +1,73 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('검색 결과')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('검색', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<!-- 검색 헤더 -->
-<div class="search-hero">
-  <div class="container">
-    <h1>🔍 검색 결과</h1>
-    <p>
-      "<strong th:text="${query}"></strong>"에 대한 검색 결과
-      — 총 <strong th:text="${totalCount}"></strong>건
-    </p>
-    <!-- 재검색 -->
-    <form th:action="@{/search}" method="get" style="margin-top:1rem;">
-      <div class="topbar-search">
-        <input type="text" name="q" th:value="${query}" placeholder="검색어 입력..." autocomplete="off">
-        <button type="submit">검색</button>
+<div style="background:var(--surface-2);border-bottom:1px solid var(--b1);padding:36px 0 28px;">
+  <div class="container-sm">
+    <form th:action="@{/search}" method="get">
+      <div style="display:flex;gap:8px;">
+        <input class="form-input" type="text" name="keyword" th:value="${keyword}"
+               placeholder="검색어를 입력하세요..." style="flex:1;font-size:1.1rem;height:50px;">
+        <button type="submit" class="btn btn-blue btn-md" style="height:50px;padding:0 24px;">검색</button>
       </div>
     </form>
+    <div th:if="${keyword != null and !#strings.isEmpty(keyword)}"
+         style="margin-top:12px;font-size:.88rem;color:var(--t4);">
+      <span style="color:var(--t2);font-weight:600;" th:text="'&quot;' + ${keyword} + '&quot;'"></span>
+      에 대한 검색 결과
+      <span style="color:var(--blue);font-weight:600;" th:text="${totalCount ?: 0}"></span>건
+    </div>
   </div>
 </div>
 
-<div class="container" style="padding-top:1.5rem;">
-
-  <!-- 섹션 탭 네비게이션 -->
-  <div class="search-tabs">
-    <a href="#posts" class="search-tab"
-       th:classappend="${posts != null and !posts.isEmpty()} ? ' active' : ''">
-      💬 게시글 <span th:if="${posts != null}">(<span th:text="${posts.size()}"></span>)</span>
-    </a>
-    <a href="#docs" class="search-tab">
-      📚 문서 <span th:if="${docs != null}">(<span th:text="${docs.size()}"></span>)</span>
-    </a>
-    <a href="#videos" class="search-tab">
-      🎬 영상 <span th:if="${videos != null}">(<span th:text="${videos.size()}"></span>)</span>
-    </a>
-    <a href="#projects" class="search-tab">
-      💻 프로젝트 <span th:if="${projects != null}">(<span th:text="${projects.size()}"></span>)</span>
-    </a>
-  </div>
-
-  <!-- 결과가 아예 없을 때 -->
-  <div th:if="${totalCount == 0}" class="card" style="text-align:center; padding:3rem;">
-    <p style="font-size:3rem;">🔍</p>
-    <h3>검색 결과가 없습니다</h3>
-    <p style="color:var(--muted); margin-top:.5rem;">다른 검색어로 시도해보세요.</p>
-    <a th:href="@{/}" class="btn btn-ghost" style="margin-top:1rem;">홈으로 →</a>
-  </div>
-
-  <!-- 게시글 섹션 -->
-  <div id="posts" class="search-section" th:if="${posts != null and !posts.isEmpty()}">
-    <h3>💬 게시글 (<span th:text="${posts.size()}"></span>)</h3>
-    <div th:each="post : ${posts}" class="search-result-row">
-      <div style="display:flex; align-items:center; gap:.5rem;">
-        <span class="cat-badge" th:text="${post.category}" style="flex-shrink:0;"></span>
-        <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}" class="search-result-title"></a>
-      </div>
-      <div class="search-result-meta">
-        <span th:text="${post.author.nickname}"></span> ·
-        조회 <span th:text="${post.viewCount}"></span> ·
-        추천 <span th:text="${post.likeCount}"></span> ·
-        <span th:text="${#temporals.format(post.createdAt,'yyyy.MM.dd')}"></span>
-      </div>
+<div class="section-sm">
+  <div class="container-sm">
+    <!-- Type tabs -->
+    <div class="tabs" th:if="${keyword != null and !#strings.isEmpty(keyword)}">
+      <a th:href="@{/search(keyword=${keyword})}" class="tab"
+         th:classappend="${type == null} ? ' active' : ''">전체</a>
+      <a th:href="@{/search(keyword=${keyword},type='post')}" class="tab"
+         th:classappend="${type == 'post'} ? ' active' : ''">게시글</a>
+      <a th:href="@{/search(keyword=${keyword},type='doc')}" class="tab"
+         th:classappend="${type == 'doc'} ? ' active' : ''">문서</a>
+      <a th:href="@{/search(keyword=${keyword},type='project')}" class="tab"
+         th:classappend="${type == 'project'} ? ' active' : ''">프로젝트</a>
+      <a th:href="@{/search(keyword=${keyword},type='event')}" class="tab"
+         th:classappend="${type == 'event'} ? ' active' : ''">이벤트</a>
     </div>
-    <div style="margin-top:.8rem;">
-      <a th:href="@{/posts(keyword=${query})}" class="btn btn-ghost btn-sm">게시글 더 보기 →</a>
-    </div>
-  </div>
 
-  <!-- 기술문서 섹션 -->
-  <div id="docs" class="search-section" th:if="${docs != null and !docs.isEmpty()}">
-    <h3>📚 기술 문서 (<span th:text="${docs.size()}"></span>)</h3>
-    <div th:each="doc : ${docs}" class="search-result-row">
-      <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
-        <span class="cat-badge" th:text="${doc.category}" style="flex-shrink:0;"></span>
-        <a th:href="@{/docs/{id}(id=${doc.id})}" th:text="${doc.title}" class="search-result-title"></a>
-        <span th:if="${doc.pinned}" style="color:#ef4444; font-size:.75rem;">📌</span>
-      </div>
-      <div class="search-result-meta">
-        <span th:text="${doc.author.nickname}"></span> ·
-        조회 <span th:text="${doc.viewCount}"></span> ·
-        <span th:each="tag,ti : ${doc.tags?.split(',')}" th:if="${ti.index < 3}">
-          <span class="tech-tag" th:text="${#strings.trim(tag)}"></span>
-        </span>
-      </div>
+    <div th:if="${keyword == null or #strings.isEmpty(keyword)}" class="empty" style="margin-top:40px;">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-title">검색어를 입력하세요</div>
     </div>
-    <div style="margin-top:.8rem;">
-      <a th:href="@{/docs(keyword=${query})}" class="btn btn-ghost btn-sm">문서 더 보기 →</a>
-    </div>
-  </div>
 
-  <!-- 영상 섹션 -->
-  <div id="videos" class="search-section" th:if="${videos != null and !videos.isEmpty()}">
-    <h3>🎬 강의 영상 (<span th:text="${videos.size()}"></span>)</h3>
-    <div th:each="video : ${videos}" class="search-result-row" style="display:flex; gap:.8rem; align-items:flex-start;">
-      <a th:href="@{/videos/{id}(id=${video.id})}" style="flex-shrink:0;">
-        <img th:src="'https://img.youtube.com/vi/' + ${video.youtubeId} + '/default.jpg'"
-             style="width:80px; border-radius:4px;" th:alt="${video.title}">
-      </a>
-      <div style="flex:1;">
-        <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
-          <span class="cat-badge" th:text="${video.category}" style="font-size:.72rem;"></span>
-          <a th:href="@{/videos/{id}(id=${video.id})}" th:text="${video.title}" class="search-result-title"></a>
+    <div th:if="${keyword != null and !#strings.isEmpty(keyword) and (results == null or results.isEmpty())}"
+         class="empty" style="margin-top:40px;">
+      <div class="empty-icon">😶</div>
+      <div class="empty-title">검색 결과가 없습니다.</div>
+      <div class="empty-sub">다른 검색어를 시도해보세요</div>
+    </div>
+
+    <div class="search-results">
+      <div th:each="result : ${results}" class="search-result-item">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+          <span class="pill pill-gray" th:text="${result.type}"></span>
+          <span class="pill pill-gray" th:if="${result.category != null}" th:text="${result.category}"></span>
         </div>
+        <a th:href="${result.url}" class="search-result-title" th:text="${result.title}"></a>
+        <div class="search-result-snippet" th:if="${result.snippet != null}" th:text="${result.snippet}"></div>
         <div class="search-result-meta">
-          <span th:text="${video.author.nickname}"></span> ·
-          조회 <span th:text="${video.viewCount}"></span>
+          <span th:text="${result.authorNickname}"></span>
+          <span>·</span>
+          <span th:text="${#temporals.format(result.createdAt,'yyyy.MM.dd')}"></span>
         </div>
       </div>
     </div>
-    <div style="margin-top:.8rem;">
-      <a th:href="@{/videos(keyword=${query})}" class="btn btn-ghost btn-sm">영상 더 보기 →</a>
-    </div>
   </div>
-
-  <!-- 프로젝트 섹션 -->
-  <div id="projects" class="search-section" th:if="${projects != null and !projects.isEmpty()}">
-    <h3>💻 프로젝트 (<span th:text="${projects.size()}"></span>)</h3>
-    <div th:each="proj : ${projects}" class="search-result-row">
-      <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
-        <span class="cat-badge" th:text="${proj.status}" style="font-size:.72rem;"></span>
-        <a th:href="@{/projects/{id}(id=${proj.id})}" th:text="${proj.title}" class="search-result-title"></a>
-      </div>
-      <div class="search-result-meta">
-        <span th:text="${proj.author.nickname}"></span> ·
-        👍 <span th:text="${proj.likeCount}"></span> ·
-        <span th:each="tech,ti : ${proj.techStack?.split(',')}" th:if="${ti.index < 3}">
-          <span class="tech-tag" th:text="${#strings.trim(tech)}"></span>
-        </span>
-      </div>
-    </div>
-    <div style="margin-top:.8rem;">
-      <a th:href="@{/projects(keyword=${query})}" class="btn btn-ghost btn-sm">프로젝트 더 보기 →</a>
-    </div>
-  </div>
-
 </div>
-<div th:replace="~{fragments/layout :: footer}"></div>
+
+</th:block>
 </body>
 </html>

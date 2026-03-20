@@ -1,86 +1,91 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('프로젝트')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('프로젝트', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="padding-top:1.5rem;">
-
-  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1.2rem;">
-    <div>
-      <h2 style="font-size:1.5rem; font-weight:800;">💻 프로젝트</h2>
-      <p style="color:var(--muted); font-size:.88rem; margin-top:.2rem;">멤버들의 프로젝트와 포트폴리오를 공유합니다.</p>
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <div class="label" style="margin-bottom:6px;">Projects</div>
+        <h1>프로젝트</h1>
+        <p>팀 프로젝트를 공유하고 피드백을 나눠보세요</p>
+      </div>
+      <a th:href="@{/projects/new}" class="btn btn-blue btn-md">🚀 프로젝트 등록</a>
     </div>
-    <a th:if="${session.loginMember != null}" th:href="@{/projects/new}" class="btn btn-primary">+ 프로젝트 등록</a>
   </div>
+</div>
 
-  <!-- 검색 & 정렬 -->
-  <div class="card" style="margin-bottom:1.2rem; padding:1rem 1.25rem;">
-    <form th:action="@{/projects}" method="get" style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
-      <input type="text" name="keyword" th:value="${keyword}" placeholder="프로젝트 / 기술 스택 검색..."
-             style="flex:1; min-width:200px; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-      <select name="sort" style="padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        <option value="latest" th:selected="${sort == 'latest'}">최신순</option>
-        <option value="popular" th:selected="${sort == 'popular'}">인기순</option>
-      </select>
-      <button type="submit" class="btn btn-primary">검색</button>
-      <a th:href="@{/projects}" class="btn btn-ghost">초기화</a>
+<div class="section-sm">
+  <div class="container">
+    <!-- Tabs -->
+    <div class="tabs">
+      <a th:href="@{/projects(keyword=${keyword})}"
+         class="tab" th:classappend="${category == null or category == ''} ? ' active' : ''">전체</a>
+      <a th:each="cat : ${categories}"
+         th:href="@{/projects(category=${cat},keyword=${keyword})}"
+         th:text="${cat}" class="tab"
+         th:classappend="${cat == category} ? ' active' : ''"></a>
+    </div>
+
+    <!-- Search -->
+    <form th:action="@{/projects}" method="get" class="search-row" style="margin-bottom:24px;">
+      <input type="hidden" name="category" th:value="${category}">
+      <input type="text" name="keyword" th:value="${keyword}" placeholder="프로젝트 검색..." class="search-input">
+      <button type="submit" class="btn btn-blue btn-md">검색</button>
     </form>
-  </div>
 
-  <!-- 프로젝트 그리드 -->
-  <div th:if="${projects.isEmpty()}" class="card">
-    <div class="empty-msg">
-      <p style="font-size:2rem;">💻</p>
-      <p>등록된 프로젝트가 없습니다.<th:block th:if="${session.loginMember != null}"> <a th:href="@{/projects/new}">첫 프로젝트를 등록해보세요!</a></th:block></p>
+    <div th:if="${projects == null or projects.content.isEmpty()}" class="empty">
+      <div class="empty-icon">🚀</div>
+      <div class="empty-title">등록된 프로젝트가 없습니다.</div>
+      <div class="empty-sub" style="margin-top:16px;">
+        <a th:href="@{/projects/new}" class="btn btn-blue btn-md">첫 프로젝트 등록하기</a>
+      </div>
     </div>
-  </div>
 
-  <div th:if="${!projects.isEmpty()}" class="project-grid">
-    <div th:each="proj : ${projects}" class="project-card">
-      <a th:href="@{/projects/{id}(id=${proj.id})}" class="project-thumb"
-         th:style="${proj.thumbnailUrl != null} ? 'background-image:url('+proj.thumbnailUrl+');background-size:cover;background-position:center;' : ''">
-        <span th:if="${proj.thumbnailUrl == null}" style="font-size:2.5rem;">💻</span>
-      </a>
-      <div class="project-body">
-        <div style="display:flex; gap:.4rem; align-items:center; margin-bottom:.3rem;">
-          <span class="cat-badge" th:text="${proj.status}" style="font-size:.72rem;"></span>
-          <span th:if="${proj.teamSize != null}" style="font-size:.75rem; color:var(--muted);">팀 <span th:text="${proj.teamSize}"></span>명</span>
+    <div class="project-grid">
+      <div th:each="project : ${projects.content}" class="project-card">
+        <div class="project-thumb">
+          <img th:if="${project.thumbnailUrl != null}"
+               th:src="${project.thumbnailUrl}" alt="thumbnail">
+          <div th:unless="${project.thumbnailUrl != null}"
+               style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--blue-xl),#e0e7ff);">🚀</div>
         </div>
-        <h4><a th:href="@{/projects/{id}(id=${proj.id})}" th:text="${proj.title}"></a></h4>
-        <p class="project-desc" th:text="${proj.description}"></p>
-        <div class="project-tags">
-          <span th:each="tech,ti : ${proj.techStack?.split(',')}" th:if="${ti.index < 4}">
-            <span class="tech-tag" th:text="${#strings.trim(tech)}"></span>
-          </span>
-        </div>
-        <div class="project-meta">
-          <span th:text="${proj.author.nickname}"></span>
-          <div style="display:flex; gap:.6rem;">
-            <span>👍 <span th:text="${proj.likeCount}"></span></span>
-            <span>👁 <span th:text="${proj.viewCount}"></span></span>
+        <div class="project-body">
+          <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+            <span class="pill pill-gray" th:text="${project.category}"></span>
+            <span th:each="tag,ti : ${project.techStack?.split(',')}" th:if="${ti.index < 2}">
+              <span class="tag" th:text="${#strings.trim(tag)}"></span>
+            </span>
+          </div>
+          <div class="project-card-title">
+            <a th:href="@{/projects/{id}(id=${project.id})}" th:text="${project.title}"></a>
+          </div>
+          <div class="project-card-desc" th:if="${project.summary != null}"
+               th:text="${project.summary}"></div>
+          <div class="project-card-meta">
+            <span th:text="${project.author.nickname}"></span>
+            <span>·</span>
+            <span th:text="${#temporals.format(project.createdAt,'yyyy.MM.dd')}"></span>
+            <span>·</span>
+            <span>👁 <span th:text="${project.viewCount}"></span></span>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 페이지네이션 -->
-  <div th:if="${totalPages > 1}" style="display:flex; justify-content:center; gap:.4rem; margin-top:2rem;">
-    <a th:if="${currentPage > 0}"
-       th:href="@{/projects(page=${currentPage-1}, keyword=${keyword}, sort=${sort})}"
-       class="btn btn-ghost btn-sm">← 이전</a>
-    <span th:each="i : ${#numbers.sequence(0, totalPages-1)}">
-      <a th:href="@{/projects(page=${i}, keyword=${keyword}, sort=${sort})}"
-         th:text="${i+1}"
-         th:class="${i == currentPage} ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"></a>
-    </span>
-    <a th:if="${currentPage < totalPages-1}"
-       th:href="@{/projects(page=${currentPage+1}, keyword=${keyword}, sort=${sort})}"
-       class="btn btn-ghost btn-sm">다음 →</a>
+    <div class="pagination" th:if="${projects != null and projects.totalPages > 1}">
+      <a th:if="${projects.hasPreviousPage}" th:href="@{/projects(page=${projects.number-1},category=${category},keyword=${keyword})}">‹</a>
+      <th:block th:each="i : ${#numbers.sequence(0, projects.totalPages - 1)}">
+        <a th:href="@{/projects(page=${i},category=${category},keyword=${keyword})}"
+           th:text="${i+1}" th:classappend="${i == projects.number} ? ' active' : ''"></a>
+      </th:block>
+      <a th:if="${projects.hasNextPage}" th:href="@{/projects(page=${projects.number+1},category=${category},keyword=${keyword})}">›</a>
+    </div>
   </div>
-
 </div>
-<div th:replace="~{fragments/layout :: footer}"></div>
+
+</th:block>
 </body>
 </html>

@@ -1,92 +1,89 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('강의 영상')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('영상 자료', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="padding-top:1.5rem;">
-
-  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1.2rem;">
-    <div>
-      <h2 style="font-size:1.5rem; font-weight:800;">🎬 강의 영상</h2>
-      <p style="color:var(--muted); font-size:.88rem; margin-top:.2rem;">세미나, 튜토리얼, 코드리뷰 영상을 공유하세요.</p>
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <div class="label" style="margin-bottom:6px;">Learning</div>
+        <h1>영상 자료</h1>
+        <p>강의, 세미나, 프로젝트 영상을 공유하세요</p>
+      </div>
+      <a th:href="@{/videos/new}" class="btn btn-blue btn-md">🎬 영상 등록</a>
     </div>
-    <a th:if="${session.loginMember != null and session.loginMember.role == 'ADMIN'}"
-       th:href="@{/videos/new}" class="btn btn-primary">+ 영상 등록</a>
   </div>
+</div>
 
-  <!-- 검색 & 필터 -->
-  <div class="card" style="margin-bottom:1.2rem; padding:1rem 1.25rem;">
-    <form th:action="@{/videos}" method="get" style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
-      <input type="text" name="keyword" th:value="${keyword}" placeholder="영상 검색..."
-             style="flex:1; min-width:180px; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-      <select name="category" style="padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        <option value="">전체 카테고리</option>
-        <option th:each="cat : ${ {'SEMINAR','TUTORIAL','CODE_REVIEW','ALGORITHM','ETC'} }"
-                th:value="${cat}" th:text="${cat}" th:selected="${cat == category}"></option>
-      </select>
-      <button type="submit" class="btn btn-primary">검색</button>
-      <a th:href="@{/videos}" class="btn btn-ghost">초기화</a>
+<div class="section-sm">
+  <div class="container">
+    <!-- Tabs -->
+    <div class="tabs">
+      <a th:href="@{/videos(keyword=${keyword})}"
+         class="tab" th:classappend="${category == null or category == ''} ? ' active' : ''">전체</a>
+      <a th:each="cat : ${categories}"
+         th:href="@{/videos(category=${cat},keyword=${keyword})}"
+         th:text="${cat}" class="tab"
+         th:classappend="${cat == category} ? ' active' : ''"></a>
+    </div>
+
+    <!-- Search -->
+    <form th:action="@{/videos}" method="get" class="search-row" style="margin-bottom:24px;">
+      <input type="hidden" name="category" th:value="${category}">
+      <input type="text" name="keyword" th:value="${keyword}" placeholder="영상 검색..." class="search-input">
+      <button type="submit" class="btn btn-blue btn-md">검색</button>
     </form>
-  </div>
 
-  <!-- 영상 그리드 -->
-  <div th:if="${videos.isEmpty()}" class="card">
-    <div class="empty-msg">
-      <p style="font-size:2rem;">🎬</p>
-      <p>등록된 영상이 없습니다.</p>
+    <div th:if="${videos == null or videos.content.isEmpty()}" class="empty">
+      <div class="empty-icon">🎬</div>
+      <div class="empty-title">등록된 영상이 없습니다.</div>
+      <div class="empty-sub" style="margin-top:16px;">
+        <a th:href="@{/videos/new}" class="btn btn-blue btn-md">첫 영상 등록하기</a>
+      </div>
     </div>
-  </div>
 
-  <div th:if="${!videos.isEmpty()}" class="video-grid">
-    <div th:each="video : ${videos}" class="video-card">
-      <a th:href="@{/videos/{id}(id=${video.id})}" class="video-thumb">
-        <img th:src="'https://img.youtube.com/vi/' + ${video.youtubeId} + '/mqdefault.jpg'"
-             th:alt="${video.title}" loading="lazy">
-        <div class="video-play-overlay">
-          <div class="play-icon">▶</div>
-        </div>
-        <!-- 길이 배지 -->
-        <span th:if="${video.duration != null}"
-              style="position:absolute; bottom:.4rem; right:.5rem; background:rgba(0,0,0,.8); color:#fff; font-size:.72rem; padding:.1rem .4rem; border-radius:3px;"
-              th:text="${video.duration}"></span>
-      </a>
-      <div class="video-body">
-        <div style="display:flex; gap:.4rem; align-items:center; margin-bottom:.3rem;">
-          <span class="cat-badge" th:text="${video.category}" style="font-size:.72rem;"></span>
-          <span th:if="${video.pinned}" style="font-size:.75rem; color:#ef4444;">📌</span>
-        </div>
-        <h4><a th:href="@{/videos/{id}(id=${video.id})}" th:text="${video.title}"></a></h4>
-        <div class="video-meta">
-          <span th:text="${video.author.nickname}"></span>
-          <span>👁 <span th:text="${video.viewCount}"></span></span>
-          <span th:text="${#temporals.format(video.createdAt,'MM.dd')}"></span>
-        </div>
-        <div style="margin-top:.4rem;">
-          <span th:each="tag,ti : ${video.tags?.split(',')}" th:if="${ti.index < 3}">
-            <span class="tech-tag" th:text="${#strings.trim(tag)}"></span>
-          </span>
+    <div class="video-grid">
+      <div th:each="video : ${videos.content}" class="video-card">
+        <a th:href="@{/videos/{id}(id=${video.id})}">
+          <div class="video-thumb">
+            <img th:if="${video.thumbnailUrl != null}"
+                 th:src="${video.thumbnailUrl}" alt="thumbnail">
+            <div th:unless="${video.thumbnailUrl != null}"
+                 style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:var(--surface-2);">🎬</div>
+            <div class="video-play">▶</div>
+          </div>
+        </a>
+        <div class="video-card-body">
+          <div style="display:flex;gap:6px;margin-bottom:8px;">
+            <span class="pill pill-gray" th:text="${video.category}"></span>
+          </div>
+          <div class="video-card-title">
+            <a th:href="@{/videos/{id}(id=${video.id})}" th:text="${video.title}"></a>
+          </div>
+          <div class="video-card-meta">
+            <span th:text="${video.author.nickname}"></span>
+            <span>·</span>
+            <span th:text="${#temporals.format(video.createdAt,'yyyy.MM.dd')}"></span>
+            <span>·</span>
+            <span>👁 <span th:text="${video.viewCount}"></span></span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 페이지네이션 -->
-  <div th:if="${totalPages > 1}" style="display:flex; justify-content:center; gap:.4rem; margin-top:2rem;">
-    <a th:if="${currentPage > 0}"
-       th:href="@{/videos(page=${currentPage-1}, keyword=${keyword}, category=${category})}"
-       class="btn btn-ghost btn-sm">← 이전</a>
-    <span th:each="i : ${#numbers.sequence(0, totalPages-1)}">
-      <a th:href="@{/videos(page=${i}, keyword=${keyword}, category=${category})}"
-         th:text="${i+1}"
-         th:class="${i == currentPage} ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"></a>
-    </span>
-    <a th:if="${currentPage < totalPages-1}"
-       th:href="@{/videos(page=${currentPage+1}, keyword=${keyword}, category=${category})}"
-       class="btn btn-ghost btn-sm">다음 →</a>
+    <div class="pagination" th:if="${videos != null and videos.totalPages > 1}">
+      <a th:if="${videos.hasPreviousPage}" th:href="@{/videos(page=${videos.number-1},category=${category},keyword=${keyword})}">‹</a>
+      <th:block th:each="i : ${#numbers.sequence(0, videos.totalPages - 1)}">
+        <a th:href="@{/videos(page=${i},category=${category},keyword=${keyword})}"
+           th:text="${i+1}" th:classappend="${i == videos.number} ? ' active' : ''"></a>
+      </th:block>
+      <a th:if="${videos.hasNextPage}" th:href="@{/videos(page=${videos.number+1},category=${category},keyword=${keyword})}">›</a>
+    </div>
   </div>
-
 </div>
-<div th:replace="~{fragments/layout :: footer}"></div>
+
+</th:block>
 </body>
 </html>

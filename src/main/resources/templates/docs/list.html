@@ -1,100 +1,86 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('기술 문서')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('기술 문서', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="padding-top:1.5rem;">
-
-  <!-- 헤더 -->
-  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1.2rem;">
-    <div>
-      <h2 style="font-size:1.5rem; font-weight:800;">📚 기술 문서</h2>
-      <p style="color:var(--muted); font-size:.88rem; margin-top:.2rem;">튜토리얼, 가이드, 아키텍처 문서를 공유하세요.</p>
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <div class="label" style="margin-bottom:6px;">Knowledge Base</div>
+        <h1>기술 문서</h1>
+        <p>튜토리얼, 아키텍처, 기술 노트를 공유하세요</p>
+      </div>
+      <a th:href="@{/docs/new}" class="btn btn-blue btn-md">📄 문서 작성</a>
     </div>
-    <a th:if="${session.loginMember != null}" th:href="@{/docs/new}" class="btn btn-primary">✏ 문서 작성</a>
   </div>
+</div>
 
-  <!-- 검색 & 필터 -->
-  <div class="card" style="margin-bottom:1.2rem; padding:1rem 1.25rem;">
-    <form th:action="@{/docs}" method="get" style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
-      <input type="text" name="keyword" th:value="${keyword}" placeholder="문서 검색..." style="flex:1; min-width:180px; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-      <select name="category" style="padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        <option value="">전체 카테고리</option>
-        <option th:each="cat : ${categories}"
-                th:value="${cat}" th:text="${cat}" th:selected="${cat == category}"></option>
-      </select>
-      <button type="submit" class="btn btn-primary">검색</button>
-      <a th:href="@{/docs}" class="btn btn-ghost">초기화</a>
+<div class="section-sm">
+  <div class="container">
+    <!-- Tabs -->
+    <div class="tabs">
+      <a th:href="@{/docs(keyword=${keyword})}"
+         class="tab" th:classappend="${category == null or category == ''} ? ' active' : ''">전체</a>
+      <a th:each="cat : ${categories}"
+         th:href="@{/docs(category=${cat},keyword=${keyword})}"
+         th:text="${cat}" class="tab"
+         th:classappend="${cat == category} ? ' active' : ''"></a>
+    </div>
+
+    <!-- Search -->
+    <form th:action="@{/docs}" method="get" class="search-row" style="margin-bottom:24px;">
+      <input type="hidden" name="category" th:value="${category}">
+      <input type="text" name="keyword" th:value="${keyword}" placeholder="문서 검색..." class="search-input">
+      <button type="submit" class="btn btn-blue btn-md">검색</button>
     </form>
-  </div>
 
-  <!-- 핀고정 문서 -->
-  <div th:if="${pinnedDocs != null and !pinnedDocs.isEmpty()}" style="margin-bottom:1.5rem;">
-    <h4 style="font-size:.88rem; font-weight:700; color:var(--muted); margin-bottom:.6rem;">📌 고정된 문서</h4>
+    <!-- Grid -->
+    <div th:if="${docs == null or docs.content.isEmpty()}" class="empty">
+      <div class="empty-icon">📄</div>
+      <div class="empty-title">문서가 없습니다.</div>
+      <div class="empty-sub" style="margin-top:16px;">
+        <a th:href="@{/docs/new}" class="btn btn-blue btn-md">첫 문서 작성하기</a>
+      </div>
+    </div>
+
     <div class="doc-grid">
-      <div th:each="doc : ${pinnedDocs}" class="doc-card" style="border-left:3px solid #ef4444;">
+      <div th:each="doc : ${docs.content}" class="doc-card">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="pill pill-gray" th:text="${doc.category}"></span>
+          <span th:if="${doc.pinned}" class="pill pill-orange">📌 추천</span>
+        </div>
         <div class="doc-card-title">
-          <span class="doc-pin">📌</span>
           <a th:href="@{/docs/{id}(id=${doc.id})}" th:text="${doc.title}"></a>
         </div>
-        <div class="doc-card-meta">
-          <span class="cat-badge" th:text="${doc.category}"></span>
-          <span th:text="${doc.author.nickname}"></span>
-          <span>조회 <span th:text="${doc.viewCount}"></span></span>
-        </div>
-        <div style="margin-top:.5rem;">
-          <span th:each="tag,ti : ${doc.tags?.split(',')}" th:if="${ti.index < 5}">
-            <span class="tech-tag" th:text="${#strings.trim(tag)}"></span>
+        <div class="doc-card-tags" th:if="${doc.tags != null and !doc.tags.isEmpty()}">
+          <span th:each="tag,ti : ${doc.tags.split(',')}" th:if="${ti.index < 4}">
+            <span class="tag" th:text="${#strings.trim(tag)}"></span>
           </span>
         </div>
+        <div class="doc-card-meta">
+          <span th:text="${doc.author.nickname}"></span>
+          <span>·</span>
+          <span th:text="${#temporals.format(doc.createdAt,'yyyy.MM.dd')}"></span>
+          <span>·</span>
+          <span>👁 <span th:text="${doc.viewCount}"></span></span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- 문서 목록 -->
-  <div th:if="${docs.isEmpty()}" class="card">
-    <div class="empty-msg">
-      <p style="font-size:2rem;">📭</p>
-      <p>아직 문서가 없습니다.<th:block th:if="${session.loginMember != null}"> <a th:href="@{/docs/new}">첫 문서를 작성해보세요!</a></th:block></p>
+    <!-- Pagination -->
+    <div class="pagination" th:if="${docs != null and docs.totalPages > 1}">
+      <a th:if="${docs.hasPreviousPage}" th:href="@{/docs(page=${docs.number-1},category=${category},keyword=${keyword})}">‹</a>
+      <th:block th:each="i : ${#numbers.sequence(0, docs.totalPages - 1)}">
+        <a th:href="@{/docs(page=${i},category=${category},keyword=${keyword})}"
+           th:text="${i+1}" th:classappend="${i == docs.number} ? ' active' : ''"></a>
+      </th:block>
+      <a th:if="${docs.hasNextPage}" th:href="@{/docs(page=${docs.number+1},category=${category},keyword=${keyword})}">›</a>
     </div>
   </div>
-
-  <div th:if="${!docs.isEmpty()}" class="doc-grid">
-    <div th:each="doc : ${docs}" class="doc-card">
-      <div class="doc-card-title">
-        <a th:href="@{/docs/{id}(id=${doc.id})}" th:text="${doc.title}"></a>
-      </div>
-      <div class="doc-card-meta" style="margin-top:.5rem;">
-        <span class="cat-badge" th:text="${doc.category}"></span>
-        <span th:text="${doc.author.nickname}"></span>
-        <span>조회 <span th:text="${doc.viewCount}"></span></span>
-        <span th:text="${#temporals.format(doc.createdAt,'MM.dd')}"></span>
-      </div>
-      <div style="margin-top:.6rem;">
-        <span th:each="tag,ti : ${doc.tags?.split(',')}" th:if="${ti.index < 4}">
-          <span class="tech-tag" th:text="${#strings.trim(tag)}"></span>
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <!-- 페이지네이션 -->
-  <div th:if="${totalPages > 1}" style="display:flex; justify-content:center; gap:.4rem; margin-top:2rem;">
-    <a th:if="${currentPage > 0}"
-       th:href="@{/docs(page=${currentPage-1}, keyword=${keyword}, category=${category})}"
-       class="btn btn-ghost btn-sm">← 이전</a>
-    <span th:each="i : ${#numbers.sequence(0, totalPages-1)}">
-      <a th:href="@{/docs(page=${i}, keyword=${keyword}, category=${category})}"
-         th:text="${i+1}"
-         th:class="${i == currentPage} ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"></a>
-    </span>
-    <a th:if="${currentPage < totalPages-1}"
-       th:href="@{/docs(page=${currentPage+1}, keyword=${keyword}, category=${category})}"
-       class="btn btn-ghost btn-sm">다음 →</a>
-  </div>
-
 </div>
-<div th:replace="~{fragments/layout :: footer}"></div>
+
+</th:block>
 </body>
 </html>

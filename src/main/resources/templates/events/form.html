@@ -1,79 +1,72 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${event.id == null ? '이벤트 등록' : '이벤트 수정'})}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(${event != null} ? '이벤트 수정' : '이벤트 등록', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="padding-top:1.5rem; max-width:760px;">
-  <div class="card">
-    <h2 style="font-size:1.3rem; font-weight:800; margin-bottom:1.5rem;"
-        th:text="${event.id == null ? '🎯 이벤트 등록' : '🎯 이벤트 수정'}"></h2>
-
-    <form th:action="${event.id == null ? '/events' : '/events/' + event.id + '/edit'}"
-          th:object="${event}" method="post">
-
-      <div class="form-group">
-        <label>이벤트 제목 <span style="color:var(--danger);">*</span></label>
-        <input type="text" th:field="*{title}" required placeholder="이벤트 제목"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-      </div>
-
-      <div class="form-row" style="margin-top:1rem;">
-        <div class="form-group">
-          <label>시작 일시 <span style="color:var(--danger);">*</span></label>
-          <input type="datetime-local" th:field="*{startDate}" required
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        </div>
-        <div class="form-group">
-          <label>종료 일시 <span style="color:var(--danger);">*</span></label>
-          <input type="datetime-local" th:field="*{endDate}" required
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        </div>
-      </div>
-
-      <div class="form-row" style="margin-top:1rem;">
-        <div class="form-group">
-          <label>이벤트 유형 <span style="color:var(--danger);">*</span></label>
-          <select th:field="*{eventType}" required
-                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-            <option value="">유형 선택</option>
-            <option th:each="t : ${eventTypes}"
-                    th:value="${t}" th:text="${t}"
-                    th:selected="*{eventType} == ${t}"></option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>장소 형태 <span style="color:var(--danger);">*</span></label>
-          <select th:field="*{location}" required
-                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-            <option value="ONLINE">온라인</option>
-            <option value="OFFLINE">오프라인</option>
-            <option value="HYBRID">하이브리드</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-top:1rem;">
-        <label>최대 참가 인원 (0 = 무제한)</label>
-        <input type="number" th:field="*{maxParticipants}" min="0" placeholder="0"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-      </div>
-
-      <div class="form-group" style="margin-top:1rem;">
-        <label>이벤트 설명 <span style="color:var(--danger);">*</span></label>
-        <textarea th:field="*{description}" required rows="8" placeholder="이벤트에 대한 자세한 설명을 작성하세요."
-                  style="width:100%; padding:.75rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text); resize:vertical;"></textarea>
-      </div>
-
-      <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.2rem;">
-        <a th:href="@{/events}" class="btn btn-ghost">취소</a>
-        <button type="submit" class="btn btn-primary"
-                th:text="${event.id == null ? '📤 등록' : '✅ 수정 완료'}"></button>
-      </div>
-    </form>
+<div class="page-header">
+  <div class="container">
+    <h1 th:text="${event != null} ? '이벤트 수정' : '이벤트 등록'"></h1>
   </div>
 </div>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
+<div class="section-sm">
+  <div class="container-sm">
+    <div class="card">
+      <form th:action="${event != null} ? @{'/events/' + ${event.id} + '/edit'} : @{/events}" method="post">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">카테고리</label>
+            <select name="category" class="form-select">
+              <option th:each="cat : ${categories}"
+                      th:value="${cat}" th:text="${cat}"
+                      th:selected="${event != null and event.category == cat}"></option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">최대 인원</label>
+            <input class="form-input" type="number" name="maxParticipants"
+                   th:value="${event?.maxParticipants}" placeholder="0 = 무제한" min="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">제목</label>
+          <input class="form-input" type="text" name="title"
+                 th:value="${event?.title}" required placeholder="이벤트 제목을 입력하세요">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">시작일</label>
+            <input class="form-input" type="date" name="startDate"
+                   th:value="${event != null ? #temporals.format(event.startDate,'yyyy-MM-dd') : ''}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">종료일</label>
+            <input class="form-input" type="date" name="endDate"
+                   th:value="${event != null ? #temporals.format(event.endDate,'yyyy-MM-dd') : ''}" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">장소</label>
+          <input class="form-input" type="text" name="location"
+                 th:value="${event?.location}" placeholder="온라인 / 서울 강남 등">
+        </div>
+        <div class="form-group">
+          <label class="form-label">내용</label>
+          <textarea class="form-textarea" name="content" rows="10" required
+                    placeholder="이벤트 내용을 입력하세요"
+                    th:text="${event?.content}"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <a th:href="${event != null} ? @{'/events/' + ${event.id}} : @{/events}" class="btn btn-ghost btn-md">취소</a>
+          <button type="submit" class="btn btn-blue btn-md"
+                  th:text="${event != null} ? '수정하기' : '등록하기'"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+</th:block>
 </body>
 </html>

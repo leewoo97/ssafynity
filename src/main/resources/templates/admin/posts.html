@@ -1,63 +1,86 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('게시글 관리')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('게시글 관리', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
-    <div>
-      <h2 style="margin:0;">📄 게시글 관리</h2>
-      <p style="margin:.3rem 0 0; color:var(--muted); font-size:.9rem;">
-        총 <strong th:text="${posts.size()}"></strong>개
-      </p>
-    </div>
-    <a th:href="@{/admin}" class="btn btn-ghost btn-sm">← 대시보드</a>
+<div class="page-header">
+  <div class="container">
+    <h1>게시글 관리</h1>
   </div>
+</div>
 
-  <div class="card">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:50px;">ID</th>
-            <th style="width:70px;">카테고리</th>
-            <th>제목</th>
-            <th style="width:110px;">작성자</th>
-            <th style="width:70px;">조회</th>
-            <th style="width:70px;">추천</th>
-            <th style="width:110px;">작성일</th>
-            <th style="width:70px;">관리</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr th:each="post : ${posts}">
-            <td style="color:var(--muted); font-size:.85rem;" th:text="${post.id}"></td>
-            <td><span class="cat-badge" th:text="${post.category}"></span></td>
-            <td>
-              <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}"></a>
-            </td>
-            <td>
-              <a th:href="@{/profile/{id}(id=${post.author.id})}"
-                 th:text="${post.author.nickname}" style="font-size:.9rem;"></a>
-            </td>
-            <td style="font-size:.85rem;" th:text="${post.viewCount}"></td>
-            <td style="font-size:.85rem;" th:text="${post.likeCount}"></td>
-            <td style="font-size:.85rem; color:var(--muted);"
-                th:text="${#temporals.format(post.createdAt,'yyyy.MM.dd HH:mm')}"></td>
-            <td>
-              <form th:action="@{/admin/posts/{id}/delete(id=${post.id})}" method="post"
-                    onsubmit="return confirm('이 게시글을 삭제하시겠습니까?')">
-                <button type="submit" class="btn btn-danger btn-sm">삭제</button>
-              </form>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+<div class="section-sm">
+  <div class="container">
+    <div class="tabs" style="margin-bottom:20px;">
+      <a th:href="@{/admin}" class="tab">대시보드</a>
+      <a th:href="@{/admin/members}" class="tab">회원 관리</a>
+      <a th:href="@{/admin/posts}" class="tab active">게시글 관리</a>
+    </div>
+
+    <!-- Search + filter -->
+    <form th:action="@{/admin/posts}" method="get" class="search-row" style="margin-bottom:16px;">
+      <select name="type" class="search-select">
+        <option value="" th:selected="${type == null}">전체</option>
+        <option value="POST" th:selected="${type == 'POST'}">게시글</option>
+        <option value="DOC" th:selected="${type == 'DOC'}">문서</option>
+        <option value="PROJECT" th:selected="${type == 'PROJECT'}">프로젝트</option>
+        <option value="EVENT" th:selected="${type == 'EVENT'}">이벤트</option>
+        <option value="VIDEO" th:selected="${type == 'VIDEO'}">영상</option>
+      </select>
+      <input type="text" name="keyword" th:value="${keyword}" placeholder="제목 검색..." class="search-input">
+      <button type="submit" class="btn btn-blue btn-md">검색</button>
+    </form>
+
+    <div class="card card-flush">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>구분</th>
+              <th>제목</th>
+              <th>작성자</th>
+              <th>카테고리</th>
+              <th>조회</th>
+              <th>작성일</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="post : ${posts}">
+              <td><span class="pill pill-gray" th:text="${post.type}"></span></td>
+              <td>
+                <a th:href="${post.url}" th:text="${post.title}"
+                   class="table-link" target="_blank"></a>
+              </td>
+              <td th:text="${post.authorNickname}"></td>
+              <td><span class="pill pill-gray" th:text="${post.category}"></span></td>
+              <td th:text="${post.viewCount}"></td>
+              <td style="font-size:.82rem;color:var(--t4);"
+                  th:text="${#temporals.format(post.createdAt,'yyyy.MM.dd')}"></td>
+              <td>
+                <form th:action="${post.deleteUrl}" method="post" style="display:inline;"
+                      onsubmit="return confirm('삭제하시겠습니까?')">
+                  <button type="submit" class="btn btn-danger btn-xs">삭제</button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="pagination" th:if="${posts != null and posts.totalPages > 1}">
+      <a th:if="${posts.hasPreviousPage}" th:href="@{/admin/posts(page=${posts.number-1},keyword=${keyword},type=${type})}">‹</a>
+      <th:block th:each="i : ${#numbers.sequence(0, posts.totalPages - 1)}">
+        <a th:href="@{/admin/posts(page=${i},keyword=${keyword},type=${type})}"
+           th:text="${i+1}" th:classappend="${i == posts.number} ? ' active' : ''"></a>
+      </th:block>
+      <a th:if="${posts.hasNextPage}" th:href="@{/admin/posts(page=${posts.number+1},keyword=${keyword},type=${type})}">›</a>
     </div>
   </div>
 </div>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
+</th:block>
 </body>
 </html>

@@ -1,108 +1,118 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('게시글 목록')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('게시글 목록', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container">
-  <div class="two-col">
-    <div>
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-          <h2 style="margin:0;">📋 게시글 목록</h2>
-          <a th:href="@{/posts/new}" class="btn btn-primary btn-sm">✏ 글쓰기</a>
-        </div>
-
-        <!-- 카테고리 탭 -->
-        <div class="cat-tabs">
-          <a th:href="@{/posts(keyword=${keyword}, sort=${sort})}" class="cat-tab" th:classappend="${category == null or category == ''} ? ' active' : ''">전체</a>
-          <a th:each="cat : ${categories}"
-             th:href="@{/posts(category=${cat}, keyword=${keyword}, sort=${sort})}"
-             th:text="${cat}"
-             class="cat-tab"
-             th:classappend="${cat == category} ? ' active' : ''"></a>
-        </div>
-
-        <!-- 검색/정렬 -->
-        <form th:action="@{/posts}" method="get" class="search-bar">
-          <input type="hidden" name="category" th:value="${category}">
-          <input type="text" name="keyword" th:value="${keyword}" placeholder="제목 검색..." class="form-group" style="margin:0;padding:.55rem .85rem;border:1.5px solid var(--border);border-radius:7px;font-size:.95rem;">
-          <select name="sort" style="padding:.55rem .7rem;border:1.5px solid var(--border);border-radius:7px;font-size:.9rem;">
-            <option value="createdAt" th:selected="${sort == 'createdAt'}">최신순</option>
-            <option value="viewCount" th:selected="${sort == 'viewCount'}">조회순</option>
-            <option value="likeCount" th:selected="${sort == 'likeCount'}">추천순</option>
-          </select>
-          <button type="submit" class="btn btn-primary">검색</button>
-        </form>
-
-        <!-- 게시글 테이블 -->
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>카테고리</th>
-                <th>제목</th>
-                <th>작성자</th>
-                <th>날짜</th>
-                <th>👁</th>
-                <th>❤</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr th:if="${#lists.isEmpty(posts)}">
-                <td colspan="7" style="text-align:center; padding:2rem; color:var(--muted);">게시글이 없습니다.</td>
-              </tr>
-              <tr class="post-row" th:each="post : ${posts}">
-                <td><span class="badge-cat" th:text="${post.category}"></span></td>
-                <td><a th:href="@{'/posts/' + ${post.id}}" class="post-title-link" th:text="${post.title}"></a></td>
-                <td>
-                  <a th:href="@{'/profile/' + ${post.author.id}}" class="post-meta" th:text="${post.author.nickname}"></a>
-                </td>
-                <td class="post-meta" th:text="${#temporals.format(post.createdAt, 'MM/dd HH:mm')}"></td>
-                <td class="post-meta" th:text="${post.viewCount}"></td>
-                <td class="post-meta" th:text="${post.likeCount}"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- 페이징 -->
-        <div class="pagination" th:if="${totalPages > 1}">
-          <a th:if="${page > 0}" th:href="@{/posts(page=${page-1}, keyword=${keyword}, category=${category}, sort=${sort})}">«</a>
-          <th:block th:each="i : ${#numbers.sequence(0, totalPages-1)}">
-            <a th:href="@{/posts(page=${i}, keyword=${keyword}, category=${category}, sort=${sort})}"
-               th:text="${i+1}"
-               th:class="${i==page} ? 'active' : ''"></a>
-          </th:block>
-          <a th:if="${page < totalPages-1}" th:href="@{/posts(page=${page+1}, keyword=${keyword}, category=${category}, sort=${sort})}">»</a>
-        </div>
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <div class="label" style="margin-bottom:6px;">커뮤니티</div>
+        <h1>게시글 목록</h1>
       </div>
+      <a th:href="@{/posts/new}" class="btn btn-blue btn-md">✏ 글쓰기</a>
     </div>
-
-    <!-- 사이드바 -->
-    <aside>
-      <div class="sidebar-card">
-        <h4>🔥 인기글 (조회수)</h4>
-        <ul class="sidebar-list">
-          <li th:each="p : ${topViewed}">
-            <a th:href="@{'/posts/' + ${p.id}}" th:text="${p.title}"></a>
-            <span class="post-meta" th:text="' 👁 ' + ${p.viewCount}"></span>
-          </li>
-        </ul>
-      </div>
-      <div class="sidebar-card">
-        <h4>❤ 인기글 (추천)</h4>
-        <ul class="sidebar-list">
-          <li th:each="p : ${topLiked}">
-            <a th:href="@{'/posts/' + ${p.id}}" th:text="${p.title}"></a>
-            <span class="post-meta" th:text="' ❤ ' + ${p.likeCount}"></span>
-          </li>
-        </ul>
-      </div>
-    </aside>
   </div>
 </div>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
+<div class="section-sm">
+  <div class="container">
+    <div class="two-col">
+      <div>
+        <!-- Category tabs -->
+        <div class="tabs">
+          <a th:href="@{/posts(keyword=${keyword},sort=${sort})}"
+             class="tab" th:classappend="${category == null or category == ''} ? ' active' : ''">전체</a>
+          <a th:each="cat : ${categories}"
+             th:href="@{/posts(category=${cat},keyword=${keyword},sort=${sort})}"
+             th:text="${cat}" class="tab"
+             th:classappend="${cat == category} ? ' active' : ''"></a>
+        </div>
+
+        <!-- Search -->
+        <form th:action="@{/posts}" method="get" class="search-row">
+          <input type="hidden" name="category" th:value="${category}">
+          <input type="text" name="keyword" th:value="${keyword}" placeholder="제목 검색..." class="search-input">
+          <select name="sort" class="search-select">
+            <option value="latest" th:selected="${sort == 'latest' or sort == null}">최신순</option>
+            <option value="likes" th:selected="${sort == 'likes'}">추천순</option>
+            <option value="views" th:selected="${sort == 'views'}">조회순</option>
+          </select>
+          <button type="submit" class="btn btn-blue btn-md">검색</button>
+        </form>
+
+        <!-- Table -->
+        <div class="card card-flush">
+          <div class="table-wrap" style="border:none;border-radius:0;">
+            <table>
+              <thead>
+                <tr>
+                  <th>카테고리</th>
+                  <th style="width:100%;">제목</th>
+                  <th>작성자</th>
+                  <th>조회</th>
+                  <th>추천</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${posts == null or posts.content.isEmpty()}">
+                  <td colspan="5">
+                    <div class="empty" style="padding:40px 0;">
+                      <div class="empty-icon">📭</div>
+                      <div class="empty-title">게시글이 없습니다.</div>
+                    </div>
+                  </td>
+                </tr>
+                <tr th:each="post : ${posts.content}">
+                  <td><span class="pill pill-gray" th:text="${post.category}"></span></td>
+                  <td>
+                    <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}" class="post-link"></a>
+                    <div class="post-meta" th:text="${#temporals.format(post.createdAt,'MM.dd')}"></div>
+                  </td>
+                  <td style="color:var(--t3);font-size:.84rem;" th:text="${post.author.nickname}"></td>
+                  <td style="color:var(--t4);font-size:.82rem;" th:text="${post.viewCount}"></td>
+                  <td style="color:var(--t4);font-size:.82rem;" th:text="${post.likeCount}"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" th:if="${posts != null and posts.totalPages > 1}">
+          <a th:if="${posts.hasPreviousPage}" th:href="@{/posts(page=${posts.number-1},category=${category},keyword=${keyword},sort=${sort})}">‹</a>
+          <th:block th:each="i : ${#numbers.sequence(0, posts.totalPages - 1)}">
+            <a th:href="@{/posts(page=${i},category=${category},keyword=${keyword},sort=${sort})}"
+               th:text="${i+1}"
+               th:classappend="${i == posts.number} ? ' active' : ''"></a>
+          </th:block>
+          <a th:if="${posts.hasNextPage}" th:href="@{/posts(page=${posts.number+1},category=${category},keyword=${keyword},sort=${sort})}">›</a>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <aside>
+        <div class="sidebar-block">
+          <div class="sidebar-block-head">🔥 인기글</div>
+          <div class="sidebar-block-body">
+            <div th:each="post,pi : ${hotPosts}" class="sidebar-row">
+              <div class="sidebar-row-num" th:text="${pi.index+1}"></div>
+              <div style="flex:1;min-width:0;">
+                <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}" class="sidebar-row-title"></a>
+                <div class="sidebar-row-meta">추천 <span th:text="${post.likeCount}"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <a th:href="@{/posts/new}" class="btn btn-blue btn-md" style="width:100%;justify-content:center;">✏ 글쓰기</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+</th:block>
 </body>
 </html>

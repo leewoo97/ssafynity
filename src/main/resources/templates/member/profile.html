@@ -1,83 +1,59 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('프로필')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(${member.nickname} + ' 프로필', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container">
-  <div class="two-col">
-
-    <!-- 프로필 사이드바 -->
-    <aside>
-      <div class="card" style="text-align:center;padding:2rem 1.5rem;">
-        <div class="avatar-lg" th:text="${target.nickname?.substring(0,1)?.toUpperCase()}">U</div>
-        <h2 style="font-size:1.3rem;font-weight:900;margin-bottom:.3rem;" th:text="${target.nickname}">닉네임</h2>
-        <p style="color:var(--muted);font-size:.88rem;margin-bottom:.6rem;" th:text="'@' + ${target.username}"></p>
-        <span th:if="${target.role == 'ADMIN'}" style="display:inline-flex;align-items:center;background:rgba(239,68,68,.1);color:var(--danger);border-radius:20px;padding:.2rem .75rem;font-size:.75rem;font-weight:800;margin-bottom:.7rem;">⚡ ADMIN</span>
-        <p style="font-size:.93rem;line-height:1.65;color:var(--text-sub);margin-bottom:1rem;"
-           th:text="${target.bio ?: '자기소개가 없습니다.'}"></p>
-        <div style="display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin-bottom:1rem;">
-          <span th:if="${target.email}" style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg);border-radius:20px;padding:.3rem .8rem;font-size:.8rem;color:var(--muted);">✉ <span th:text="${target.email}"></span></span>
-          <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg);border-radius:20px;padding:.3rem .8rem;font-size:.8rem;color:var(--muted);">📅 <span th:text="${#temporals.format(target.createdAt, 'yyyy.MM.dd')}"></span></span>
-        </div>
-      </div>
-
-      <div class="sidebar-card" style="margin-top:1rem;">
-        <h4>📊 활동 통계</h4>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:.8rem;">
-          <div style="text-align:center;background:var(--bg);border-radius:10px;padding:.9rem .5rem;">
-            <div style="font-size:1.6rem;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;"
-                 th:text="${posts.size()}">0</div>
-            <div style="font-size:.77rem;color:var(--muted);font-weight:700;margin-top:.2rem;">게시글</div>
-          </div>
-          <div style="text-align:center;background:var(--bg);border-radius:10px;padding:.9rem .5rem;">
-            <div style="font-size:1.6rem;font-weight:900;background:var(--grad-cool);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">✦</div>
-            <div style="font-size:.77rem;color:var(--muted);font-weight:700;margin-top:.2rem;">활동중</div>
+<div class="section-sm">
+  <div class="container">
+    <div class="two-col">
+      <div>
+        <!-- Profile card -->
+        <div class="card" style="text-align:center;padding:40px 28px;">
+          <div class="av av-2xl"
+               style="margin:0 auto 16px;"
+               th:text="${member.name != null ? #strings.substring(member.name,0,1) : member.nickname.substring(0,1)}">U</div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--t1);" th:text="${member.nickname}"></div>
+          <div style="font-size:.88rem;color:var(--t4);margin-top:4px;" th:text="${member.name}"></div>
+          <div style="margin-top:16px;display:flex;justify-content:center;gap:32px;">
+            <div>
+              <div style="font-size:1.2rem;font-weight:700;color:var(--t1);" th:text="${postCount ?: 0}">0</div>
+              <div style="font-size:.78rem;color:var(--t4);">게시글</div>
+            </div>
+            <div>
+              <div style="font-size:1.2rem;font-weight:700;color:var(--t1);" th:text="${commentCount ?: 0}">0</div>
+              <div style="font-size:.78rem;color:var(--t4);">댓글</div>
+            </div>
           </div>
         </div>
       </div>
-    </aside>
 
-    <!-- 게시글 목록 -->
-    <section>
-      <div class="card">
-        <h3 style="margin-bottom:1rem; font-size:1.1rem;">
-          📄 <span th:text="${target.nickname}"></span>의 게시글
-        </h3>
-        <div th:if="${posts.isEmpty()}" style="text-align:center; padding:2.5rem; color:var(--muted);">
-          작성한 게시글이 없습니다.
+      <div>
+        <div class="sidebar-block">
+          <div class="sidebar-block-head">최근 게시글</div>
+          <div class="sidebar-block-body">
+            <div th:if="${recentPosts == null or recentPosts.isEmpty()}" style="padding:16px 18px;color:var(--t4);font-size:.85rem;">게시글이 없습니다.</div>
+            <div th:each="post : ${recentPosts}" class="sidebar-row">
+              <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}" class="sidebar-row-title"></a>
+              <span class="sidebar-row-meta" th:text="${#temporals.format(post.createdAt,'MM.dd')}"></span>
+            </div>
+          </div>
         </div>
-        <div class="table-wrap" th:if="${!posts.isEmpty()}">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:60px;">카테고리</th>
-                <th>제목</th>
-                <th style="width:70px;">조회</th>
-                <th style="width:70px;">추천</th>
-                <th style="width:100px;">날짜</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr th:each="post : ${posts}">
-                <td><span class="cat-badge" th:text="${post.category}"></span></td>
-                <td>
-                  <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}"></a>
-                </td>
-                <td th:text="${post.viewCount}"></td>
-                <td th:text="${post.likeCount}"></td>
-                <td style="color:var(--muted); font-size:.85rem;"
-                    th:text="${#temporals.format(post.createdAt,'yyyy.MM.dd')}"></td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="sidebar-block">
+          <div class="sidebar-block-head">최근 댓글</div>
+          <div class="sidebar-block-body">
+            <div th:if="${recentComments == null or recentComments.isEmpty()}" style="padding:16px 18px;color:var(--t4);font-size:.85rem;">댓글이 없습니다.</div>
+            <div th:each="comment : ${recentComments}" class="sidebar-row">
+              <a th:href="@{/posts/{id}(id=${comment.post.id})}" th:text="${comment.content}" class="sidebar-row-title"></a>
+              <span class="sidebar-row-meta" th:text="${#temporals.format(comment.createdAt,'MM.dd')}"></span>
+            </div>
+          </div>
         </div>
       </div>
-    </section>
-
+    </div>
   </div>
 </div>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
+</th:block>
 </body>
 </html>

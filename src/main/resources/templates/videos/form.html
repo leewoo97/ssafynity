@@ -1,102 +1,55 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${video.id == null ? '영상 등록' : '영상 수정'})}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(${video != null} ? '영상 수정' : '영상 등록', ~{::body-content})}">
 <body>
-<div th:replace="~{fragments/layout :: topbar}"></div>
+<th:block th:fragment="body-content">
 
-<div class="container" style="padding-top:1.5rem; max-width:760px;">
-  <div class="card">
-    <h2 style="font-size:1.3rem; font-weight:800; margin-bottom:1.5rem;"
-        th:text="${video.id == null ? '🎬 영상 등록' : '🎬 영상 수정'}"></h2>
-
-    <form th:action="${video.id == null ? '/videos/new' : '/videos/' + video.id + '/edit'}"
-          th:object="${video}" method="post">
-
-      <div class="form-group">
-        <label>제목 <span style="color:var(--danger);">*</span></label>
-        <input type="text" th:field="*{title}" required placeholder="영상 제목"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-      </div>
-
-      <div class="form-row" style="margin-top:1rem;">
-        <div class="form-group">
-          <label>카테고리 <span style="color:var(--danger);">*</span></label>
-          <select th:field="*{category}" required
-                  style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-            <option value="">카테고리 선택</option>
-            <option th:each="cat : ${ {'SEMINAR','TUTORIAL','CODE_REVIEW','ALGORITHM','ETC'} }"
-                    th:value="${cat}" th:text="${cat}"></option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>영상 길이 (예: 1:23:45)</label>
-          <input type="text" th:field="*{duration}" placeholder="예: 45:30"
-                 style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-top:1rem;">
-        <label>YouTube URL 또는 영상 ID <span style="color:var(--danger);">*</span></label>
-        <input type="text" id="youtubeInput" name="youtubeUrl" required
-               th:value="${video.youtubeId}"
-               placeholder="https://www.youtube.com/watch?v=xxxxx 또는 영상 ID"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-        <div class="tag-hint">YouTube URL을 그대로 붙여넣으면 자동으로 ID를 추출합니다.</div>
-      </div>
-
-      <!-- 미리보기 -->
-      <div id="ytPreviewWrap" style="display:none; margin-top:1rem;">
-        <label style="font-size:.85rem; color:var(--muted);">미리보기</label>
-        <div class="yt-wrap" style="max-width:480px; margin-top:.4rem;">
-          <iframe id="ytPreviewIframe" src="" allowfullscreen></iframe>
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-top:1rem;">
-        <label>태그</label>
-        <input type="text" th:field="*{tags}" placeholder="Java, Spring, Docker (쉼표 구분)"
-               style="width:100%; padding:.55rem .85rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text);">
-      </div>
-
-      <div class="form-group" style="margin-top:1rem;">
-        <label>설명</label>
-        <textarea th:field="*{description}" rows="5" placeholder="영상에 대한 설명을 입력하세요."
-                  style="width:100%; padding:.75rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-2); color:var(--text); resize:vertical;"></textarea>
-      </div>
-
-      <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.2rem;">
-        <a th:href="@{/videos}" class="btn btn-ghost">취소</a>
-        <button type="submit" class="btn btn-primary"
-                th:text="${video.id == null ? '📤 등록' : '✅ 수정 완료'}"></button>
-      </div>
-    </form>
+<div class="page-header">
+  <div class="container">
+    <h1 th:text="${video != null} ? '영상 수정' : '영상 등록'"></h1>
   </div>
 </div>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
-<script>
-function extractYoutubeId(url) {
-  const patterns = [/(?:v=|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/];
-  for (const p of patterns) {
-    const m = url.match(p);
-    if (m) return m[1];
-  }
-  // 11자 ID 직접 입력
-  if (/^[a-zA-Z0-9_-]{11}$/.test(url.trim())) return url.trim();
-  return null;
-}
+<div class="section-sm">
+  <div class="container-sm">
+    <div class="card">
+      <form th:action="${video != null} ? @{'/videos/' + ${video.id} + '/edit'} : @{/videos}" method="post">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">카테고리</label>
+            <select name="category" class="form-select">
+              <option th:each="cat : ${categories}"
+                      th:value="${cat}" th:text="${cat}"
+                      th:selected="${video != null and video.category == cat}"></option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">제목</label>
+          <input class="form-input" type="text" name="title"
+                 th:value="${video?.title}" required placeholder="영상 제목을 입력하세요">
+        </div>
+        <div class="form-group">
+          <label class="form-label">YouTube URL</label>
+          <input class="form-input" type="url" name="youtubeUrl"
+                 th:value="${video?.youtubeUrl}" placeholder="https://www.youtube.com/watch?v=...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">설명</label>
+          <textarea class="form-textarea" name="description" rows="6"
+                    placeholder="영상에 대한 간단한 설명을 입력하세요"
+                    th:text="${video?.description}"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <a th:href="${video != null} ? @{'/videos/' + ${video.id}} : @{/videos}" class="btn btn-ghost btn-md">취소</a>
+          <button type="submit" class="btn btn-blue btn-md"
+                  th:text="${video != null} ? '수정하기' : '등록하기'"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
-document.getElementById('youtubeInput').addEventListener('input', function() {
-  const id = extractYoutubeId(this.value);
-  const wrap = document.getElementById('ytPreviewWrap');
-  const iframe = document.getElementById('ytPreviewIframe');
-  if (id) {
-    iframe.src = 'https://www.youtube.com/embed/' + id;
-    wrap.style.display = 'block';
-  } else {
-    wrap.style.display = 'none';
-  }
-});
-</script>
+</th:block>
 </body>
 </html>
