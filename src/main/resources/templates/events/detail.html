@@ -34,6 +34,13 @@
           <div class="post-body" th:text="${event.description}"></div>
 
           <div class="post-actions">
+            <!-- Join button (UPCOMING / ONGOING) -->
+            <form th:if="${session.loginMember != null
+                          and (event.status == 'UPCOMING' or event.status == 'ONGOING')
+                          and (event.maxParticipants == 0 or event.currentParticipants < event.maxParticipants)}"
+                  th:action="@{/events/{id}/join(id=${event.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-blue btn-sm">🙋 참가하기</button>
+            </form>
             <a th:if="${session.loginMember != null}"
                th:href="@{/report/form(targetType='EVENT',targetId=${event.id})}"
                class="btn btn-ghost btn-sm">신고</a>

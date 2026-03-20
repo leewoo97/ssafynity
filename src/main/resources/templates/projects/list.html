@@ -54,9 +54,8 @@
     <form th:action="@{/projects}" method="get" class="search-row" style="margin-bottom:20px;">
       <input type="text" name="keyword" th:value="${keyword}" placeholder="프로젝트 검색..." class="search-input">
       <select name="sort" class="search-select">
-        <option value="createdAt" th:selected="${sort == 'createdAt' or sort == null}">최신순</option>
-        <option value="likeCount" th:selected="${sort == 'likeCount'}">인기순</option>
-        <option value="viewCount" th:selected="${sort == 'viewCount'}">조회순</option>
+        <option value="latest" th:selected="${sort == 'latest' or sort == null}">최신순</option>
+        <option value="popular" th:selected="${sort == 'popular'}">인기순</option>
       </select>
       <button type="submit" class="btn btn-blue btn-md">검색</button>
     </form>

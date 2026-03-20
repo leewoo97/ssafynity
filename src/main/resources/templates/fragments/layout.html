@@ -23,7 +23,7 @@
       <a th:href="@{/docs}">문서</a>
       <a th:href="@{/videos}">영상</a>
       <a th:href="@{/events}">이벤트</a>
-      <a th:href="@{/chat/rooms}">채팅</a>
+      <a th:href="@{/chat}">채팅</a>
     </div>
 
     <div class="nav-actions">
@@ -34,10 +34,10 @@
 
       <th:block th:if="${session.loginMember != null}">
         <a th:href="@{/notifications}" class="nav-icon-btn" title="알림">🔔</a>
-        <a th:href="@{/member/mypage}" class="nav-user-chip">
+        <a th:href="@{/profile/me}" class="nav-user-chip">
           <span class="nav-user-dot"
-                th:text="${session.loginMember.name != null ? #strings.substring(session.loginMember.name,0,1) : 'U'}">U</span>
-          <span th:text="${session.loginMember.name}">사용자</span>
+                th:text="${#strings.substring(session.loginMember.nickname,0,1)}">U</span>
+          <span th:text="${session.loginMember.nickname}">사용자</span>
         </a>
         <a th:href="@{/logout}" class="nav-btn nav-btn-ghost">로그아웃</a>
       </th:block>
@@ -65,10 +65,10 @@
     <a th:href="@{/docs}">📄 문서</a>
     <a th:href="@{/videos}">🎬 영상</a>
     <a th:href="@{/events}">📅 이벤트</a>
-    <a th:href="@{/chat/rooms}">💬 채팅</a>
+    <a th:href="@{/chat}">💬 채팅</a>
     <div class="nav-drawer-sep"></div>
     <th:block th:if="${session.loginMember != null}">
-      <a th:href="@{/member/mypage}">👤 마이페이지</a>
+      <a th:href="@{/profile/me}">👤 마이페이지</a>
       <a th:href="@{/notifications}">🔔 알림</a>
       <a th:href="@{/bookmarks}">🔖 북마크</a>
       <div class="nav-drawer-sep"></div>
@@ -104,11 +104,11 @@
         <h5>지식</h5>
         <a th:href="@{/docs}">문서 공유</a>
         <a th:href="@{/videos}">영상</a>
-        <a th:href="@{/chat/rooms}">채팅방</a>
+        <a th:href="@{/chat}">채팅방</a>
       </div>
       <div class="footer-col">
         <h5>계정</h5>
-        <a th:href="@{/member/mypage}">마이페이지</a>
+        <a th:href="@{/profile/me}">마이페이지</a>
         <a th:href="@{/notifications}">알림</a>
         <a th:href="@{/bookmarks}">북마크</a>
       </div>

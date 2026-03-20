@@ -29,7 +29,6 @@
           <div class="post-body" th:text="${post.content}"></div>
 
           <div class="post-actions">
-            <!-- Like button -->
             <form th:if="${session.loginMember != null}"
                   th:action="@{/posts/{id}/like(id=${post.id})}" method="post" style="display:inline;">
               <button type="submit" class="like-btn" th:classappend="${liked} ? ' liked' : ''">
@@ -38,11 +37,9 @@
                 <span th:text="${post.likeCount}"></span>
               </button>
             </form>
-            <!-- Report -->
             <a th:if="${session.loginMember != null}"
                th:href="@{/report/form(targetType='POST',targetId=${post.id})}"
                class="btn btn-ghost btn-sm">신고</a>
-            <!-- Edit/Delete (owner) -->
             <th:block th:if="${session.loginMember != null and session.loginMember.id == post.author.id}">
               <a th:href="@{/posts/{id}/edit(id=${post.id})}" class="btn btn-ghost btn-sm">수정</a>
               <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post" style="display:inline;"
@@ -52,18 +49,20 @@
             </th:block>
             <a th:href="@{/posts}" class="btn btn-ghost btn-sm" style="margin-left:auto;">목록</a>
           </div>
+
+          <div class="alert alert-success" th:if="${param.reported}" style="margin-top:1rem;">
+            신고가 접수되었습니다. 검토 후 조치하겠습니다.
+          </div>
         </div>
 
-        <!-- Comments -->
         <div class="card" style="margin-top:16px;">
           <div style="font-size:.95rem;font-weight:600;color:var(--t2);margin-bottom:16px;">
-            댓글 <span th:text="${comments != null ? comments.size() : 0}"></span>
+            💬 댓글 <span th:text="${comments != null ? comments.size() : 0}"></span>
           </div>
 
-          <!-- Comment form -->
           <div th:if="${session.loginMember != null}" class="comment-compose">
             <div class="av av-sm" th:text="${#strings.substring(session.loginMember.nickname,0,1)}">U</div>
-            <form th:action="@{/comments(postId=${post.id})}" method="post" style="flex:1;display:flex;gap:8px;">
+            <form th:action="@{/comments/add}" method="post" style="flex:1;display:flex;gap:8px;">
               <input type="hidden" name="postId" th:value="${post.id}">
               <input class="form-input" type="text" name="content" required
                      placeholder="댓글을 입력하세요..." style="flex:1;">
@@ -75,7 +74,6 @@
             댓글을 달려면 <a th:href="@{/member/login}" style="color:var(--blue);">로그인</a>하세요
           </div>
 
-          <!-- Comment list -->
           <div class="comment-list" th:if="${comments != null and !comments.isEmpty()}">
             <div th:each="comment : ${comments}" class="comment-item">
               <div class="av av-sm" th:text="${#strings.substring(comment.author.nickname,0,1)}">U</div>
@@ -97,10 +95,13 @@
               </div>
             </div>
           </div>
+          <div th:if="${comments == null or comments.isEmpty()}"
+               style="padding:24px;text-align:center;font-size:.88rem;color:var(--t4);">
+            첫 댓글을 남겨보세요! 💬
+          </div>
         </div>
       </div>
 
-      <!-- Sidebar -->
       <aside>
         <div class="sidebar-block">
           <div class="sidebar-block-head">✍️ 작성자</div>
@@ -109,7 +110,11 @@
               <div class="av av-md" th:text="${#strings.substring(post.author.nickname,0,1)}">U</div>
               <div>
                 <div style="font-size:.9rem;font-weight:600;color:var(--t1);" th:text="${post.author.nickname}"></div>
+                <div style="font-size:.78rem;color:var(--t4);" th:if="${post.author.bio}" th:text="${post.author.bio}"></div>
               </div>
+            </div>
+            <div style="padding:0 18px 16px;">
+              <a th:href="@{/profile/{id}(id=${post.author.id})}" class="btn btn-ghost btn-sm" style="width:100%;text-align:center;">프로필 보기</a>
             </div>
           </div>
         </div>
