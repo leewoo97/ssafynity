@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/layout :: layout(${doc != null} ? '문서 수정' : '문서 작성', ~{::body-content})}">
+      th:replace="~{fragments/layout :: layout(${doc != null and doc.id != null} ? '문서 수정' : '문서 작성', ~{::body-content})}">
 <body>
 <th:block th:fragment="body-content">
 
@@ -8,7 +8,7 @@
 
 <div class="page-header">
   <div class="container">
-    <h1 th:text="${doc != null} ? '문서 수정' : '새 문서 작성'"></h1>
+    <h1 th:text="${doc != null and doc.id != null} ? '문서 수정' : '새 문서 작성'"></h1>
   </div>
 </div>
 
@@ -16,7 +16,7 @@
   <div class="container-sm">
     <div class="card">
       <form id="doc-form"
-            th:action="${doc != null} ? @{'/docs/' + ${doc.id} + '/edit'} : @{/docs}"
+            th:action="${doc != null and doc.id != null} ? @{'/docs/' + ${doc.id} + '/edit'} : @{/docs}"
             method="post">
         <div class="form-row">
           <div class="form-group">
@@ -44,9 +44,9 @@
           <input type="hidden" name="content" id="content-input">
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
-          <a th:href="${doc != null} ? @{'/docs/' + ${doc.id}} : @{/docs}" class="btn btn-ghost btn-md">취소</a>
+          <a th:href="${doc != null and doc.id != null} ? @{'/docs/' + ${doc.id}} : @{/docs}" class="btn btn-ghost btn-md">취소</a>
           <button type="submit" class="btn btn-blue btn-md"
-                  th:text="${doc != null} ? '수정하기' : '저장하기'"></button>
+                  th:text="${doc != null and doc.id != null} ? '수정하기' : '저장하기'"></button>
         </div>
       </form>
     </div>
