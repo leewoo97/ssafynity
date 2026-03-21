@@ -1796,7 +1796,7 @@ footer {
 /* ─── QUILL EDITOR OVERRIDES ─────────────────────────────────── */
 .ql-toolbar.ql-snow { border-radius: var(--r-sm) var(--r-sm) 0 0 !important; border-color: var(--b1) !important; background: var(--surface2); }
 .ql-container.ql-snow { border-radius: 0 0 var(--r-sm) var(--r-sm) !important; border-color: var(--b1) !important; font-family: inherit; font-size: .97rem; }
-.ql-editor { min-height: 320px; line-height: 1.75; padding: 16px 20px; }
+.ql-editor { min-height: 320px; height: 480px; max-height: 480px; overflow-y: auto; line-height: 1.75; padding: 16px 20px 80px; scroll-padding-bottom: 80px; }
 .ql-editor.ql-blank::before { color: var(--t5); font-style: normal; }
 .ql-snow .ql-stroke { stroke: var(--t2); }
 .ql-snow .ql-fill { fill: var(--t2); }
