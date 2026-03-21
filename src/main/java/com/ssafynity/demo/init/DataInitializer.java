@@ -25,6 +25,8 @@ public class DataInitializer implements CommandLineRunner {
     private final TechVideoRepository  techVideoRepository;
     private final EventRepository      eventRepository;
     private final ProjectRepository    projectRepository;
+    private final NotificationRepository  notificationRepository;
+    private final BookmarkRepository      bookmarkRepository;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -658,5 +660,65 @@ public class DataInitializer implements CommandLineRunner {
                 .thumbnailUrl("https://picsum.photos/seed/proj5/600/340")
                 .author(choi).teamSize(2).status("IN_PROGRESS")
                 .likeCount(44).viewCount(278).build());
+
+        // ──────────── 알림 (10개) ────────────
+        // 댓글 알림
+        notificationRepository.save(Notification.builder()
+                .receiver(park).message("🔔 김개발님이 내 게시글에 댓글을 달았습니다: \"정말 유익한 정리 감사합니다!...\"")
+                .link("/posts/1").isRead(false).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(lee).message("🔔 김개발님이 내 게시글에 댓글을 달았습니다: \"Fetch Join + @BatchSize 조합 써보세요!...\"")
+                .link("/posts/3").isRead(false).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(lee).message("🔔 최클라우드님이 내 게시글에 댓글을 달았습니다: \"맞아요, @BatchSize(size=100) 설정하면...\"")
+                .link("/posts/3").isRead(true).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(lee).message("🔔 정AI님이 내 게시글에 댓글을 달았습니다: \"스터디 참여하고 싶습니다!...\"")
+                .link("/posts/4").isRead(false).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(park).message("🔔 이싸피님이 내 게시글에 댓글을 달았습니다: \"React Query 처음엔 낯설었는데...\"")
+                .link("/posts/5").isRead(true).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(admin).message("🔔 김개발님이 내 게시글에 댓글을 달았습니다: \"오픈 축하드립니다! 🎉\"")
+                .link("/posts/6").isRead(true).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(jung).message("🔔 이싸피님이 내 게시글에 댓글을 달았습니다: \"비전공자 합격 후기 정말 감사해요...\"")
+                .link("/posts/7").isRead(false).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(choi).message("🔔 박풀스택님이 내 게시글에 댓글을 달았습니다: \"docker-compose 예시 공유 가능한가요?...\"")
+                .link("/posts/8").isRead(false).build());
+        // 이벤트/프로젝트 알림
+        notificationRepository.save(Notification.builder()
+                .receiver(kim).message("📅 주최하신 스터디에 새 참가자가 신청했습니다. 현재 13 / 20명")
+                .link("/events/1").isRead(false).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(park).message("🏆 SSAFYnity 프로젝트에 새 좋아요가 추가됐습니다!")
+                .link("/projects/1").isRead(true).build());
+
+        // ──────────── 북마크 (8개) ────────────
+        bookmarkRepository.save(Bookmark.builder()
+                .member(kim).targetType("POST").targetId(6L)
+                .targetTitle("[공지] SSAFYnity 플랫폼 정식 오픈!").build());
+        bookmarkRepository.save(Bookmark.builder()
+                .member(kim).targetType("DOC").targetId(2L)
+                .targetTitle("JPA 연관관계 완전 정복 — N+1 해결까지").build());
+        bookmarkRepository.save(Bookmark.builder()
+                .member(kim).targetType("VIDEO").targetId(1L)
+                .targetTitle("Spring Boot 3.x + JPA 실전 강의 풀버전").build());
+        bookmarkRepository.save(Bookmark.builder()
+                .member(lee).targetType("POST").targetId(8L)
+                .targetTitle("Docker + Spring Boot 배포 완전 정복 — 삽질 기록").build());
+        bookmarkRepository.save(Bookmark.builder()
+                .member(lee).targetType("DOC").targetId(3L)
+                .targetTitle("알고리즘 유형별 완전 정복 — BFS/DFS/DP").build());
+        bookmarkRepository.save(Bookmark.builder()
+                .member(park).targetType("DOC").targetId(6L)
+                .targetTitle("CS 면접 필수 암기 — 운영체제·네트워크 총정리").build());
+        bookmarkRepository.save(Bookmark.builder()
+                .member(park).targetType("VIDEO").targetId(2L)
+                .targetTitle("백준 BFS/DFS 유형 완전 정복 — 실전 문제풀이").build());
+        bookmarkRepository.save(Bookmark.builder()
+                .member(jung).targetType("POST").targetId(11L)
+                .targetTitle("AWS EC2 + RDS + S3 아키텍처 구성기").build());
     }
 }
