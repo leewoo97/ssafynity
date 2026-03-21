@@ -4,6 +4,8 @@
 <body>
 <th:block th:fragment="body-content">
 
+<link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css">
+
 <div class="page-header">
   <div class="container">
     <h1 th:text="${doc != null} ? '문서 수정' : '새 문서 작성'"></h1>
@@ -13,7 +15,9 @@
 <div class="section-sm">
   <div class="container-sm">
     <div class="card">
-      <form th:action="${doc != null} ? @{'/docs/' + ${doc.id} + '/edit'} : @{/docs}" method="post">
+      <form id="doc-form"
+            th:action="${doc != null} ? @{'/docs/' + ${doc.id} + '/edit'} : @{/docs}"
+            method="post">
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">카테고리</label>
@@ -34,12 +38,12 @@
                  th:value="${doc?.title}" required placeholder="문서 제목을 입력하세요">
         </div>
         <div class="form-group">
-          <label class="form-label">내용 <span style="font-weight:400;color:var(--t5);">(Markdown 지원)</span></label>
-          <textarea class="form-textarea" name="content" required
-                    rows="20" placeholder="# 제목&#10;&#10;내용을 입력하세요..."
-                    th:text="${doc?.content}" style="font-family:monospace;font-size:.9rem;"></textarea>
+          <label class="form-label">내용</label>
+          <div id="initial-content" style="display:none" th:utext="${doc?.content}"></div>
+          <div id="editor"></div>
+          <input type="hidden" name="content" id="content-input">
         </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
           <a th:href="${doc != null} ? @{'/docs/' + ${doc.id}} : @{/docs}" class="btn btn-ghost btn-md">취소</a>
           <button type="submit" class="btn btn-blue btn-md"
                   th:text="${doc != null} ? '수정하기' : '저장하기'"></button>
@@ -48,6 +52,57 @@
     </div>
   </div>
 </div>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+var quill = new Quill('#editor', {
+  theme: 'snow',
+  placeholder: '내용을 입력하세요...',
+  modules: {
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        [{ 'align': [] }],
+        ['link', 'image'],
+        ['blockquote', 'code-block'],
+        ['clean']
+      ],
+      handlers: { image: imageHandler }
+    }
+  }
+});
+
+var ic = document.getElementById('initial-content');
+if (ic && ic.innerHTML.trim()) {
+  quill.root.innerHTML = ic.innerHTML;
+}
+
+function imageHandler() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.click();
+  input.onchange = function () {
+    var file = input.files[0];
+    if (!file) return;
+    var fd = new FormData();
+    fd.append('file', file);
+    fetch('/upload/image', { method: 'POST', body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var range = quill.getSelection(true);
+        quill.insertEmbed(range.index, 'image', data.url);
+      });
+  };
+}
+
+document.getElementById('doc-form').addEventListener('submit', function () {
+  document.getElementById('content-input').value = quill.root.innerHTML;
+});
+</script>
 
 </th:block>
 </body>

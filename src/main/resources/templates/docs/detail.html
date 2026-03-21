@@ -29,7 +29,7 @@
             </div>
           </div>
 
-          <div class="post-body md-body" th:text="${doc.content}"></div>
+          <div class="post-body" th:utext="${doc.content}"></div>
 
           <div class="post-actions">
             <!-- Bookmark -->
