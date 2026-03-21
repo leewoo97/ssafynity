@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('기술 문서', ~{::body-content})}">
+<body>
+<th:block th:fragment="body-content">
+
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <div class="label" style="margin-bottom:6px;">Knowledge Base</div>
+        <h1>기술 문서</h1>
+        <p>튜토리얼, 아키텍처, 기술 노트를 공유하세요</p>
+      </div>
+      <a th:href="@{/docs/new}" class="btn btn-blue btn-md">📄 문서 작성</a>
+    </div>
+  </div>
+</div>
+
+<div class="section-sm">
+  <div class="container">
+    <!-- Pinned -->
+    <div th:if="${pinnedDocs != null and !pinnedDocs.isEmpty()}" style="margin-bottom:24px;">
+      <div class="label" style="margin-bottom:10px;">📌 추천 문서</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a th:each="d : ${pinnedDocs}"
+           th:href="@{/docs/{id}(id=${d.id})}"
+           th:text="${d.title}"
+           class="btn btn-tinted btn-sm"></a>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <a th:href="@{/docs(keyword=${keyword})}" class="tab"
+         th:classappend="${category == null or category == ''} ? ' active' : ''">전체</a>
+      <a th:each="cat : ${categories}"
+         th:href="@{/docs(category=${cat},keyword=${keyword})}"
+         th:text="${cat}" class="tab"
+         th:classappend="${cat == category} ? ' active' : ''"></a>
+    </div>
+
+    <!-- Search -->
+    <form th:action="@{/docs}" method="get" class="search-row" style="margin-bottom:24px;">
+      <input type="hidden" name="category" th:value="${category}">
+      <input type="text" name="keyword" th:value="${keyword}" placeholder="문서 검색..." class="search-input">
+      <button type="submit" class="btn btn-blue btn-md">검색</button>
+    </form>
+
+    <div th:if="${docs == null or docs.isEmpty()}" class="empty">
+      <div class="empty-icon">📄</div>
+      <div class="empty-title">문서가 없습니다.</div>
+      <div class="empty-sub" style="margin-top:16px;">
+        <a th:href="@{/docs/new}" class="btn btn-blue btn-md">첫 문서 작성하기</a>
+      </div>
+    </div>
+
+    <div class="doc-grid">
+      <div th:each="doc : ${docs}" class="doc-card">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+          <span class="pill pill-gray" th:text="${doc.category}"></span>
+          <span th:if="${doc.pinned}" class="pill pill-orange">📌 추천</span>
+        </div>
+        <div class="doc-card-title">
+          <a th:href="@{/docs/{id}(id=${doc.id})}" th:text="${doc.title}"></a>
+        </div>
+        <div class="doc-card-tags" th:if="${doc.tags != null and !#strings.isEmpty(doc.tags)}">
+          <span th:each="tag,ti : ${doc.tags.split(',')}" th:if="${ti.index < 4}">
+            <span class="tag" th:text="${#strings.trim(tag)}"></span>
+          </span>
+        </div>
+        <div class="doc-card-meta">
+          <span th:text="${doc.author.nickname}"></span>
+          <span>·</span>
+          <span th:text="${#temporals.format(doc.createdAt,'yyyy.MM.dd')}"></span>
+          <span>·</span>
+          <span>👁 <span th:text="${doc.viewCount}"></span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination: totalPages + currentPage -->
+    <div class="pagination" th:if="${totalPages != null and totalPages > 1}">
+      <a th:if="${currentPage > 0}"
+         th:href="@{/docs(page=${currentPage-1},category=${category},keyword=${keyword})}">‹</a>
+      <th:block th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+        <a th:href="@{/docs(page=${i},category=${category},keyword=${keyword})}"
+           th:text="${i+1}" th:classappend="${i == currentPage} ? ' active' : ''"></a>
+      </th:block>
+      <a th:if="${currentPage < totalPages - 1}"
+         th:href="@{/docs(page=${currentPage+1},category=${category},keyword=${keyword})}">›</a>
+    </div>
+  </div>
+</div>
+
+</th:block>
+</body>
+</html>
