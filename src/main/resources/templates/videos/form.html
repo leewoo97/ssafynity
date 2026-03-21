@@ -11,7 +11,7 @@
 </div>
 
 <div class="section-sm">
-  <div class="container-sm">
+  <div class="container">
     <div class="card">
       <form th:action="${video != null and video.id != null} ? @{/videos/{id}/edit(id=${video.id})} : @{/videos}" method="post">
         <div class="form-row">

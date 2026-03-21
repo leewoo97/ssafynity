@@ -111,6 +111,15 @@
   </div>
 </div>
 
+<script>
+document.querySelectorAll('.project-desc').forEach(function(el) {
+  var tmp = document.createElement('div');
+  tmp.innerHTML = el.textContent;
+  var plain = (tmp.textContent || tmp.innerText || '').trim();
+  el.textContent = plain.length > 90 ? plain.substring(0, 90) + '…' : plain;
+});
+</script>
+
 </th:block>
 </body>
 </html>
