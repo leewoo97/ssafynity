@@ -2,6 +2,7 @@ package com.ssafynity.demo.controller;
 
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.domain.Post;
+import com.ssafynity.demo.service.FriendshipService;
 import com.ssafynity.demo.service.MemberService;
 import com.ssafynity.demo.service.PostService;
 import jakarta.servlet.http.HttpSession;
@@ -34,6 +35,7 @@ public class CampusController {
 
     private final MemberService memberService;
     private final PostService postService;
+    private final FriendshipService friendshipService;
 
     private static final Map<String, String> CAMPUS_IMAGES = new LinkedHashMap<>();
     private static final Map<String, String> CAMPUS_EMOJI  = new LinkedHashMap<>();
@@ -90,6 +92,11 @@ public class CampusController {
                 .filter(m -> m.getCohort() != null)
                 .collect(Collectors.groupingBy(Member::getCohort, TreeMap::new, Collectors.toList()));
 
+        // 친구 ID set — 멤버 카드 실명 표시용
+        Set<Long> friendIds = friendshipService.getFriends(fresh).stream()
+                .map(Member::getId)
+                .collect(Collectors.toSet());
+
         model.addAttribute("loginMember", fresh);
         model.addAttribute("campus", campus);
         model.addAttribute("campusEmoji",  CAMPUS_EMOJI.getOrDefault(campus, "🎓"));
@@ -102,6 +109,7 @@ public class CampusController {
         model.addAttribute("campusImages", CAMPUS_IMAGES);
         model.addAttribute("campusEmojis", CAMPUS_EMOJI);
         model.addAttribute("isMyCampus",   campus.equals(fresh.getCampus()));
+        model.addAttribute("friendIds",    friendIds);
         return "campus/community";
     }
 

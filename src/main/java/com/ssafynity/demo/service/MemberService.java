@@ -18,8 +18,7 @@ public class MemberService {
 
     @Transactional
     public Member register(String username, String password, String nickname, String email,
-                          String realName, String realNameScope,
-                          String campus, Integer cohort) {
+                          String realName, String campus, Integer cohort, Integer classCode) {
         if (memberRepository.findByUsername(username).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
         }
@@ -29,9 +28,9 @@ public class MemberService {
                 .nickname(nickname)
                 .email((email != null && !email.isBlank()) ? email : null)
                 .realName((realName != null && !realName.isBlank()) ? realName : null)
-                .realNameScope(realNameScope != null ? realNameScope : "NONE")
                 .campus((campus != null && !campus.isBlank()) ? campus : null)
                 .cohort(cohort)
+                .classCode(classCode)
                 .role("USER")
                 .build();
         return memberRepository.save(member);
@@ -55,8 +54,8 @@ public class MemberService {
 
     @Transactional
     public void updateProfile(Long memberId, String nickname, String email, String bio,
-                              String profileImageUrl, String realName, String realNameScope,
-                              String campus, Integer cohort) {
+                              String profileImageUrl, String realName,
+                              String campus, Integer cohort, Integer classCode) {
         Member member = memberRepository.findById(memberId).orElseThrow();
         member.setNickname(nickname);
         member.setEmail(email);
@@ -65,9 +64,9 @@ public class MemberService {
             member.setProfileImageUrl(profileImageUrl);
         }
         member.setRealName((realName != null && !realName.isBlank()) ? realName : null);
-        member.setRealNameScope(realNameScope != null ? realNameScope : "NONE");
         member.setCampus((campus != null && !campus.isBlank()) ? campus : null);
         member.setCohort(cohort);
+        member.setClassCode(classCode);
     }
 
     @Transactional
@@ -89,23 +88,19 @@ public class MemberService {
         return memberRepository.findByCampusOrderByNicknameAsc(campus);
     }
 
+    public List<Member> findByCampusAndCohortAndClassCode(String campus, Integer cohort, Integer classCode) {
+        return memberRepository.findByCampusAndCohortAndClassCodeOrderByNicknameAsc(campus, cohort, classCode);
+    }
+
     /**
-     * viewer가 target의 실명을 볼 수 있는지 여부
-     * ALL    → 항상 공개
-     * COHORT → viewer와 같은 캠퍼스+기수일 때만 공개
-     * NONE   → 비공개
+     * viewer가 target의 실명을 볼 수 있는지:
+     * 1. 같은 캠퍼스 + 같은 기수 + 같은 반
+     * 2. 친구 관계 (FriendshipService에서 판단)
      */
-    public boolean canSeeRealName(Member viewer, Member target) {
-        if (target.getRealName() == null || target.getRealName().isBlank()) return false;
-        String scope = target.getRealNameScope();
-        if (scope == null || "NONE".equals(scope)) return false;
-        if ("ALL".equals(scope)) return true;
-        if ("COHORT".equals(scope) && viewer != null) {
-            return target.getCampus() != null
-                    && target.getCampus().equals(viewer.getCampus())
-                    && target.getCohort() != null
-                    && target.getCohort().equals(viewer.getCohort());
-        }
-        return false;
+    public boolean isSameClass(Member viewer, Member target) {
+        if (viewer == null || target == null) return false;
+        return target.getCampus() != null && target.getCampus().equals(viewer.getCampus())
+                && target.getCohort() != null && target.getCohort().equals(viewer.getCohort())
+                && target.getClassCode() != null && target.getClassCode().equals(viewer.getClassCode());
     }
 }

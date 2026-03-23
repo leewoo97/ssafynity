@@ -158,13 +158,24 @@
       <!-- 이름 -->
       <div class="campus-member-nickname" th:text="${m.nickname}"></div>
 
-      <!-- 실명 (공개 조건) -->
-      <div th:if="${m.realName != null and (m.realNameScope == 'ALL' or (m.realNameScope == 'COHORT' and m.campus == loginMember.campus and m.cohort == loginMember.cohort))}"
+      <!-- 실명 (같은 반이거나 친구이면 공개) -->
+      <div th:if="${m.realName != null and !#strings.isEmpty(m.realName)
+                   and (friendIds.contains(m.id)
+                        or (m.classCode != null and m.classCode == loginMember.classCode
+                            and m.cohort != null and m.cohort == loginMember.cohort
+                            and m.campus != null and m.campus == loginMember.campus))}"
            class="campus-member-realname"
            th:text="${m.realName}"></div>
 
-      <!-- 기수 -->
-      <div th:if="${m.cohort != null}" class="campus-member-cohort" th:text="${m.cohort + '기'}"></div>
+      <!-- 기수 + 같은 반 뱃지 -->
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;">
+        <div th:if="${m.cohort != null}" class="campus-member-cohort" th:text="${m.cohort + '기'}"></div>
+        <span th:if="${m.classCode != null and m.classCode == loginMember.classCode
+                       and m.cohort != null and m.cohort == loginMember.cohort
+                       and m.campus != null and m.campus == loginMember.campus
+                       and m.id != loginMember.id}"
+              class="campus-same-class-badge">같은 반</span>
+      </div>
 
       <!-- 한줄소개 -->
       <div th:if="${m.bio != null and #strings.length(m.bio) > 0}"
@@ -406,6 +417,11 @@
 .campus-member-cohort {
   background: rgba(37,99,235,.08); color: var(--blue);
   border-radius: 8px; padding: 1px 8px; font-size: 11px; font-weight: 600; margin-top: 2px;
+}
+.campus-same-class-badge {
+  background: rgba(16,185,129,.12); color: #059669;
+  border-radius: 8px; padding: 1px 8px; font-size: 11px; font-weight: 700; margin-top: 2px;
+  border: 1px solid rgba(16,185,129,.25);
 }
 .campus-member-bio { font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-top: 4px; }
 

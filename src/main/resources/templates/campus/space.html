@@ -94,9 +94,11 @@
           <!-- 이름 -->
           <div class="campus-member-name">
             <span th:text="${m.nickname}">닉네임</span>
-            <!-- 실명 공개 범위가 ALL이면 누구에게나 표시, COHORT면 같은 기수에게만 -->
-            <span th:if="${m.realName != null and !#strings.isEmpty(m.realName)}"
-                  th:if="${m.realNameScope == 'ALL' or (m.realNameScope == 'COHORT' and m.campus == loginMember.campus and m.cohort == loginMember.cohort)}"
+            <!-- 같은 반이거나 친구이면 실명 표시 (space.html은 friendIds 미사용 → 같은 반만 체크) -->
+            <span th:if="${m.realName != null and !#strings.isEmpty(m.realName)
+                          and m.classCode != null and m.classCode == loginMember.classCode
+                          and m.cohort != null and m.cohort == loginMember.cohort
+                          and m.campus != null and m.campus == loginMember.campus}"
                   class="campus-real-name"
                   th:text="'(' + ${m.realName} + ')'"></span>
           </div>

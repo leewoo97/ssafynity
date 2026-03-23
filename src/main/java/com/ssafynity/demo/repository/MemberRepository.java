@@ -9,4 +9,5 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByUsername(String username);
     List<Member> findByCampusAndCohortOrderByNicknameAsc(String campus, Integer cohort);
     List<Member> findByCampusOrderByNicknameAsc(String campus);
+    List<Member> findByCampusAndCohortAndClassCodeOrderByNicknameAsc(String campus, Integer cohort, Integer classCode);
 }

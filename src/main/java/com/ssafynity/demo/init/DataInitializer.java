@@ -29,6 +29,7 @@ public class DataInitializer implements CommandLineRunner {
     private final BookmarkRepository      bookmarkRepository;
     private final MentorProfileRepository mentorProfileRepository;
     private final MentoringRequestRepository mentoringRequestRepository;
+    private final FriendshipRepository friendshipRepository;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -46,8 +47,8 @@ public class DataInitializer implements CommandLineRunner {
                 .bio("SSAFYnity 플랫폼 관리자입니다. 플랫폼 운영과 콘텐츠 관리를 담당합니다.")
                 .campus("서울")
                 .cohort(13)
+                .classCode(1)
                 .realName("관리자")
-                .realNameScope("ALL")
                 .role("ADMIN")
                 .build());
 
@@ -59,8 +60,8 @@ public class DataInitializer implements CommandLineRunner {
                 .bio("백엔드 개발자 지망생. Spring Boot와 JPA를 공부 중입니다. 매일 한 문제씩 알고리즘 풀기 중.")
                 .campus("서울")
                 .cohort(13)
+                .classCode(1)
                 .realName("김민준")
-                .realNameScope("COHORT")
                 .profileImageUrl("https://picsum.photos/seed/kim_dev/200/200")
                 .role("USER")
                 .build());
@@ -73,8 +74,8 @@ public class DataInitializer implements CommandLineRunner {
                 .bio("알고리즘 문제 풀이를 즐기는 SSAFY 수료생. 현재 백엔드 취준 중입니다.")
                 .campus("대전")
                 .cohort(13)
+                .classCode(2)
                 .realName("이지훈")
-                .realNameScope("COHORT")
                 .profileImageUrl("https://picsum.photos/seed/lee_ssafy/200/200")
                 .role("USER")
                 .build());
@@ -87,8 +88,8 @@ public class DataInitializer implements CommandLineRunner {
                 .bio("프론트엔드와 백엔드 모두 다루는 풀스택 개발자. React + Spring Boot 조합을 좋아합니다.")
                 .campus("서울")
                 .cohort(13)
+                .classCode(1)
                 .realName("박준혁")
-                .realNameScope("ALL")
                 .profileImageUrl("https://picsum.photos/seed/park_full/200/200")
                 .role("USER")
                 .build());
@@ -101,8 +102,8 @@ public class DataInitializer implements CommandLineRunner {
                 .bio("DevOps 엔지니어 지망생. AWS, Docker, Kubernetes를 공부하고 있습니다.")
                 .campus("구미")
                 .cohort(12)
+                .classCode(1)
                 .realName("최성환")
-                .realNameScope("COHORT")
                 .profileImageUrl("https://picsum.photos/seed/choi_cloud/200/200")
                 .role("USER")
                 .build());
@@ -115,8 +116,8 @@ public class DataInitializer implements CommandLineRunner {
                 .bio("AI/ML 개발자. Python과 PyTorch를 주로 사용하며 MLOps에 관심이 많습니다.")
                 .campus("부울경")
                 .cohort(14)
+                .classCode(2)
                 .realName("정유진")
-                .realNameScope("NONE")
                 .profileImageUrl("https://picsum.photos/seed/jung_ai/200/200")
                 .role("USER")
                 .build());
@@ -942,5 +943,13 @@ public class DataInitializer implements CommandLineRunner {
                 .receiver(choi)
                 .message("😢 이싸피 멘토님이 멘토링 신청을 검토했지만 아쉽게도 수락하지 못했습니다.")
                 .link("/mentors").isRead(false).build());
+
+        // ──────────── 친구 관계 (Friendship 더미 데이터) ────────────
+        friendshipRepository.save(Friendship.builder()
+                .requester(kim).receiver(park).status("ACCEPTED").build());
+        friendshipRepository.save(Friendship.builder()
+                .requester(lee).receiver(jung).status("ACCEPTED").build());
+        friendshipRepository.save(Friendship.builder()
+                .requester(kim).receiver(choi).status("PENDING").build());
     }
 }

@@ -33,12 +33,22 @@
         <div class="profile-stat-num" th:text="${myComments != null ? myComments.size() : 0}">0</div>
         <div class="profile-stat-lbl">댓글</div>
       </div>
+      <div class="profile-stat">
+        <div class="profile-stat-num" th:text="${myFriends != null ? myFriends.size() : 0}">0</div>
+        <div class="profile-stat-lbl">친구</div>
+      </div>
     </div>
 
     <!-- Tabs -->
     <div class="tabs" style="margin-top:24px;">
       <a href="?tab=posts" class="tab" th:classappend="${tab == null or tab == 'posts'} ? ' active' : ''">내 게시글</a>
       <a href="?tab=comments" class="tab" th:classappend="${tab == 'comments'} ? ' active' : ''">내 댓글</a>
+      <a href="?tab=friends" class="tab" th:classappend="${tab == 'friends'} ? ' active' : ''">
+        친구
+        <span th:if="${pendingRequests != null and !pendingRequests.isEmpty()}"
+              style="display:inline-block;background:var(--red);color:#fff;border-radius:10px;padding:0 6px;font-size:.75rem;font-weight:700;margin-left:4px;"
+              th:text="${pendingRequests.size()}"></span>
+      </a>
     </div>
 
     <!-- Posts tab -->
@@ -79,6 +89,62 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Friends tab -->
+    <div th:if="${tab == 'friends'}">
+
+      <!-- 받은 친구 요청 -->
+      <div th:if="${pendingRequests != null and !pendingRequests.isEmpty()}" style="margin-top:24px;">
+        <div style="font-size:.9rem;font-weight:700;color:var(--t2);margin-bottom:12px;">📬 받은 친구 요청</div>
+        <div class="card card-flush">
+          <div th:each="req : ${pendingRequests}"
+               style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--b1);">
+            <div class="av" th:text="${#strings.substring(req.requester.nickname,0,1)}">U</div>
+            <div style="flex:1;">
+              <a th:href="@{/profile/{id}(id=${req.requester.id})}"
+                 th:text="${req.requester.nickname}"
+                 style="font-weight:600;color:var(--t1);text-decoration:none;"></a>
+              <div style="font-size:.8rem;color:var(--t5);" th:text="${req.requester.campus != null ? req.requester.campus + (req.requester.cohort != null ? ' ' + req.requester.cohort + '기' : '') : ''}"></div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <form th:action="@{/friends/accept/{id}(id=${req.id})}" method="post">
+                <button type="submit" class="btn btn-blue btn-sm">수락</button>
+              </form>
+              <form th:action="@{/friends/reject/{id}(id=${req.id})}" method="post">
+                <button type="submit" class="btn btn-ghost btn-sm">거절</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 친구 목록 -->
+      <div style="margin-top:24px;">
+        <div style="font-size:.9rem;font-weight:700;color:var(--t2);margin-bottom:12px;">
+          👥 친구 목록 <span style="font-weight:400;color:var(--t5);" th:text="'(' + (${myFriends != null ? myFriends.size() : 0}) + '명)'"></span>
+        </div>
+        <div th:if="${myFriends == null or myFriends.isEmpty()}" class="empty">
+          <div class="empty-icon">👤</div>
+          <div class="empty-title">아직 친구가 없습니다.</div>
+          <div class="empty-desc">캠퍼스 커뮤니티나 프로필 페이지에서 친구를 추가해보세요!</div>
+        </div>
+        <div th:unless="${myFriends == null or myFriends.isEmpty()}"
+             style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
+          <div th:each="friend : ${myFriends}"
+               class="card"
+               style="text-align:center;padding:20px 12px;cursor:pointer;transition:box-shadow .2s;"
+               onclick="location.href=this.dataset.href"
+               th:attr="data-href=@{/profile/{id}(id=${friend.id})}">
+            <div class="av av-lg" style="margin:0 auto 10px;"
+                 th:text="${#strings.substring(friend.nickname,0,1)}">U</div>
+            <div style="font-weight:600;font-size:.9rem;color:var(--t1);" th:text="${friend.nickname}"></div>
+            <div style="font-size:.78rem;color:var(--t5);margin-top:2px;"
+                 th:if="${friend.campus != null}"
+                 th:text="${friend.campus + (friend.cohort != null ? ' ' + friend.cohort + '기' : '')}"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

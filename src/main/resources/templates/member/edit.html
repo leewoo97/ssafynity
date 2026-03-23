@@ -75,30 +75,25 @@
             </select>
           </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">반</label>
+          <select name="classCode" class="form-select">
+            <option value="">선택 안함</option>
+            <option value="1" th:selected="${member.classCode == 1}">1반</option>
+            <option value="2" th:selected="${member.classCode == 2}">2반</option>
+            <option value="3" th:selected="${member.classCode == 3}">3반</option>
+            <option value="4" th:selected="${member.classCode == 4}">4반</option>
+            <option value="5" th:selected="${member.classCode == 5}">5반</option>
+          </select>
+          <div style="font-size:.8rem;color:var(--t5);margin-top:4px;">같은 반 동기의 실명을 볼 수 있습니다.</div>
+        </div>
 
-        <!-- 실명 공개 설정 -->
-        <div class="register-section-label" style="margin-top:24px;">실명 공개 설정</div>
+        <!-- 실명 설정 -->
+        <div class="register-section-label" style="margin-top:24px;">실명 설정</div>
         <div class="form-group">
           <label class="form-label">실명 <span style="font-weight:400;color:var(--t5)">(선택)</span></label>
           <input class="form-input" type="text" name="realName" th:value="${member.realName}" placeholder="홍길동">
-          <div style="font-size:.8rem;color:var(--t5);margin-top:4px;">닉네임 옆에 함께 표시됩니다.</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">실명 공개 범위</label>
-          <div class="radio-group">
-            <label class="radio-item">
-              <input type="radio" name="realNameScope" value="NONE" th:checked="${member.realNameScope == 'NONE' or member.realNameScope == null}">
-              <div class="radio-content"><span class="radio-label">🔒 비공개</span><span class="radio-desc">실명을 공개하지 않습니다</span></div>
-            </label>
-            <label class="radio-item">
-              <input type="radio" name="realNameScope" value="COHORT" th:checked="${member.realNameScope == 'COHORT'}">
-              <div class="radio-content"><span class="radio-label">👥 같은 기수만</span><span class="radio-desc">같은 캠퍼스·기수 동기에게만 공개</span></div>
-            </label>
-            <label class="radio-item">
-              <input type="radio" name="realNameScope" value="ALL" th:checked="${member.realNameScope == 'ALL'}">
-              <div class="radio-content"><span class="radio-label">🌍 전체 공개</span><span class="radio-desc">SSAFYnity 모든 회원에게 공개</span></div>
-            </label>
-          </div>
+          <div style="font-size:.8rem;color:var(--t5);margin-top:4px;">같은 반 동기와 친구에게만 공개됩니다.</div>
         </div>
 
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">

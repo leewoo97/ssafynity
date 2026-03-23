@@ -37,15 +37,6 @@ public class Member {
     private String realName;
 
     /**
-     * 실명 공개 범위
-     * ALL    — SSAFYnity 전체 공개
-     * COHORT — 같은 캠퍼스+기수만 공개
-     * NONE   — 비공개
-     */
-    @Builder.Default
-    private String realNameScope = "NONE";
-
-    /**
      * SSAFY 캠퍼스
      * 서울 / 대전 / 광주 / 구미 / 부울경
      */
@@ -55,6 +46,11 @@ public class Member {
      * SSAFY 기수 (1~16)
      */
     private Integer cohort;
+
+    /**
+     * 반 번호 (1학기 기준 1, 2, 3 ...)
+     */
+    private Integer classCode;
 
     @Builder.Default
     @Column(nullable = false)

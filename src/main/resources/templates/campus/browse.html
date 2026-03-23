@@ -89,7 +89,10 @@
           </div>
           <div class="campus-member-name">
             <span th:text="${m.nickname}">닉네임</span>
-            <span th:if="${m.realName != null and !#strings.isEmpty(m.realName) and m.realNameScope == 'ALL'}"
+            <span th:if="${m.realName != null and !#strings.isEmpty(m.realName)
+                          and m.classCode != null and m.classCode == loginMember.classCode
+                          and m.cohort != null and m.cohort == loginMember.cohort
+                          and m.campus != null and m.campus == loginMember.campus}"
                   class="campus-real-name"
                   th:text="'(' + ${m.realName} + ')'"></span>
           </div>

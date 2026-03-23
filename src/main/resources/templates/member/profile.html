@@ -6,41 +6,79 @@
 <div class="section-sm">
   <div class="container">
     <div class="two-col">
+      <!-- 왼쪽: 프로필 카드 -->
       <div>
-        <div class="profile-hero" style="justify-content:flex-start;">
-          <div class="av av-2xl"
-               th:text="${#strings.substring(member.nickname,0,1)}">U</div>
-          <div class="profile-hero-info">
-            <div style="font-size:1.5rem;font-weight:700;color:var(--t1);letter-spacing:-.025em;"
-                 th:text="${member.nickname}"></div>
-            <div style="font-size:.88rem;color:var(--t4);margin-top:4px;"
-                 th:text="${member.username}"></div>
-            <div style="font-size:.88rem;color:var(--t3);margin-top:8px;line-height:1.5;"
-                 th:if="${member.bio != null and !#strings.isEmpty(member.bio)}"
-                 th:text="${member.bio}"></div>
-            <div style="display:flex;gap:24px;margin-top:16px;">
-              <div>
-                <div style="font-size:1.2rem;font-weight:700;color:var(--t1);"
-                     th:text="${posts != null ? posts.size() : 0}">0</div>
-                <div style="font-size:.78rem;color:var(--t4);">게시글</div>
-              </div>
-            </div>
-          </div>
-        </div>        <div class="card" style="text-align:center;padding:40px 28px;">
+        <div class="card" style="text-align:center;padding:40px 28px;">
+          <!-- 아바타 -->
           <div class="av av-2xl" style="margin:0 auto 16px;"
                th:text="${#strings.substring(member.nickname,0,1)}">U</div>
+
+          <!-- 닉네임 + 실명 -->
           <div style="font-size:1.4rem;font-weight:700;color:var(--t1);" th:text="${member.nickname}"></div>
+          <div th:if="${canSeeRealName and member.realName != null and !#strings.isEmpty(member.realName)}"
+               style="font-size:.95rem;color:var(--t4);margin-top:4px;"
+               th:text="${'(' + member.realName + ')'}"></div>
           <div style="font-size:.88rem;color:var(--t4);margin-top:4px;" th:text="${member.username}"></div>
-          <div style="font-size:.88rem;color:var(--t3);margin-top:8px;line-height:1.5;"
-               th:if="${member.bio != null and !#strings.isEmpty(member.bio)}" th:text="${member.bio}"></div>
+
+          <!-- SSAFY 정보 -->
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px;">
+            <span th:if="${member.campus != null}" class="pill pill-blue" th:text="${member.campus}"></span>
+            <span th:if="${member.cohort != null}" class="pill pill-gray" th:text="${member.cohort + '기'}"></span>
+            <span th:if="${isSameClass}" class="pill"
+                  style="background:rgba(16,185,129,.12);color:#059669;border:1px solid rgba(16,185,129,.25);">같은 반</span>
+          </div>
+
+          <!-- 자기소개 -->
+          <div style="font-size:.88rem;color:var(--t3);margin-top:12px;line-height:1.5;"
+               th:if="${member.bio != null and !#strings.isEmpty(member.bio)}"
+               th:text="${member.bio}"></div>
+
+          <!-- 통계 -->
           <div style="margin-top:20px;display:flex;justify-content:center;gap:32px;">
             <div>
               <div style="font-size:1.2rem;font-weight:700;color:var(--t1);" th:text="${posts != null ? posts.size() : 0}">0</div>
               <div style="font-size:.78rem;color:var(--t4);">게시글</div>
             </div>
           </div>
+
+          <!-- 친구 버튼 (내 프로필이 아닌 경우) -->
+          <div th:if="${loginMember != null and loginMember.id != member.id}" style="margin-top:20px;">
+            <!-- 친구 관계 없음 → 친구 추가 -->
+            <form th:if="${friendStatus == null or friendStatus == 'REJECTED'}"
+                  th:action="@{/friends/request/{id}(id=${member.id})}" method="post">
+              <input type="hidden" name="redirect" th:value="${'/profile/' + member.id}">
+              <button type="submit" class="btn btn-blue btn-md" style="width:100%;">👤 친구 추가</button>
+            </form>
+            <!-- 내가 요청함 (PENDING + 내가 requester) -->
+            <div th:if="${friendStatus == 'PENDING' and isRequester}"
+                 style="padding:10px 0;font-size:.88rem;color:var(--t4);">
+              ⏳ 친구 요청 대기 중
+            </div>
+            <!-- 상대가 요청함 (PENDING + 내가 receiver) -->
+            <div th:if="${friendStatus == 'PENDING' and !isRequester}"
+                 style="display:flex;gap:8px;justify-content:center;">
+              <form th:action="@{/friends/accept/{id}(id=${friendshipId})}" method="post" th:if="${friendshipId != null}">
+                <button type="submit" class="btn btn-blue btn-sm">✅ 수락</button>
+              </form>
+              <form th:action="@{/friends/reject/{id}(id=${friendshipId})}" method="post" th:if="${friendshipId != null}">
+                <button type="submit" class="btn btn-ghost btn-sm">❌ 거절</button>
+              </form>
+            </div>
+            <!-- 이미 친구 → 친구 끊기 -->
+            <form th:if="${friendStatus == 'ACCEPTED'}"
+                  th:action="@{/friends/unfriend/{id}(id=${member.id})}" method="post">
+              <button type="submit" class="btn btn-ghost btn-md" style="width:100%;">💔 친구 끊기</button>
+            </form>
+          </div>
+
+          <!-- 내 프로필이면 수정 버튼 -->
+          <div th:if="${loginMember != null and loginMember.id == member.id}" style="margin-top:20px;">
+            <a th:href="@{/profile/edit}" class="btn btn-ghost btn-md" style="width:100%;">✏️ 프로필 수정</a>
+          </div>
         </div>
       </div>
+
+      <!-- 오른쪽: 최근 게시글 -->
       <div>
         <div class="sidebar-block">
           <div class="sidebar-block-head">최근 게시글</div>
