@@ -134,15 +134,18 @@
              style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
           <div th:each="friend : ${myFriends}"
                class="card"
-               style="text-align:center;padding:20px 12px;cursor:pointer;transition:box-shadow .2s;"
-               onclick="location.href=this.dataset.href"
-               th:attr="data-href=@{/profile/{id}(id=${friend.id})}">
-            <div class="av av-lg" style="margin:0 auto 10px;"
-                 th:text="${#strings.substring(friend.nickname,0,1)}">U</div>
-            <div style="font-weight:600;font-size:.9rem;color:var(--t1);" th:text="${friend.nickname}"></div>
-            <div style="font-size:.78rem;color:var(--t5);margin-top:2px;"
-                 th:if="${friend.campus != null}"
-                 th:text="${friend.campus + (friend.cohort != null ? ' ' + friend.cohort + '기' : '')}"></div>
+               style="text-align:center;padding:20px 12px;">
+            <a th:href="@{/profile/{id}(id=${friend.id})}" style="text-decoration:none;">
+              <div class="av av-lg" style="margin:0 auto 10px;"
+                   th:text="${#strings.substring(friend.nickname,0,1)}">U</div>
+              <div style="font-weight:600;font-size:.9rem;color:var(--t1);" th:text="${friend.nickname}"></div>
+              <div style="font-size:.78rem;color:var(--t5);margin-top:2px;"
+                   th:if="${friend.campus != null}"
+                   th:text="${friend.campus + (friend.cohort != null ? ' ' + friend.cohort + '기' : '')}"></div>
+            </a>
+            <form th:action="@{/dm/start/{id}(id=${friend.id})}" method="post" style="margin-top:10px;">
+              <button type="submit" class="btn btn-ghost btn-sm" style="width:100%;">💬 DM</button>
+            </form>
           </div>
         </div>
       </div>

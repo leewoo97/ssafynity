@@ -71,6 +71,13 @@
             </form>
           </div>
 
+          <!-- 친구 관계이면 메시지 보내기 버튼도 표시 -->
+          <div th:if="${friendStatus == 'ACCEPTED'}" style="margin-top:8px;">
+            <form th:action="@{/dm/start/{id}(id=${member.id})}" method="post">
+              <button type="submit" class="btn btn-ghost btn-md" style="width:100%;">💬 메시지 보내기</button>
+            </form>
+          </div>
+
           <!-- 내 프로필이면 수정 버튼 -->
           <div th:if="${loginMember != null and loginMember.id == member.id}" style="margin-top:20px;">
             <a th:href="@{/profile/edit}" class="btn btn-ghost btn-md" style="width:100%;">✏️ 프로필 수정</a>

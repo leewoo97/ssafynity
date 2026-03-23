@@ -39,8 +39,9 @@ public class RedisSubscriber implements MessageListener {
             String body = new String(message.getBody());
             ChatMessageDto dto = objectMapper.readValue(body, ChatMessageDto.class);
 
-            // STOMP /topic/chat/{roomId} 로 브로드캐스트
-            String destination = "/topic/chat/" + dto.getRoomId();
+            // channel 에 따라 STOMP 목적지 결정
+            String prefix = "DM".equals(dto.getChannel()) ? "/topic/dm/" : "/topic/chat/";
+            String destination = prefix + dto.getRoomId();
             messagingTemplate.convertAndSend(destination, dto);
 
             log.debug("[Redis Subscribe] → {} type={} sender={}", destination, dto.getType(), dto.getSenderNickname());

@@ -42,4 +42,12 @@ public class ChatMessageDto implements Serializable {
 
     /** 서버 타임스탬프 (ISO-8601) */
     private String timestamp;
+
+    /**
+     * 채널 구분 — Redis Subscriber가 STOMP 목적지를 결정하는 키
+     * CHAT : /topic/chat/{roomId}  (공개 채팅방)
+     * DM   : /topic/dm/{roomId}   (1:1 DM / 그룹 채팅)
+     */
+    @Builder.Default
+    private String channel = "CHAT";
 }
