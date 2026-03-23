@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(${mentorProfile.member.nickname} + ' 멘토', ~{::body-content})}">
+<body>
+<th:block th:fragment="body-content">
+
+<div class="section-sm">
+  <div class="container" style="max-width:860px;">
+
+    <!-- 플래시 메시지 -->
+    <div th:if="${success}" class="alert alert-success" style="margin-bottom:20px;padding:14px 18px;background:rgba(52,199,89,.1);border:1px solid rgba(52,199,89,.3);border-radius:10px;color:var(--green);font-size:.9rem;" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-error" style="margin-bottom:20px;padding:14px 18px;background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.25);border-radius:10px;color:var(--red);font-size:.9rem;" th:text="${error}"></div>
+
+    <!-- 멘토 헤더 카드 -->
+    <div class="mentor-detail-hero">
+      <div class="mentor-detail-avatar"
+           th:text="${#strings.substring(mentorProfile.member.nickname, 0, 1)}"></div>
+      <div class="mentor-detail-info">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <h1 class="mentor-detail-name" th:text="${mentorProfile.member.nickname}"></h1>
+          <span class="pill pill-blue" th:if="${mentorProfile.sessionCount > 0}"
+                th:text="${mentorProfile.sessionCount} + ' 세션'"></span>
+          <span class="pill pill-green"
+                th:if="${mentorProfile.maxMentees - mentorProfile.currentMentees > 0}"
+                th:text="'자리 ' + ${mentorProfile.maxMentees - mentorProfile.currentMentees} + '/' + ${mentorProfile.maxMentees}"></span>
+          <span class="pill pill-red"
+                th:unless="${mentorProfile.maxMentees - mentorProfile.currentMentees > 0}">정원 마감</span>
+        </div>
+        <div class="mentor-detail-title" th:text="${mentorProfile.title}"></div>
+        <div class="mentor-detail-career"
+             th:if="${mentorProfile.career != null and !#strings.isEmpty(mentorProfile.career)}"
+             th:text="${mentorProfile.career}"></div>
+        <div class="mentor-tags" style="margin-top:10px;" th:if="${mentorProfile.specialties != null}">
+          <span th:each="s : ${mentorProfile.specialties.split(',')}">
+            <span class="tag" th:text="${#strings.trim(s)}"></span>
+          </span>
+        </div>
+      </div>
+
+      <!-- 내 프로필이면 수정/관리 버튼 -->
+      <div th:if="${isSelf}" style="display:flex;flex-direction:column;gap:8px;min-width:140px;">
+        <a th:href="@{/mentors/register}" class="btn btn-ghost btn-md" style="text-align:center;">✏️ 프로필 수정</a>
+        <a th:href="@{/mentoring/my}" class="btn btn-blue btn-md" style="text-align:center;">📋 대시보드</a>
+        <form th:action="@{/mentors/toggle-active}" method="post">
+          <input type="hidden" name="profileId" th:value="${mentorProfile.id}">
+          <button type="submit" class="btn btn-ghost btn-sm" style="width:100%;"
+                  th:text="${mentorProfile.active} ? '⏸ 모집 일시중단' : '▶ 모집 재개'"></button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 멘토 소개 -->
+    <div class="card" style="margin-bottom:20px;" th:if="${mentorProfile.mentorBio != null and !#strings.isEmpty(mentorProfile.mentorBio)}">
+      <h3 style="font-size:1rem;font-weight:700;margin-bottom:12px;color:var(--t1);">👤 멘토 소개</h3>
+      <p style="font-size:.93rem;color:var(--t2);line-height:1.75;white-space:pre-wrap;" th:text="${mentorProfile.mentorBio}"></p>
+    </div>
+
+    <!-- 멘토링 신청 폼 (로그인 + 자신 아닌 경우만) -->
+    <div th:if="${loginMember != null and !isSelf}">
+
+      <!-- 이미 신청한 경우 -->
+      <div th:if="${alreadyApplied}" class="card" style="border:1.5px solid rgba(0,113,227,.3);background:rgba(0,113,227,.04);">
+        <div style="text-align:center;padding:8px 0;">
+          <div style="font-size:2rem;margin-bottom:8px;">✅</div>
+          <div style="font-size:1rem;font-weight:600;color:var(--blue);">신청이 완료됐습니다</div>
+          <div style="font-size:.86rem;color:var(--t3);margin-top:6px;">멘토님의 승낙을 기다려주세요.<br>결과는 알림으로 알려드립니다.</div>
+          <a th:href="@{/mentoring/my}" class="btn btn-ghost btn-md" style="margin-top:16px;">내 신청 현황 보기</a>
+        </div>
+      </div>
+
+      <!-- 신청 폼 -->
+      <div th:unless="${alreadyApplied}" class="card">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--t1);">🙋 멘토링 신청</h3>
+        <form th:action="@{/mentoring/apply/{id}(id=${mentorProfile.id})}" method="post">
+          <div class="form-group">
+            <label class="form-label">신청 메시지
+              <span style="font-weight:400;color:var(--t5);">(선택 — 자기소개, 배우고 싶은 것을 적어주세요)</span>
+            </label>
+            <textarea class="form-input" name="message" rows="5"
+                      style="resize:vertical;font-family:inherit;font-size:.93rem;line-height:1.6;"
+                      placeholder="안녕하세요! 저는 SSAFY x기 xxx입니다. Spring Boot를 공부 중인데 JPA N+1 문제와 성능 최적화에 대해 배우고 싶습니다."></textarea>
+          </div>
+          <div style="text-align:right;">
+            <button type="submit" class="btn btn-blue btn-md"
+                    th:disabled="${mentorProfile.maxMentees - mentorProfile.currentMentees <= 0}">
+              🎓 멘토링 신청하기
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- 비로그인 안내 -->
+    <div th:if="${loginMember == null}" class="card" style="text-align:center;padding:32px;">
+      <div style="font-size:1rem;color:var(--t2);margin-bottom:16px;">로그인 후 멘토링을 신청할 수 있습니다.</div>
+      <a th:href="@{/member/login}" class="btn btn-blue btn-md">로그인하기</a>
+    </div>
+
+    <div style="margin-top:20px;">
+      <a th:href="@{/mentors}" class="btn btn-ghost btn-md">← 멘토 목록으로</a>
+    </div>
+
+  </div>
+</div>
+
+</th:block>
+</body>
+</html>

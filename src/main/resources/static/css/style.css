@@ -1806,3 +1806,150 @@ footer {
   .ql-container.ql-snow { color: var(--t1); background: var(--surface); }
 }
 
+/* ─── MENTORING SYSTEM ───────────────────────────────────────── */
+
+/* 멘토 그리드 */
+.mentor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+@media (max-width: 900px) { .mentor-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 580px) { .mentor-grid { grid-template-columns: 1fr; } }
+
+/* 멘토 목록 카드 */
+.mentor-card {
+  background: var(--surface);
+  border: 1px solid var(--b1);
+  border-radius: var(--r-lg);
+  box-shadow: var(--s1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow .18s, transform .18s;
+}
+.mentor-card:hover { box-shadow: var(--s2); transform: translateY(-2px); }
+
+.mentor-card-top {
+  padding: 28px 20px 20px;
+  text-align: center;
+  background: linear-gradient(160deg, rgba(0,113,227,.05) 0%, transparent 100%);
+  border-bottom: 1px solid var(--b1);
+}
+
+.mentor-avatar-lg {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-xl), rgba(88,86,214,.15));
+  color: var(--blue);
+  font-size: 1.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  letter-spacing: -.02em;
+}
+
+.mentor-card-body {
+  padding: 18px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.mentor-name { font-size: 1.05rem; font-weight: 700; color: var(--t1); }
+.mentor-title { font-size: .86rem; color: var(--blue); font-weight: 600; }
+.mentor-career { font-size: .79rem; color: var(--t4); }
+.mentor-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.mentor-bio-preview { font-size: .84rem; color: var(--t3); line-height: 1.55; flex: 1; }
+
+/* 멘토 상세 헤더 */
+.mentor-detail-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  background: var(--surface);
+  border: 1px solid var(--b1);
+  border-radius: var(--r-lg);
+  box-shadow: var(--s1);
+  padding: 32px 28px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.mentor-detail-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0,113,227,.18), rgba(88,86,214,.2));
+  color: var(--blue);
+  font-size: 2.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.mentor-detail-info { flex: 1; min-width: 0; }
+.mentor-detail-name { font-size: 1.5rem; font-weight: 700; color: var(--t1); letter-spacing: -.02em; }
+.mentor-detail-title { font-size: .95rem; color: var(--blue); font-weight: 600; margin-top: 6px; }
+.mentor-detail-career { font-size: .86rem; color: var(--t4); margin-top: 4px; }
+
+/* 멘토 아바타 작은 버전 */
+.mentor-avatar-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--t2);
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 멘토링 신청 목록 */
+.mentoring-request-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--b1);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--s1);
+}
+.mentoring-request-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--b1);
+  transition: background .12s;
+}
+.mentoring-request-item:last-child { border-bottom: none; }
+.mentoring-request-item:hover { background: var(--surface-2); }
+.mentoring-request-left { padding-top: 2px; }
+.mentoring-request-body { flex: 1; min-width: 0; }
+
+/* 상태 뱃지 */
+.mentoring-status {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 20px;
+  font-size: .73rem;
+  font-weight: 600;
+}
+.status-pending  { background: rgba(255,149,0,.12); color: var(--orange); }
+.status-accepted { background: rgba(52,199,89,.12);  color: var(--green); }
+.status-rejected { background: rgba(255,59,48,.1);  color: var(--red); }
+
+@media (max-width: 600px) {
+  .mentor-detail-hero { flex-direction: column; align-items: stretch; }
+  .mentor-detail-avatar { width: 64px; height: 64px; font-size: 1.6rem; }
+}
+

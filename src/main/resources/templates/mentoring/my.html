@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('내 멘토링', ~{::body-content})}">
+<body>
+<th:block th:fragment="body-content">
+
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <div class="label" style="margin-bottom:6px;">Mentoring</div>
+        <h1>내 멘토링</h1>
+        <p>멘토링 신청 현황과 진행 중인 멘토링을 관리하세요</p>
+      </div>
+      <a th:href="@{/mentors}" class="btn btn-ghost btn-md">← 멘토 목록</a>
+    </div>
+  </div>
+</div>
+
+<div class="section-sm">
+  <div class="container">
+
+    <!-- 플래시 메시지 -->
+    <div th:if="${success}" style="margin-bottom:20px;padding:14px 18px;background:rgba(52,199,89,.1);border:1px solid rgba(52,199,89,.3);border-radius:10px;color:var(--green);font-size:.9rem;" th:text="${success}"></div>
+    <div th:if="${error}" style="margin-bottom:20px;padding:14px 18px;background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.25);border-radius:10px;color:var(--red);font-size:.9rem;" th:text="${error}"></div>
+
+    <!-- ══ 멘토 대시보드 섹션 (멘토인 경우만) ══════════════════════════════ -->
+    <div th:if="${myMentorProfile != null}">
+
+      <!-- 내 멘토 프로필 요약 -->
+      <div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,rgba(0,113,227,.06),rgba(88,86,214,.06));border-color:rgba(0,113,227,.2);">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div class="mentor-avatar-lg" style="width:56px;height:56px;font-size:1.5rem;flex-shrink:0;"
+               th:text="${#strings.substring(loginMember.nickname, 0, 1)}"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.78rem;color:var(--blue);font-weight:600;margin-bottom:2px;">나의 멘토 프로필</div>
+            <div style="font-size:1.05rem;font-weight:700;color:var(--t1);" th:text="${myMentorProfile.title}"></div>
+            <div style="font-size:.83rem;color:var(--t3);margin-top:4px;">
+              현재 멘티 <strong th:text="${myMentorProfile.currentMentees}"></strong>명 /
+              최대 <strong th:text="${myMentorProfile.maxMentees}"></strong>명 ·
+              완료 세션 <strong th:text="${myMentorProfile.sessionCount}"></strong>건
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <span class="pill pill-green" th:if="${myMentorProfile.active}">모집 중</span>
+            <span class="pill pill-gray" th:unless="${myMentorProfile.active}">모집 중단</span>
+            <span class="pill pill-orange" th:if="${pendingCount > 0}"
+                  th:text="${pendingCount} + ' 건 대기 중'"></span>
+            <a th:href="@{/mentors/register}" class="btn btn-ghost btn-sm">수정</a>
+            <form th:action="@{/mentors/toggle-active}" method="post" style="margin:0;">
+              <input type="hidden" name="profileId" th:value="${myMentorProfile.id}">
+              <button type="submit" class="btn btn-ghost btn-sm"
+                      th:text="${myMentorProfile.active} ? '⏸ 일시중단' : '▶ 재개'"></button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- 받은 신청 목록 -->
+      <div style="margin-bottom:40px;">
+        <div class="section-head" style="padding:0;margin-bottom:16px;">
+          <h2 style="font-size:1.1rem;font-weight:700;">
+            📥 받은 신청
+            <span class="pill pill-orange" style="margin-left:8px;" th:if="${pendingCount > 0}"
+                  th:text="${pendingCount}"></span>
+          </h2>
+        </div>
+
+        <div th:if="${receivedRequests == null or receivedRequests.isEmpty()}" class="empty" style="padding:32px 0;">
+          <div class="empty-icon" style="font-size:2rem;">📭</div>
+          <div class="empty-title" style="font-size:1rem;">아직 멘토링 신청이 없습니다</div>
+        </div>
+
+        <div class="mentoring-request-list" th:unless="${receivedRequests == null or receivedRequests.isEmpty()}">
+          <div th:each="req : ${receivedRequests}" class="mentoring-request-item">
+            <div class="mentoring-request-left">
+              <div class="mentor-avatar-sm"
+                   th:text="${#strings.substring(req.mentee.nickname, 0, 1)}"></div>
+            </div>
+            <div class="mentoring-request-body">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+                <span style="font-weight:700;color:var(--t1);" th:text="${req.mentee.nickname}"></span>
+                <span class="mentoring-status"
+                      th:classappend="${req.status == 'PENDING'} ? ' status-pending' : (${req.status == 'ACCEPTED'} ? ' status-accepted' : ' status-rejected')"
+                      th:text="${req.status == 'PENDING'} ? '대기 중' : (${req.status == 'ACCEPTED'} ? '승낙됨' : '거절됨')"></span>
+                <span style="font-size:.78rem;color:var(--t4);"
+                      th:text="${#temporals.format(req.createdAt, 'MM.dd HH:mm')}"></span>
+              </div>
+              <div th:if="${req.message != null and !#strings.isEmpty(req.message)}"
+                   style="font-size:.88rem;color:var(--t2);line-height:1.6;white-space:pre-wrap;background:var(--surface-2);border-radius:8px;padding:10px 14px;margin-bottom:10px;"
+                   th:text="${req.message}"></div>
+              <!-- 승낙되어 채팅방이 있는 경우 -->
+              <div th:if="${req.status == 'ACCEPTED' and req.chatRoomId != null}">
+                <a th:href="@{/chat/{id}(id=${req.chatRoomId})}" class="btn btn-blue btn-sm">
+                  💬 채팅하기
+                </a>
+              </div>
+              <!-- PENDING인 경우 승낙/거절 버튼 -->
+              <div th:if="${req.status == 'PENDING'}" style="display:flex;gap:8px;">
+                <form th:action="@{/mentoring/accept/{id}(id=${req.id})}" method="post">
+                  <button type="submit" class="btn btn-blue btn-sm">✅ 승낙</button>
+                </form>
+                <form th:action="@{/mentoring/reject/{id}(id=${req.id})}" method="post">
+                  <button type="submit" class="btn btn-danger btn-sm">❌ 거절</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ 멘티 대시보드 섹션 (보낸 신청 목록) ════════════════════════════ -->
+    <div>
+      <div class="section-head" style="padding:0;margin-bottom:16px;">
+        <h2 style="font-size:1.1rem;font-weight:700;">📤 내가 보낸 신청</h2>
+        <a th:href="@{/mentors}" class="btn btn-ghost btn-sm">멘토 찾기</a>
+      </div>
+
+      <div th:if="${sentRequests == null or sentRequests.isEmpty()}" class="empty" style="padding:32px 0;">
+        <div class="empty-icon" style="font-size:2rem;">🔍</div>
+        <div class="empty-title" style="font-size:1rem;">아직 신청한 멘토링이 없습니다</div>
+        <div style="margin-top:14px;">
+          <a th:href="@{/mentors}" class="btn btn-blue btn-md">멘토 찾아보기</a>
+        </div>
+      </div>
+
+      <div class="mentoring-request-list" th:unless="${sentRequests == null or sentRequests.isEmpty()}">
+        <div th:each="req : ${sentRequests}" class="mentoring-request-item">
+          <div class="mentoring-request-left">
+            <div class="mentor-avatar-sm"
+                 th:text="${#strings.substring(req.mentorProfile.member.nickname, 0, 1)}"
+                 style="background:linear-gradient(135deg,var(--blue-xl),rgba(88,86,214,.15));color:var(--blue);"></div>
+          </div>
+          <div class="mentoring-request-body">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+              <span style="font-weight:700;color:var(--t1);" th:text="${req.mentorProfile.member.nickname}"></span>
+              <span style="font-size:.82rem;color:var(--t3);" th:text="${req.mentorProfile.title}"></span>
+              <span class="mentoring-status"
+                    th:classappend="${req.status == 'PENDING'} ? ' status-pending' : (${req.status == 'ACCEPTED'} ? ' status-accepted' : ' status-rejected')"
+                    th:text="${req.status == 'PENDING'} ? '대기 중' : (${req.status == 'ACCEPTED'} ? '승낙됨' : '거절됨')"></span>
+              <span style="font-size:.78rem;color:var(--t4);"
+                    th:text="${#temporals.format(req.createdAt, 'MM.dd HH:mm')}"></span>
+            </div>
+            <div th:if="${req.message != null and !#strings.isEmpty(req.message)}"
+                 style="font-size:.86rem;color:var(--t4);margin-bottom:8px;font-style:italic;"
+                 th:text="'「' + ${#strings.abbreviate(req.message, 60)} + '」'"></div>
+            <!-- 승낙된 경우 채팅 버튼 -->
+            <div th:if="${req.status == 'ACCEPTED' and req.chatRoomId != null}" style="display:flex;gap:8px;align-items:center;">
+              <a th:href="@{/chat/{id}(id=${req.chatRoomId})}" class="btn btn-blue btn-sm">
+                💬 멘토와 채팅하기
+              </a>
+              <a th:href="@{/mentors/{id}(id=${req.mentorProfile.id})}" class="btn btn-ghost btn-sm">
+                멘토 프로필
+              </a>
+            </div>
+            <!-- 거절된 경우 다른 멘토 찾기 -->
+            <div th:if="${req.status == 'REJECTED'}">
+              <a th:href="@{/mentors}" class="btn btn-ghost btn-sm">다른 멘토 찾기</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 멘토 미등록 시 유도 배너 -->
+    <div th:if="${myMentorProfile == null}"
+         style="margin-top:40px;padding:28px 32px;background:linear-gradient(135deg,rgba(0,113,227,.06),rgba(88,86,214,.06));border:1.5px dashed rgba(0,113,227,.3);border-radius:var(--r-lg);text-align:center;">
+      <div style="font-size:2rem;margin-bottom:10px;">🎓</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--t1);margin-bottom:6px;">후배들에게 경험을 나눠주세요</div>
+      <div style="font-size:.88rem;color:var(--t3);margin-bottom:16px;">멘토로 등록하면 멘티들의 성장을 도울 수 있습니다.</div>
+      <a th:href="@{/mentors/register}" class="btn btn-blue btn-md">멘토 등록하기</a>
+    </div>
+
+  </div>
+</div>
+
+</th:block>
+</body>
+</html>

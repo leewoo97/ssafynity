@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(${profile != null} ? '멘토 프로필 수정' : '멘토 등록', ~{::body-content})}">
+<body>
+<th:block th:fragment="body-content">
+
+<div class="page-header">
+  <div class="container">
+    <h1 th:text="${profile != null} ? '멘토 프로필 수정' : '🎓 멘토 등록하기'"></h1>
+    <p th:text="${profile != null} ? '프로필 정보를 수정하세요.' : 'SSAFY 후배들에게 경험과 지식을 나눠주세요.'"></p>
+  </div>
+</div>
+
+<div class="section-sm">
+  <div class="container" style="max-width:720px;">
+
+    <!-- 플래시 메시지 -->
+    <div th:if="${error}" style="margin-bottom:20px;padding:14px 18px;background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.25);border-radius:10px;color:var(--red);font-size:.9rem;" th:text="${error}"></div>
+
+    <div class="card">
+
+      <!-- 신규 등록 안내 배너 -->
+      <div th:unless="${profile != null}"
+           style="background:linear-gradient(135deg,rgba(0,113,227,.08),rgba(88,86,214,.08));border:1.5px solid rgba(0,113,227,.2);border-radius:var(--r);padding:20px 24px;margin-bottom:28px;">
+        <div style="font-size:1.05rem;font-weight:700;color:var(--blue);margin-bottom:8px;">멘토로 활동하면 이런 점이 좋아요 🌟</div>
+        <ul style="font-size:.88rem;color:var(--t2);line-height:2;padding-left:18px;margin:0;">
+          <li>SSAFY 후배들에게 실무 경험과 노하우를 전달할 수 있어요</li>
+          <li>멘토링 과정에서 나 자신도 다시 한번 성장할 수 있어요</li>
+          <li>멘토링 채팅으로 편하게 커뮤니케이션할 수 있어요</li>
+          <li>언제든 비활성화해서 모집을 중단할 수 있어요</li>
+        </ul>
+      </div>
+
+      <form th:action="@{${profile != null} ? '/mentors/edit' : '/mentors/register'}" method="post">
+
+        <!-- 수정 시 profile ID -->
+        <input th:if="${profile != null}" type="hidden" name="profileId" th:value="${profile.id}">
+
+        <div class="form-group">
+          <label class="form-label">멘토링 제목 <span style="color:var(--red);">*</span></label>
+          <input class="form-input" type="text" name="title" required
+                 th:value="${profile?.title}"
+                 placeholder="예: Spring Boot & JPA 백엔드 개발 멘토링">
+          <div style="font-size:.78rem;color:var(--t4);margin-top:5px;">멘토 목록에서 첫 번째로 보이는 제목입니다.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">경력 / 이력</label>
+          <input class="form-input" type="text" name="career"
+                 th:value="${profile?.career}"
+                 placeholder="예: SSAFY 12기 수료, 현 N사 백엔드 개발자 2년차">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">전문 분야
+            <span style="font-weight:400;color:var(--t5);">(쉼표로 구분)</span>
+          </label>
+          <input class="form-input" type="text" name="specialties"
+                 th:value="${profile?.specialties}"
+                 placeholder="예: Spring Boot, JPA, AWS, 알고리즘, 코드리뷰">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">멘토 소개</label>
+          <textarea class="form-input" name="mentorBio" rows="6"
+                    style="resize:vertical;font-family:inherit;font-size:.93rem;line-height:1.6;"
+                    placeholder="멘티들에게 본인을 소개해주세요. 어떤 방식으로 멘토링할지, 무엇을 도와드릴 수 있는지 자세히 적어주세요."
+                    th:text="${profile?.mentorBio}"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">최대 동시 멘티 수</label>
+          <input class="form-input" type="number" name="maxMentees" min="1" max="20"
+                 th:value="${profile?.maxMentees ?: 5}"
+                 style="max-width:120px;">
+          <div style="font-size:.78rem;color:var(--t4);margin-top:5px;">동시에 받을 수 있는 최대 멘티 수입니다. 정원이 차면 신청이 불가합니다.</div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <a th:href="${profile != null} ? @{/mentors/{id}(id=${profile.id})} : @{/mentors}"
+             class="btn btn-ghost btn-md">취소</a>
+          <button type="submit" class="btn btn-blue btn-md"
+                  th:text="${profile != null} ? '수정하기' : '🎓 멘토 등록하기'"></button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+</th:block>
+</body>
+</html>

@@ -27,6 +27,8 @@ public class DataInitializer implements CommandLineRunner {
     private final ProjectRepository    projectRepository;
     private final NotificationRepository  notificationRepository;
     private final BookmarkRepository      bookmarkRepository;
+    private final MentorProfileRepository mentorProfileRepository;
+    private final MentoringRequestRepository mentoringRequestRepository;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -720,5 +722,128 @@ public class DataInitializer implements CommandLineRunner {
         bookmarkRepository.save(Bookmark.builder()
                 .member(jung).targetType("POST").targetId(11L)
                 .targetTitle("AWS EC2 + RDS + S3 아키텍처 구성기").build());
+
+        // ──────────── 멘토 프로필 (4명) ────────────
+        MentorProfile mentorAdmin = mentorProfileRepository.save(MentorProfile.builder()
+                .member(admin)
+                .title("Spring Boot & JPA 아키텍처 멘토링")
+                .career("SSAFY 운영진 출신, 백엔드 개발 7년차, 현 플랫폼 팀 선임 개발자")
+                .specialties("Spring Boot,Spring Security,JPA,QueryDSL,MSA,시스템 설계")
+                .mentorBio("안녕하세요! SSAFYnity 운영을 맡고 있는 관리자입니다.\n\n"
+                         + "백엔드 개발 7년차로, Spring 생태계를 깊이 있게 다뤄왔습니다. "
+                         + "주로 엔터프라이즈 레벨의 서비스 설계와 JPA 성능 최적화 경험이 풍부합니다.\n\n"
+                         + "멘토링 방식: 매주 1회 화상 미팅 + 코드 리뷰 + 슬랙 Q&A\n"
+                         + "주로 다루는 주제: N+1 해결, 인덱스 최적화, Spring Security 설계, MSA 입문")
+                .maxMentees(3)
+                .currentMentees(1)
+                .sessionCount(28)
+                .active(true)
+                .build());
+
+        MentorProfile mentorPark = mentorProfileRepository.save(MentorProfile.builder()
+                .member(park)
+                .title("React + Spring Boot 풀스택 개발 멘토링")
+                .career("SSAFY 10기 수료, 현 스타트업 풀스택 개발자 1.5년차")
+                .specialties("React,TypeScript,Spring Boot,REST API,Git,프로젝트 설계")
+                .mentorBio("풀스택 개발자로 일하면서 쌓은 실무 노하우를 나눠드리고 싶습니다!\n\n"
+                         + "SSAFY 최종 프로젝트 우수상 수상 경험이 있고, 현재 스타트업에서 "
+                         + "프론트엔드(React/TypeScript)와 백엔드(Spring Boot)를 동시에 담당하고 있습니다.\n\n"
+                         + "특히 취업 준비생들을 위한 포트폴리오 프로젝트 설계와 코드 리뷰에 집중합니다.\n"
+                         + "같이 프로젝트를 만들어가는 방식으로 진행합니다!")
+                .maxMentees(5)
+                .currentMentees(2)
+                .sessionCount(15)
+                .active(true)
+                .build());
+
+        MentorProfile mentorChoi = mentorProfileRepository.save(MentorProfile.builder()
+                .member(choi)
+                .title("AWS & Docker DevOps 실전 멘토링")
+                .career("SSAFY 11기 수료, Cloud/DevOps 엔지니어 1년차, AWS SAA 자격증 보유")
+                .specialties("AWS,Docker,Docker Compose,CI/CD,Linux,GitHub Actions,Kubernetes 입문")
+                .mentorBio("DevOps 엔지니어로 일하면서 배포와 인프라의 재미에 빠졌습니다 😄\n\n"
+                         + "AWS EC2/RDS/S3/CloudFront 구성부터 Docker 컨테이너 배포, "
+                         + "GitHub Actions CI/CD 파이프라인 구축까지 실무 경험을 공유합니다.\n\n"
+                         + "멘토링 주제: 사이드 프로젝트 AWS 배포, Docker 입문, "
+                         + "CI/CD 파이프라인 설계, 비용 최적화 팁")
+                .maxMentees(4)
+                .currentMentees(0)
+                .sessionCount(8)
+                .active(true)
+                .build());
+
+        MentorProfile mentorLee = mentorProfileRepository.save(MentorProfile.builder()
+                .member(lee)
+                .title("코딩 테스트 & 알고리즘 집중 멘토링")
+                .career("SSAFY 11기 수료, PS 대회 입상, 백준 Diamond 달성")
+                .specialties("알고리즘,BFS/DFS,DP,그리디,백준,프로그래머스,코딩테스트")
+                .mentorBio("알고리즘 공부를 열정적으로 해온 이싸피입니다!\n\n"
+                         + "백준 Diamond 티어, 프로그래머스 Lv.4 다수 풀이 경험이 있습니다. "
+                         + "코딩 테스트로 어려움을 겪고 있는 분들을 집중 지원합니다.\n\n"
+                         + "진행 방식: 취약 유형 분석 → 유형별 집중 풀이 → 실전 모의 테스트\n"
+                         + "목표: 2~3개월 내 삼성/카카오/네이버 코테 통과 수준 달성")
+                .maxMentees(6)
+                .currentMentees(3)
+                .sessionCount(42)
+                .active(true)
+                .build());
+
+        // ──────────── 멘토링 신청 (더미, 다양한 상태) ────────────
+
+        // kim → mentorLee 에게 신청 (PENDING)
+        mentoringRequestRepository.save(MentoringRequest.builder()
+                .mentee(kim)
+                .mentorProfile(mentorLee)
+                .message("안녕하세요! 코딩 테스트 공부를 시작한 지 3개월째인데 "
+                       + "아직 프로그래머스 Lv.2 문제도 어렵게 느껴집니다. "
+                       + "BFS/DFS 유형이 특히 취약한데 집중적으로 도움받고 싶습니다!")
+                .status("PENDING")
+                .build());
+
+        // jung → mentorAdmin 에게 신청 (PENDING)
+        mentoringRequestRepository.save(MentoringRequest.builder()
+                .mentee(jung)
+                .mentorProfile(mentorAdmin)
+                .message("Spring Boot로 사이드 프로젝트를 진행 중인데, JPA를 쓰다 보니 "
+                       + "N+1 문제와 성능 이슈가 자주 발생합니다. "
+                       + "실무 관점에서 JPA 최적화 노하우를 배우고 싶습니다.")
+                .status("PENDING")
+                .build());
+
+        // lee → mentorPark 에게 신청 (PENDING)
+        mentoringRequestRepository.save(MentoringRequest.builder()
+                .mentee(lee)
+                .mentorProfile(mentorPark)
+                .message("백엔드 위주로 개발해왔는데 프론트엔드(React)도 공부하고 싶어요. "
+                       + "풀스택으로 포트폴리오를 만들고 싶은데 어디서부터 시작해야 할지 "
+                       + "방향을 잡아주시면 감사하겠습니다!")
+                .status("PENDING")
+                .build());
+
+        // choi → mentorLee 에게 신청 (REJECTED)
+        mentoringRequestRepository.save(MentoringRequest.builder()
+                .mentee(choi)
+                .mentorProfile(mentorLee)
+                .message("코딩 테스트 준비를 하고 싶습니다. 현재 골드 수준인데 플래티넘까지 올리고 싶어요.")
+                .status("REJECTED")
+                .build());
+
+        // 알림: 멘토링 관련 알림 추가
+        notificationRepository.save(Notification.builder()
+                .receiver(lee)
+                .message("🎓 김개발님이 멘토링을 신청했습니다.")
+                .link("/mentoring/my").isRead(false).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(admin)
+                .message("🎓 정AI님이 멘토링을 신청했습니다.")
+                .link("/mentoring/my").isRead(false).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(park)
+                .message("🎓 이싸피님이 멘토링을 신청했습니다.")
+                .link("/mentoring/my").isRead(true).build());
+        notificationRepository.save(Notification.builder()
+                .receiver(choi)
+                .message("😢 이싸피 멘토님이 멘토링 신청을 검토했지만 아쉽게도 수락하지 못했습니다.")
+                .link("/mentors").isRead(false).build());
     }
 }

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('멘토 찾기', ~{::body-content})}">
+<body>
+<th:block th:fragment="body-content">
+
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <div class="label" style="margin-bottom:6px;">Mentoring</div>
+        <h1>멘토 찾기</h1>
+        <p>SSAFY 선배 개발자에게 1:1 멘토링을 신청해보세요</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <a th:if="${myProfile == null}" th:href="@{/mentors/register}"
+           class="btn btn-blue btn-md" th:unless="${session.loginMember == null}">
+          🎓 멘토 등록하기
+        </a>
+        <a th:if="${myProfile != null}" th:href="@{/mentoring/my}"
+           class="btn btn-ghost btn-md">내 멘토링 관리</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-sm">
+  <div class="container">
+
+    <!-- 검색 바 -->
+    <form th:action="@{/mentors}" method="get" style="margin-bottom:32px;display:flex;gap:8px;">
+      <input type="text" name="keyword" th:value="${keyword}"
+             placeholder="분야로 검색 (예: Spring Boot, 알고리즘, 프론트엔드...)"
+             class="form-input" style="flex:1;max-width:480px;">
+      <button type="submit" class="btn btn-blue btn-md">검색</button>
+      <a th:if="${keyword != null}" th:href="@{/mentors}" class="btn btn-ghost btn-md">초기화</a>
+    </form>
+
+    <!-- 멘토 없음 -->
+    <div th:if="${mentors == null or mentors.isEmpty()}" class="empty">
+      <div class="empty-icon">🎓</div>
+      <div class="empty-title" th:text="${keyword != null} ? '검색 결과가 없습니다.' : '아직 등록된 멘토가 없습니다.'"></div>
+      <div class="empty-sub" style="margin-top:16px;" th:unless="${session.loginMember == null}">
+        <a th:href="@{/mentors/register}" class="btn btn-blue btn-md">첫 번째 멘토가 되기</a>
+      </div>
+    </div>
+
+    <!-- 멘토 그리드 -->
+    <div class="mentor-grid" th:unless="${mentors == null or mentors.isEmpty()}">
+      <div th:each="m : ${mentors}" class="mentor-card">
+        <div class="mentor-card-top">
+          <!-- 아바타 -->
+          <div class="mentor-avatar-lg"
+               th:text="${#strings.substring(m.member.nickname, 0, 1)}"></div>
+          <!-- 뱃지 -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;justify-content:center;">
+            <span class="pill pill-blue" th:if="${m.sessionCount > 0}"
+                  th:text="${m.sessionCount} + ' 세션 완료'"></span>
+            <span class="pill pill-green"
+                  th:text="${m.maxMentees - m.currentMentees} + '/' + ${m.maxMentees} + ' 자리'"></span>
+          </div>
+        </div>
+        <div class="mentor-card-body">
+          <div class="mentor-name" th:text="${m.member.nickname}"></div>
+          <div class="mentor-title" th:text="${m.title}"></div>
+          <div class="mentor-career" th:if="${m.career != null and !#strings.isEmpty(m.career)}"
+               th:text="${m.career}"></div>
+          <div class="mentor-tags" th:if="${m.specialties != null}">
+            <span th:each="s,si : ${m.specialties.split(',')}" th:if="${si.index < 5}">
+              <span class="tag" th:text="${#strings.trim(s)}"></span>
+            </span>
+          </div>
+          <p class="mentor-bio-preview"
+             th:if="${m.mentorBio != null and !#strings.isEmpty(m.mentorBio)}"
+             th:text="${#strings.abbreviate(m.mentorBio, 80)}"></p>
+          <a th:href="@{/mentors/{id}(id=${m.id})}" class="btn btn-blue btn-md" style="width:100%;justify-content:center;">프로필 보기</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</th:block>
+</body>
+</html>

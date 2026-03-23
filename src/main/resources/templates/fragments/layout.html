@@ -24,6 +24,7 @@
       <a th:href="@{/videos}">영상</a>
       <a th:href="@{/events}">이벤트</a>
       <a th:href="@{/chat}">채팅</a>
+      <a th:href="@{/mentors}">멘토링</a>
     </div>
 
     <div class="nav-actions">
@@ -66,10 +67,10 @@
     <a th:href="@{/videos}">🎬 영상</a>
     <a th:href="@{/events}">📅 이벤트</a>
     <a th:href="@{/chat}">💬 채팅</a>
+    <a th:href="@{/mentors}">🎓 멘토링</a>
     <div class="nav-drawer-sep"></div>
     <th:block th:if="${session.loginMember != null}">
-      <a th:href="@{/profile/me}">👤 마이페이지</a>
-      <a th:href="@{/notifications}">🔔 알림</a>
+      <a th:href="@{/profile/me}">👤 마이페이지</a>      <a th:href="@{/mentoring/my}">🎓 내 멘토링</a>      <a th:href="@{/notifications}">🔔 알림</a>
       <a th:href="@{/bookmarks}">🔖 북마크</a>
       <div class="nav-drawer-sep"></div>
       <a th:href="@{/logout}">로그아웃</a>
@@ -105,6 +106,7 @@
         <a th:href="@{/docs}">문서 공유</a>
         <a th:href="@{/videos}">영상</a>
         <a th:href="@{/chat}">채팅방</a>
+        <a th:href="@{/mentors}">멘토링</a>
       </div>
       <div class="footer-col">
         <h5>계정</h5>
