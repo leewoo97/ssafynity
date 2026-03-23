@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('캠퍼스 추억 공간', ~{::body-content})}">
+<body>
+<th:block th:fragment="body-content">
+
+<!-- ── 캠퍼스 정보 없음 안내 ───────────────────────────── -->
+<div th:if="${noCampus}" class="section">
+  <div class="container" style="max-width:560px;text-align:center;">
+    <div style="font-size:4rem;margin-bottom:20px;">🎓</div>
+    <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:12px;">캠퍼스 정보를 설정해주세요</h2>
+    <p style="color:var(--t4);line-height:1.7;margin-bottom:28px;">
+      프로필에서 SSAFY 캠퍼스와 기수를 설정하면<br>같은 기수 동기들의 추억 공간에 입장할 수 있어요.
+    </p>
+    <a th:href="@{/profile/edit}" class="btn btn-blue btn-md">프로필 설정하러 가기</a>
+    <div style="margin-top:16px;">
+      <a th:href="@{/campus/browse}" class="btn btn-ghost btn-md">캠퍼스 둘러보기</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── 메인 캠퍼스 공간 ─────────────────────────────────── -->
+<div th:unless="${noCampus}">
+
+  <!-- 히어로 배너 -->
+  <div class="campus-hero" th:style="'background-image: linear-gradient(rgba(0,0,0,.38), rgba(0,0,0,.55)), url(' + ${campusImage} + ')'">
+    <div class="campus-hero-inner">
+      <div class="campus-badge">
+        <span th:text="${campusEmoji}">🏙️</span>
+        <span th:text="${campus} + ' 캠퍼스'">서울 캠퍼스</span>
+      </div>
+      <h1 class="campus-hero-title">
+        <span th:text="${cohort}">13</span>기 동기들과의 추억
+      </h1>
+      <p class="campus-hero-sub">
+        함께 코딩하고, 함께 성장했던 그 시간들 ✨
+      </p>
+      <div class="campus-hero-stats">
+        <div class="campus-stat">
+          <div class="campus-stat-num" th:text="${memberCount}">0</div>
+          <div class="campus-stat-label">함께한 동기</div>
+        </div>
+        <div class="campus-stat">
+          <div class="campus-stat-num" th:text="${cohort}">0</div>
+          <div class="campus-stat-label">기수</div>
+        </div>
+        <div class="campus-stat">
+          <div class="campus-stat-num" th:text="${campus}">-</div>
+          <div class="campus-stat-label">캠퍼스</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 동기 멤버 그리드 -->
+  <div class="section-sm">
+    <div class="container">
+
+      <div class="campus-section-head">
+        <div>
+          <div class="label" style="margin-bottom:6px;">Members</div>
+          <h2 style="font-size:1.3rem;font-weight:700;">
+            <span th:text="${campus}">서울</span> <span th:text="${cohort}">13</span>기 동기
+            <span class="campus-count-badge" th:text="${memberCount} + '명'">0명</span>
+          </h2>
+        </div>
+        <a th:href="@{/campus/browse}" class="btn btn-ghost btn-md">다른 기수 보기</a>
+      </div>
+
+      <!-- 비어있는 경우 -->
+      <div th:if="${cohortMembers == null or cohortMembers.isEmpty()}" class="campus-empty">
+        <div style="font-size:3rem;margin-bottom:16px;">👥</div>
+        <p>아직 같은 기수 동기가 없습니다.</p>
+        <p style="font-size:.88rem;color:var(--t5);margin-top:6px;">동기들에게 SSAFYnity를 소개해보세요!</p>
+      </div>
+
+      <!-- 멤버 카드 그리드 -->
+      <div class="campus-members-grid" th:unless="${cohortMembers == null or cohortMembers.isEmpty()}">
+        <a th:each="m : ${cohortMembers}"
+           th:href="@{/profile/{id}(id=${m.id})}"
+           class="campus-member-card"
+           th:classappend="${m.id == loginMember.id} ? ' campus-member-me' : ''">
+
+          <!-- 아바타 -->
+          <div class="campus-member-avatar">
+            <img th:if="${m.profileImageUrl != null and !#strings.isEmpty(m.profileImageUrl)}"
+                 th:src="${m.profileImageUrl}" alt="프로필" class="campus-avatar-img">
+            <span th:unless="${m.profileImageUrl != null and !#strings.isEmpty(m.profileImageUrl)}"
+                  th:text="${#strings.substring(m.nickname, 0, 1)}"
+                  class="campus-avatar-initial"></span>
+            <span th:if="${m.id == loginMember.id}" class="campus-me-badge">나</span>
+          </div>
+
+          <!-- 이름 -->
+          <div class="campus-member-name">
+            <span th:text="${m.nickname}">닉네임</span>
+            <!-- 실명 공개 범위가 ALL이면 누구에게나 표시, COHORT면 같은 기수에게만 -->
+            <span th:if="${m.realName != null and !#strings.isEmpty(m.realName)}"
+                  th:if="${m.realNameScope == 'ALL' or (m.realNameScope == 'COHORT' and m.campus == loginMember.campus and m.cohort == loginMember.cohort)}"
+                  class="campus-real-name"
+                  th:text="'(' + ${m.realName} + ')'"></span>
+          </div>
+          <div class="campus-member-bio" th:text="${m.bio != null ? #strings.abbreviate(m.bio, 40) : ''}"></div>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 추억 포토 섹션 (더미 갤러리) -->
+  <div class="section-sm" style="background:var(--surface-2);">
+    <div class="container">
+      <div class="label" style="margin-bottom:6px;">Memories</div>
+      <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:20px;">
+        <span th:text="${campus}">서울</span> 캠퍼스의 풍경
+      </h2>
+      <div class="campus-gallery">
+        <div class="campus-gallery-item campus-gallery-wide">
+          <img th:src="${campusImage}" alt="캠퍼스">
+          <div class="campus-gallery-label" th:text="${campus} + ' 캠퍼스'">캠퍼스</div>
+        </div>
+        <div class="campus-gallery-item">
+          <img th:src="'https://picsum.photos/seed/' + ${campus} + '1/600/400'" alt="추억1">
+        </div>
+        <div class="campus-gallery-item">
+          <img th:src="'https://picsum.photos/seed/' + ${campus} + '2/600/400'" alt="추억2">
+        </div>
+        <div class="campus-gallery-item">
+          <img th:src="'https://picsum.photos/seed/' + ${campus} + '3/600/400'" alt="추억3">
+          <div class="campus-gallery-label" th:text="${cohort} + '기 화이팅! 🔥'">기 화이팅</div>
+        </div>
+        <div class="campus-gallery-item">
+          <img th:src="'https://picsum.photos/seed/' + ${campus} + '4/600/400'" alt="추억4">
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</th:block>
+</body>
+</html>

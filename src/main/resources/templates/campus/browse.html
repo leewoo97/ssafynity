@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('캠퍼스 둘러보기', ~{::body-content})}">
+<body>
+<th:block th:fragment="body-content">
+
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <div class="label" style="margin-bottom:6px;">Campus</div>
+        <h1>캠퍼스 둘러보기</h1>
+        <p>SSAFY 5개 캠퍼스, 1~16기 동기들을 만나보세요</p>
+      </div>
+      <a th:if="${session.loginMember != null}" th:href="@{/campus}" class="btn btn-blue btn-md">
+        🏠 내 기수 공간 가기
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="section-sm">
+  <div class="container">
+
+    <!-- 검색 폼 -->
+    <form th:action="@{/campus/browse}" method="get" class="campus-browse-form">
+      <div class="campus-browse-selects">
+        <select name="campus" class="form-select campus-browse-select">
+          <option value="">캠퍼스 선택</option>
+          <option th:each="c : ${campuses}" th:value="${c}" th:text="${c}"
+                  th:selected="${c == browserCampus}"></option>
+        </select>
+        <select name="cohort" class="form-select campus-browse-select">
+          <option value="">기수 선택</option>
+          <option th:each="n : ${#numbers.sequence(1, 16)}"
+                  th:value="${n}" th:text="${n} + '기'"
+                  th:selected="${n == browserCohort}"></option>
+        </select>
+        <button type="submit" class="btn btn-blue btn-md">조회하기</button>
+      </div>
+    </form>
+
+    <!-- 캠퍼스 카드 그리드 (선택 전) -->
+    <div th:if="${browserCampus == null}" class="campus-cards-grid">
+      <a th:each="entry : ${campusImages.entrySet()}"
+         th:href="@{/campus/browse(campus=${entry.key}, cohort=13)}"
+         class="campus-card">
+        <div class="campus-card-img">
+          <img th:src="${entry.value}" th:alt="${entry.key}">
+          <div class="campus-card-overlay">
+            <span th:text="${campusEmojis[entry.key]}">🏙️</span>
+            <span th:text="${entry.key} + ' 캠퍼스'">캠퍼스</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- 조회 결과 -->
+    <div th:if="${browserCampus != null}">
+      <!-- 히어로 배너 (작은 사이즈) -->
+      <div class="campus-browse-banner"
+           th:style="'background-image: linear-gradient(rgba(0,0,0,.4), rgba(0,0,0,.56)), url(' + ${campusImage} + ')'">
+        <div class="campus-badge" style="margin-bottom:12px;">
+          <span th:text="${campusEmoji}">🏙️</span>
+          <span th:text="${browserCampus} + ' 캠퍼스 ' + ${browserCohort} + '기'">캠퍼스</span>
+        </div>
+        <div style="color:rgba(255,255,255,.8);font-size:.95rem;">
+          총 <strong th:text="${memberCount}">0</strong>명의 동기가 SSAFYnity에 있습니다
+        </div>
+      </div>
+
+      <!-- 멤버 그리드 -->
+      <div th:if="${cohortMembers == null or cohortMembers.isEmpty()}" class="campus-empty" style="margin-top:32px;">
+        <div style="font-size:3rem;margin-bottom:16px;">👥</div>
+        <p>해당 기수에 가입한 멤버가 없습니다.</p>
+      </div>
+
+      <div class="campus-members-grid" style="margin-top:28px;"
+           th:unless="${cohortMembers == null or cohortMembers.isEmpty()}">
+        <a th:each="m : ${cohortMembers}"
+           th:href="@{/profile/{id}(id=${m.id})}"
+           class="campus-member-card">
+          <div class="campus-member-avatar">
+            <img th:if="${m.profileImageUrl != null and !#strings.isEmpty(m.profileImageUrl)}"
+                 th:src="${m.profileImageUrl}" alt="프로필" class="campus-avatar-img">
+            <span th:unless="${m.profileImageUrl != null and !#strings.isEmpty(m.profileImageUrl)}"
+                  th:text="${#strings.substring(m.nickname, 0, 1)}"
+                  class="campus-avatar-initial"></span>
+          </div>
+          <div class="campus-member-name">
+            <span th:text="${m.nickname}">닉네임</span>
+            <span th:if="${m.realName != null and !#strings.isEmpty(m.realName) and m.realNameScope == 'ALL'}"
+                  class="campus-real-name"
+                  th:text="'(' + ${m.realName} + ')'"></span>
+          </div>
+          <div class="campus-member-bio" th:text="${m.bio != null ? #strings.abbreviate(m.bio, 40) : ''}"></div>
+        </a>
+      </div>
+
+      <!-- 다른 기수 링크 -->
+      <div class="campus-cohort-nav" th:if="${browserCampus != null}">
+        <div class="label" style="margin-bottom:10px;">다른 기수 보기</div>
+        <div class="campus-cohort-pills">
+          <a th:each="n : ${#numbers.sequence(1, 16)}"
+             th:href="@{/campus/browse(campus=${browserCampus},cohort=${n})}"
+             class="campus-cohort-pill"
+             th:classappend="${n == browserCohort} ? ' active' : ''"
+             th:text="${n} + '기'">기</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</th:block>
+</body>
+</html>

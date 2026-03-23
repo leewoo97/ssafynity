@@ -44,10 +44,16 @@ public class ProfileController {
     public String edit(@RequestParam String nickname,
                        @RequestParam(required = false) String email,
                        @RequestParam(required = false) String bio,
+                       @RequestParam(required = false) String profileImageUrl,
+                       @RequestParam(required = false) String realName,
+                       @RequestParam(required = false, defaultValue = "NONE") String realNameScope,
+                       @RequestParam(required = false) String campus,
+                       @RequestParam(required = false) Integer cohort,
                        HttpSession session) {
         Member member = (Member) session.getAttribute("loginMember");
         if (member == null) return "redirect:/member/login";
-        memberService.updateProfile(member.getId(), nickname, email, bio);
+        memberService.updateProfile(member.getId(), nickname, email, bio,
+                profileImageUrl, realName, realNameScope, campus, cohort);
         // 세션 갱신
         Member fresh = memberService.findById(member.getId()).orElseThrow();
         session.setAttribute("loginMember", fresh);

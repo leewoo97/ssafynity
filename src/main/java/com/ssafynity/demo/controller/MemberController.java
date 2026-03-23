@@ -27,9 +27,13 @@ public class MemberController {
                           @RequestParam String password,
                           @RequestParam String nickname,
                           @RequestParam(required = false) String email,
+                          @RequestParam(required = false) String realName,
+                          @RequestParam(required = false, defaultValue = "NONE") String realNameScope,
+                          @RequestParam(required = false) String campus,
+                          @RequestParam(required = false) Integer cohort,
                           Model model) {
         try {
-            memberService.register(username, password, nickname, email);
+            memberService.register(username, password, nickname, email, realName, realNameScope, campus, cohort);
             return "redirect:/member/login";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());

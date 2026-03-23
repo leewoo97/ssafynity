@@ -44,6 +44,10 @@ public class DataInitializer implements CommandLineRunner {
                 .nickname("관리자")
                 .email("admin@ssafynity.com")
                 .bio("SSAFYnity 플랫폼 관리자입니다. 플랫폼 운영과 콘텐츠 관리를 담당합니다.")
+                .campus("서울")
+                .cohort(13)
+                .realName("관리자")
+                .realNameScope("ALL")
                 .role("ADMIN")
                 .build());
 
@@ -53,6 +57,11 @@ public class DataInitializer implements CommandLineRunner {
                 .nickname("김개발")
                 .email("kim@ssafy.com")
                 .bio("백엔드 개발자 지망생. Spring Boot와 JPA를 공부 중입니다. 매일 한 문제씩 알고리즘 풀기 중.")
+                .campus("서울")
+                .cohort(13)
+                .realName("김민준")
+                .realNameScope("COHORT")
+                .profileImageUrl("https://picsum.photos/seed/kim_dev/200/200")
                 .role("USER")
                 .build());
 
@@ -62,6 +71,11 @@ public class DataInitializer implements CommandLineRunner {
                 .nickname("이싸피")
                 .email("lee@ssafy.com")
                 .bio("알고리즘 문제 풀이를 즐기는 SSAFY 수료생. 현재 백엔드 취준 중입니다.")
+                .campus("대전")
+                .cohort(13)
+                .realName("이지훈")
+                .realNameScope("COHORT")
+                .profileImageUrl("https://picsum.photos/seed/lee_ssafy/200/200")
                 .role("USER")
                 .build());
 
@@ -71,6 +85,11 @@ public class DataInitializer implements CommandLineRunner {
                 .nickname("박풀스택")
                 .email("park@ssafy.com")
                 .bio("프론트엔드와 백엔드 모두 다루는 풀스택 개발자. React + Spring Boot 조합을 좋아합니다.")
+                .campus("서울")
+                .cohort(13)
+                .realName("박준혁")
+                .realNameScope("ALL")
+                .profileImageUrl("https://picsum.photos/seed/park_full/200/200")
                 .role("USER")
                 .build());
 
@@ -80,6 +99,11 @@ public class DataInitializer implements CommandLineRunner {
                 .nickname("최클라우드")
                 .email("choi@ssafy.com")
                 .bio("DevOps 엔지니어 지망생. AWS, Docker, Kubernetes를 공부하고 있습니다.")
+                .campus("구미")
+                .cohort(12)
+                .realName("최성환")
+                .realNameScope("COHORT")
+                .profileImageUrl("https://picsum.photos/seed/choi_cloud/200/200")
                 .role("USER")
                 .build());
 
@@ -89,6 +113,11 @@ public class DataInitializer implements CommandLineRunner {
                 .nickname("정AI")
                 .email("jung@ssafy.com")
                 .bio("AI/ML 개발자. Python과 PyTorch를 주로 사용하며 MLOps에 관심이 많습니다.")
+                .campus("부울경")
+                .cohort(14)
+                .realName("정유진")
+                .realNameScope("NONE")
+                .profileImageUrl("https://picsum.photos/seed/jung_ai/200/200")
                 .role("USER")
                 .build());
 

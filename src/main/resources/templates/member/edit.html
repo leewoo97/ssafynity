@@ -9,10 +9,31 @@
   </div>
 </div>
 <div class="section-sm">
-  <div class="container-sm">
+  <div class="container" style="max-width:680px;">
     <div class="card">
       <div th:if="${pwError}" style="margin-bottom:16px;padding:12px 16px;background:rgba(255,59,48,.08);border-radius:var(--r-sm);color:var(--red);font-size:.88rem;" th:text="${pwError}"></div>
+
       <form th:action="@{/profile/edit}" method="post">
+
+        <!-- 프로필 사진 -->
+        <div class="register-section-label">프로필 사진</div>
+        <div class="profile-img-edit-wrap">
+          <div class="profile-img-preview" id="imgPreview">
+            <img th:if="${member.profileImageUrl != null and !#strings.isEmpty(member.profileImageUrl)}"
+                 th:src="${member.profileImageUrl}" id="previewImg" alt="프로필">
+            <span th:unless="${member.profileImageUrl != null and !#strings.isEmpty(member.profileImageUrl)}"
+                  id="previewInitial"
+                  th:text="${#strings.substring(member.nickname, 0, 1)}">U</span>
+          </div>
+          <div class="profile-img-edit-info">
+            <button type="button" class="btn btn-ghost btn-md" id="uploadImgBtn">사진 변경</button>
+            <div style="font-size:.8rem;color:var(--t5);margin-top:6px;">JPG, PNG, GIF 최대 5MB</div>
+          </div>
+          <input type="hidden" name="profileImageUrl" id="profileImageUrl" th:value="${member.profileImageUrl}">
+        </div>
+
+        <!-- 기본 정보 -->
+        <div class="register-section-label" style="margin-top:24px;">기본 정보</div>
         <div class="form-group">
           <label class="form-label">아이디</label>
           <input class="form-input" type="text" th:value="${member.username}" disabled style="opacity:.6;cursor:not-allowed;">
@@ -27,14 +48,66 @@
         </div>
         <div class="form-group">
           <label class="form-label">자기소개</label>
-          <textarea class="form-textarea" name="bio" rows="4" placeholder="간단한 자기소개를 입력하세요" th:text="${member.bio}"></textarea>
+          <textarea class="form-textarea" name="bio" rows="3" placeholder="간단한 자기소개를 입력하세요" th:text="${member.bio}"></textarea>
         </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
+
+        <!-- SSAFY 정보 -->
+        <div class="register-section-label" style="margin-top:24px;">SSAFY 정보</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">캠퍼스</label>
+            <select name="campus" class="form-select">
+              <option value="">선택 안함</option>
+              <option value="서울" th:selected="${member.campus == '서울'}">🏙️ 서울</option>
+              <option value="대전" th:selected="${member.campus == '대전'}">🌿 대전</option>
+              <option value="광주" th:selected="${member.campus == '광주'}">🌸 광주</option>
+              <option value="구미" th:selected="${member.campus == '구미'}">⚙️ 구미</option>
+              <option value="부울경" th:selected="${member.campus == '부울경'}">🌊 부울경</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">기수</label>
+            <select name="cohort" class="form-select">
+              <option value="">선택 안함</option>
+              <option th:each="n : ${#numbers.sequence(1, 16)}"
+                      th:value="${n}" th:text="${n} + '기'"
+                      th:selected="${n == member.cohort}">기</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 실명 공개 설정 -->
+        <div class="register-section-label" style="margin-top:24px;">실명 공개 설정</div>
+        <div class="form-group">
+          <label class="form-label">실명 <span style="font-weight:400;color:var(--t5)">(선택)</span></label>
+          <input class="form-input" type="text" name="realName" th:value="${member.realName}" placeholder="홍길동">
+          <div style="font-size:.8rem;color:var(--t5);margin-top:4px;">닉네임 옆에 함께 표시됩니다.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">실명 공개 범위</label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="realNameScope" value="NONE" th:checked="${member.realNameScope == 'NONE' or member.realNameScope == null}">
+              <div class="radio-content"><span class="radio-label">🔒 비공개</span><span class="radio-desc">실명을 공개하지 않습니다</span></div>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="realNameScope" value="COHORT" th:checked="${member.realNameScope == 'COHORT'}">
+              <div class="radio-content"><span class="radio-label">👥 같은 기수만</span><span class="radio-desc">같은 캠퍼스·기수 동기에게만 공개</span></div>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="realNameScope" value="ALL" th:checked="${member.realNameScope == 'ALL'}">
+              <div class="radio-content"><span class="radio-label">🌍 전체 공개</span><span class="radio-desc">SSAFYnity 모든 회원에게 공개</span></div>
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
           <a th:href="@{/profile/me}" class="btn btn-ghost btn-md">취소</a>
           <button type="submit" class="btn btn-blue btn-md">저장하기</button>
         </div>
       </form>
-      <hr style="border:none;border-top:1px solid var(--b1);margin:24px 0;">
+
+      <hr style="border:none;border-top:1px solid var(--b1);margin:28px 0;">
       <div style="font-size:.9rem;font-weight:600;color:var(--t2);margin-bottom:16px;">비밀번호 변경</div>
       <form th:action="@{/profile/change-password}" method="post">
         <div class="form-group">
@@ -52,6 +125,28 @@
     </div>
   </div>
 </div>
+
+<script>
+document.getElementById('uploadImgBtn').addEventListener('click', function() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.click();
+  input.onchange = function() {
+    var file = input.files[0];
+    if (!file) return;
+    var fd = new FormData();
+    fd.append('file', file);
+    fetch('/upload/image', { method: 'POST', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        document.getElementById('profileImageUrl').value = data.url;
+        var preview = document.getElementById('imgPreview');
+        preview.innerHTML = '<img src="' + data.url + '" id="previewImg" alt="프로필" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+  };
+});
+</script>
 </th:block>
 </body>
 </html>

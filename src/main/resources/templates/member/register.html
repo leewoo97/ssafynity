@@ -4,7 +4,7 @@
 <body>
 <th:block th:fragment="body-content">
 <div class="auth-wrap">
-  <div class="auth-card" style="max-width:480px;">
+  <div class="auth-card" style="max-width:560px;">
     <div class="auth-logo">S</div>
     <div class="auth-tagline">SSAFYnity</div>
     <h2 class="auth-title">회원가입</h2>
@@ -12,26 +12,75 @@
     <div th:if="${error}" style="margin-bottom:16px;padding:12px 14px;background:rgba(255,59,48,.08);border-radius:var(--r-sm);color:var(--red);font-size:.88rem;" th:text="${error}"></div>
 
     <form th:action="@{/member/register}" method="post">
+      <div class="register-section-label">기본 정보</div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">아이디</label>
+          <label class="form-label">아이디 <span style="color:var(--red)">*</span></label>
           <input class="form-input" type="text" name="username" required placeholder="영문/숫자 4자 이상">
         </div>
         <div class="form-group">
-          <label class="form-label">닉네임</label>
-          <input class="form-input" type="text" name="nickname" required placeholder="커뮤니티 닉네임">
+          <label class="form-label">닉네임 <span style="color:var(--red)">*</span></label>
+          <input class="form-input" type="text" name="nickname" required placeholder="커뮤니티에서 사용할 이름">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">비밀번호</label>
+        <label class="form-label">비밀번호 <span style="color:var(--red)">*</span></label>
         <input class="form-input" type="password" name="password" required placeholder="8자 이상">
       </div>
       <div class="form-group">
-        <label class="form-label">이메일 <span style="font-weight:400;color:var(--t5);">(선택)</span></label>
+        <label class="form-label">이메일 <span style="font-weight:400;color:var(--t5)">(선택)</span></label>
         <input class="form-input" type="email" name="email" placeholder="example@ssafy.com">
       </div>
-      <button type="submit" class="btn btn-blue btn-lg" style="width:100%;margin-top:8px;">가입하기</button>
+
+      <div class="register-section-label" style="margin-top:20px;">SSAFY 정보</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">캠퍼스 <span style="font-weight:400;color:var(--t5)">(선택)</span></label>
+          <select name="campus" class="form-select">
+            <option value="">선택 안함</option>
+            <option value="서울">🏙️ 서울</option>
+            <option value="대전">🌿 대전</option>
+            <option value="광주">🌸 광주</option>
+            <option value="구미">⚙️ 구미</option>
+            <option value="부울경">🌊 부울경</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">기수 <span style="font-weight:400;color:var(--t5)">(선택)</span></label>
+          <select name="cohort" class="form-select">
+            <option value="">선택 안함</option>
+            <option th:each="n : ${#numbers.sequence(1, 16)}" th:value="${n}" th:text="${n} + '기'">기</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="register-section-label" style="margin-top:20px;">실명 공개 설정</div>
+      <div class="form-group">
+        <label class="form-label">실명 <span style="font-weight:400;color:var(--t5)">(선택)</span></label>
+        <input class="form-input" type="text" name="realName" placeholder="홍길동">
+        <div style="font-size:.8rem;color:var(--t5);margin-top:4px;">닉네임 옆에 함께 표시됩니다.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">실명 공개 범위</label>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="realNameScope" value="NONE" checked>
+            <div class="radio-content"><span class="radio-label">🔒 비공개</span><span class="radio-desc">실명을 공개하지 않습니다</span></div>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="realNameScope" value="COHORT">
+            <div class="radio-content"><span class="radio-label">👥 같은 기수만</span><span class="radio-desc">같은 캠퍼스·기수 동기에게만 공개</span></div>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="realNameScope" value="ALL">
+            <div class="radio-content"><span class="radio-label">🌍 전체 공개</span><span class="radio-desc">SSAFYnity 모든 회원에게 공개</span></div>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-blue btn-lg" style="width:100%;margin-top:16px;">가입하기</button>
     </form>
+
     <p style="text-align:center;margin-top:20px;font-size:.88rem;color:var(--t4);">
       이미 계정이 있으신가요? <a th:href="@{/member/login}" style="color:var(--blue);font-weight:600;">로그인</a>
     </p>

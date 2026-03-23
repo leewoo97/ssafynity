@@ -30,6 +30,32 @@ public class Member {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
+    /** 프로필 이미지 URL */
+    private String profileImageUrl;
+
+    /** 실명 (선택) */
+    private String realName;
+
+    /**
+     * 실명 공개 범위
+     * ALL    — SSAFYnity 전체 공개
+     * COHORT — 같은 캠퍼스+기수만 공개
+     * NONE   — 비공개
+     */
+    @Builder.Default
+    private String realNameScope = "NONE";
+
+    /**
+     * SSAFY 캠퍼스
+     * 서울 / 대전 / 광주 / 구미 / 부울경
+     */
+    private String campus;
+
+    /**
+     * SSAFY 기수 (1~16)
+     */
+    private Integer cohort;
+
     @Builder.Default
     @Column(nullable = false)
     private String role = "USER"; // USER, ADMIN
