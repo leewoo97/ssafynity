@@ -35,6 +35,9 @@ public class Post {
     @Builder.Default
     private int likeCount = 0;
 
+    /** null = 전체게시판, "서울"/"대전" 등 = 캠퍼스 전용게시판 */
+    private String campus;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

@@ -99,4 +99,29 @@ public class PostService {
         java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(days);
         return postRepository.findHotPosts(since, limit);
     }
+
+    // ── 캠퍼스 전용 게시판 ────────────────────────────────────────
+    @Transactional
+    public Post createCampusPost(String title, String content, Member author, String campus) {
+        Post post = Post.builder()
+                .title(title)
+                .content(content)
+                .category("캠퍼스")
+                .author(author)
+                .campus(campus)
+                .build();
+        return postRepository.save(post);
+    }
+
+    public List<Post> getRecentCampusPosts(String campus) {
+        return postRepository.findTop5ByCampusOrderByCreatedAtDesc(campus);
+    }
+
+    public Page<Post> findByCampusPaged(String campus, Pageable pageable) {
+        return postRepository.findByCampus(campus, pageable);
+    }
+
+    public Page<Post> findByCampusAndKeyword(String campus, String keyword, Pageable pageable) {
+        return postRepository.findByCampusAndTitleContainingIgnoreCase(campus, keyword, pageable);
+    }
 }

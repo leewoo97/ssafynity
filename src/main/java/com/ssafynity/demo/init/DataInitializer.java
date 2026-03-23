@@ -857,6 +857,74 @@ public class DataInitializer implements CommandLineRunner {
                 .status("REJECTED")
                 .build());
 
+        // ──────────── 캠퍼스 전용 게시글 (각 캠퍼스별 2~3개) ────────────
+        postRepository.save(Post.builder()
+                .title("[서울] 13기 최종 프로젝트 발표회 후기")
+                .content("<h2>서울 13기 최종 프로젝트 발표회 🎉</h2>"
+                       + "<p>드디어 최종 프로젝트 발표가 끝났습니다! 6주간 팀원들과 함께한 시간이 정말 소중했어요.</p>"
+                       + "<p>우리 팀은 AI 기반 코드 리뷰 자동화 서비스를 개발했는데, 심사위원 분들 반응이 너무 좋았습니다! 서울 13기 모두 수고했어요 👏</p>"
+                       + "<img src=\"https://picsum.photos/seed/seoul13/800/400\" style=\"max-width:100%;border-radius:8px;margin:12px 0\">")
+                .author(kim).category("캠퍼스").campus("서울")
+                .viewCount(47).likeCount(12).build());
+
+        postRepository.save(Post.builder()
+                .title("[서울] 캠퍼스 근처 맛집 공유 스레드")
+                .content("<h2>서울 캠퍼스 근처 맛집 모음 🍜</h2>"
+                       + "<p>점심/저녁 먹을 곳 찾으시는 분들을 위해 자주 가는 맛집들을 정리해봤어요. 댓글로 추가해주세요!</p>"
+                       + "<ul><li><strong>설렁탕 집:</strong> 캠퍼스 정문에서 5분, 국물이 진해서 자주 가요</li>"
+                       + "<li><strong>일식 덮밥:</strong> 가성비 최고. 점심 특선 9천원</li>"
+                       + "<li><strong>카페:</strong> 3층 창가 자리에서 공부하기 딱 좋아요</li></ul>")
+                .author(park).category("캠퍼스").campus("서울")
+                .viewCount(89).likeCount(23).build());
+
+        postRepository.save(Post.builder()
+                .title("[서울] 코딩 스터디 모집 — 매주 화/목 저녁")
+                .content("<h2>서울 캠퍼스 코딩 스터디 모집 💻</h2>"
+                       + "<p>서울 캠퍼스 분들끼리 알고리즘/코딩 테스트 스터디 하실 분 모십니다!</p>"
+                       + "<ul><li>시간: 매주 화, 목 오후 7시</li><li>장소: 캠퍼스 세미나실</li><li>모집 인원: 5~8명</li></ul>"
+                       + "<p>참여 희망하시는 분은 댓글 달아주세요 🙌</p>")
+                .author(admin).category("캠퍼스").campus("서울")
+                .viewCount(62).likeCount(8).build());
+
+        postRepository.save(Post.builder()
+                .title("[대전] 13기 화이팅! 중간 프로젝트 마무리 후기")
+                .content("<h2>대전 13기 중간 프로젝트 완료! 🏆</h2>"
+                       + "<p>2주간의 중간 프로젝트가 드디어 끝났습니다. 대전 캠퍼스 분들 모두 정말 수고 많으셨어요!</p>"
+                       + "<p>우리 13기는 정말 팀워크가 끝내줬던 것 같아요. 다들 취업도 파이팅하세요! 💪</p>"
+                       + "<img src=\"https://picsum.photos/seed/daejeon13/800/350\" style=\"max-width:100%;border-radius:8px;margin:12px 0\">")
+                .author(lee).category("캠퍼스").campus("대전")
+                .viewCount(34).likeCount(9).build());
+
+        postRepository.save(Post.builder()
+                .title("[대전] 대전 캠퍼스 정보 공유 & 꿀팁 모음")
+                .content("<h2>대전 캠퍼스 생존 꿀팁 🌿</h2>"
+                       + "<p>대전 새내기분들을 위해 꿀팁을 정리해봤습니다!</p>"
+                       + "<ul><li>🚌 버스: 001번 타면 캠퍼스 정문까지 직통</li>"
+                       + "<li>🍱 점심: 구내식당이 제일 가성비 좋아요 (6천원)</li>"
+                       + "<li>📚 스터디룸: 오전 9시 이후 예약 가능, 미리미리!</li>"
+                       + "<li>☕ 카페: 2층 카페 아메리카노 2천원 👍</li></ul>")
+                .author(lee).category("캠퍼스").campus("대전")
+                .viewCount(58).likeCount(15).build());
+
+        postRepository.save(Post.builder()
+                .title("[구미] AWS 특강 후기 + 자료 공유")
+                .content("<h2>구미 캠퍼스 AWS 특강 들으셨나요? ⚙️</h2>"
+                       + "<p>어제 AWS 특강 정말 유익했습니다! 강사님이 설명을 너무 잘 해주셔서 처음 보는 내용도 쏙쏙 이해됐어요.</p>"
+                       + "<p>특강에서 나온 주요 내용 정리 + 실습 코드 GitHub에 올려놨으니 참고하세요!</p>"
+                       + "<ul><li>EC2 + RDS 기본 세팅</li><li>S3 버킷 퍼블릭 설정 방법</li><li>CloudFront 배포</li></ul>")
+                .author(choi).category("캠퍼스").campus("구미")
+                .viewCount(41).likeCount(11).build());
+
+        postRepository.save(Post.builder()
+                .title("[부울경] AI 특화 과정 시작! 14기 자기소개")
+                .content("<h2>부울경 14기 AI 특화 과정 시작합니다 🌊</h2>"
+                       + "<p>안녕하세요! 부울경 14기 AI 특화 과정이 드디어 시작됐네요.</p>"
+                       + "<p>저는 Python과 PyTorch를 주로 다루고 있는데, 이번 과정에서 MLOps까지 제대로 배워보고 싶습니다!</p>"
+                       + "<p>부울경 14기 분들 모두 반갑습니다. 함께 열심히 해봐요! 💪</p>"
+                       + "<img src=\"https://picsum.photos/seed/busan14/800/350\" style=\"max-width:100%;border-radius:8px;margin:12px 0\">")
+                .author(jung).category("캠퍼스").campus("부울경")
+                .viewCount(29).likeCount(7).build());
+
         // 알림: 멘토링 관련 알림 추가
         notificationRepository.save(Notification.builder()
                 .receiver(lee)

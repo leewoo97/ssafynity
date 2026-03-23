@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('캠퍼스 선택', ~{::body-content})}">
+<body>
+<th:block th:fragment="body-content">
+
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <div class="label" style="margin-bottom:6px;">Campus</div>
+        <h1>캠퍼스 선택</h1>
+        <p>방문할 캠퍼스 커뮤니티를 선택하세요</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-sm">
+<div class="container">
+
+  <div th:if="${loginMember != null and (loginMember.campus == null or loginMember.campus.isBlank())}"
+       class="campus-select-notice">
+    <span>⚠️</span>
+    <span>아직 캠퍼스 정보가 없습니다.
+      <a th:href="@{/profile/edit}">프로필 수정</a>에서 캠퍼스와 기수를 등록하세요.</span>
+  </div>
+
+  <div class="campus-select-grid">
+    <th:block th:each="entry : ${campusImages}">
+      <a th:href="@{/campus/{c}(c=${entry.key})}" class="campus-select-card"
+         th:classappend="${loginMember != null and entry.key == loginMember.campus} ? ' my-campus' : ''">
+        <div class="campus-select-img"
+             th:style="'background-image:url(' + ${entry.value} + ')'">
+          <div class="campus-select-img-overlay"></div>
+          <span th:if="${loginMember != null and entry.key == loginMember.campus}"
+                class="campus-select-my-badge">내 캠퍼스</span>
+        </div>
+        <div class="campus-select-info">
+          <div class="campus-select-name">
+            <span th:text="${campusEmojis[entry.key]}"></span>
+            <span th:text="${entry.key + ' 캠퍼스'}"></span>
+          </div>
+          <div class="campus-select-arrow">→</div>
+        </div>
+      </a>
+    </th:block>
+  </div>
+
+</div>
+</div>
+
+<style>
+.campus-select-notice {
+  background: rgba(234,179,8,.08);
+  border: 1px solid rgba(234,179,8,.3);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.campus-select-notice a { color: var(--blue); font-weight: 600; }
+
+.campus-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+.campus-select-card {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  transition: box-shadow .2s, border-color .2s, transform .2s;
+  display: flex;
+  flex-direction: column;
+}
+.campus-select-card:hover {
+  box-shadow: 0 6px 24px rgba(0,0,0,.12);
+  border-color: var(--blue);
+  transform: translateY(-3px);
+}
+.campus-select-card.my-campus { border-color: var(--blue); }
+
+.campus-select-img {
+  height: 160px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.campus-select-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,.05), rgba(0,0,0,.25));
+}
+.campus-select-my-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--blue);
+  color: #fff;
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.campus-select-info {
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg);
+}
+.campus-select-name {
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.campus-select-arrow {
+  color: var(--text-muted);
+  font-size: 18px;
+  transition: transform .15s;
+}
+.campus-select-card:hover .campus-select-arrow { transform: translateX(4px); color: var(--blue); }
+</style>
+
+</th:block>
+</body>
+</html>

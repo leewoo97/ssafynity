@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(${campus + ' 캠퍼스 커뮤니티'}, ~{::body-content})}">
+<body>
+<th:block th:fragment="body-content">
+
+<!-- ══════════ 히어로 배너 ══════════ -->
+<div class="campus-community-hero" th:style="'background-image: url(' + ${campusImage} + ')'">
+  <div class="campus-community-hero-overlay">
+    <div class="campus-community-hero-inner">
+      <div class="campus-community-badge-row">
+        <span class="campus-community-badge" th:text="${campusEmoji + ' ' + campus + ' 캠퍼스'}"></span>
+        <span th:if="${isMyCampus}" class="campus-community-my-badge">내 캠퍼스</span>
+      </div>
+      <h1 class="campus-community-title" th:text="${campus + ' 캠퍼스 커뮤니티'}"></h1>
+      <div class="campus-community-stats">
+        <span>👥 멤버 <strong th:text="${memberCount}"></strong>명</span>
+        <span th:if="${#maps.size(membersByCohort) > 0}">·</span>
+        <span th:if="${#maps.size(membersByCohort) > 0}">🎓 <strong th:text="${#maps.size(membersByCohort)}"></strong>개 기수</span>
+      </div>
+      <!-- 다른 캠퍼스 빠른 이동 -->
+      <div class="campus-quick-links">
+        <th:block th:each="entry : ${campusEmojis}">
+          <a th:href="@{/campus/{c}(c=${entry.key})}"
+             th:text="${entry.value + ' ' + entry.key}"
+             class="campus-quick-link"
+             th:classappend="${entry.key == campus} ? ' active' : ''"></a>
+        </th:block>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 탭 메뉴 ══════════ -->
+<div class="campus-tab-nav">
+  <div class="container">
+    <div class="campus-tab-nav-inner">
+      <button class="campus-tab-btn active" onclick="showTab('home', this)">🏠 홈</button>
+      <button class="campus-tab-btn" onclick="showTab('members', this)">👥 멤버</button>
+      <button class="campus-tab-btn" onclick="showTab('gallery', this)">📷 갤러리</button>
+      <a th:href="@{/campus/{c}/board(c=${campus})}" class="campus-tab-btn campus-tab-link">📝 게시판</a>
+    </div>
+  </div>
+</div>
+
+<div class="section-sm">
+<div class="container">
+
+<!-- ══════════ 탭: 홈 ══════════ -->
+<div id="tab-home" class="campus-tab-content">
+  <div class="campus-home-layout">
+
+    <!-- 최근 게시글 -->
+    <div class="campus-home-main">
+      <div class="campus-section-header">
+        <h2 class="campus-section-title">📝 최근 게시글</h2>
+        <a th:href="@{/campus/{c}/board(c=${campus})}" class="campus-section-more">더보기 →</a>
+      </div>
+
+      <div th:if="${#lists.isEmpty(recentPosts)}" class="campus-empty">
+        <div class="campus-empty-icon">📭</div>
+        <p>아직 게시글이 없습니다.</p>
+        <a th:href="@{/campus/{c}/board(c=${campus})}" class="btn btn-blue btn-sm">첫 번째 글 쓰기</a>
+      </div>
+
+      <div th:unless="${#lists.isEmpty(recentPosts)}" class="campus-post-list">
+        <a th:each="post : ${recentPosts}"
+           th:href="@{/campus/{c}/board(c=${campus})}"
+           class="campus-post-card">
+          <div class="campus-post-meta">
+            <span class="campus-post-author">
+              <span th:if="${post.author.profileImageUrl != null}"
+                    class="campus-post-avatar-img"
+                    th:style="'background-image:url(' + ${post.author.profileImageUrl} + ')'"></span>
+              <span th:unless="${post.author.profileImageUrl != null}"
+                    class="campus-post-avatar-initial"
+                    th:text="${#strings.substring(post.author.nickname, 0, 1)}"></span>
+              <span th:text="${post.author.nickname}"></span>
+            </span>
+            <span class="campus-post-time" th:text="${#temporals.format(post.createdAt,'MM/dd HH:mm')}"></span>
+          </div>
+          <div class="campus-post-title" th:text="${post.title}"></div>
+          <div class="campus-post-stats">
+            <span>👁 <span th:text="${post.viewCount}"></span></span>
+            <span>❤️ <span th:text="${post.likeCount}"></span></span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- 사이드: 캠퍼스 정보 카드 -->
+    <div class="campus-home-side">
+      <div class="campus-info-card">
+        <div class="campus-info-title" th:text="${campusEmoji + ' ' + campus + ' 캠퍼스'}"></div>
+        <div class="campus-info-rows">
+          <div class="campus-info-row">
+            <span class="campus-info-label">총 멤버</span>
+            <span class="campus-info-value" th:text="${memberCount + '명'}"></span>
+          </div>
+          <div class="campus-info-row">
+            <span class="campus-info-label">기수</span>
+            <span class="campus-info-value">
+              <th:block th:each="cohort, stat : ${cohorts}">
+                <span class="cohort-chip" th:text="${cohort + '기'}"></span>
+              </th:block>
+              <span th:if="${#sets.isEmpty(cohorts)}">-</span>
+            </span>
+          </div>
+          <div class="campus-info-row" th:if="${isMyCampus}">
+            <span class="campus-info-label">내 기수</span>
+            <span class="campus-info-value" th:text="${loginMember.cohort + '기'}"></span>
+          </div>
+        </div>
+        <div class="campus-info-actions">
+          <a th:href="@{/campus/{c}/board(c=${campus})}" class="btn btn-blue btn-sm" style="width:100%;text-align:center;">📝 게시판 바로가기</a>
+          <a th:unless="${isMyCampus}" th:href="@{/campus}" class="btn btn-outline btn-sm" style="width:100%;text-align:center;margin-top:8px;">내 캠퍼스로</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /tab-home -->
+
+<!-- ══════════ 탭: 멤버 ══════════ -->
+<div id="tab-members" class="campus-tab-content" style="display:none">
+
+  <!-- 기수 필터 pills -->
+  <div class="campus-cohort-filter" th:if="${!#sets.isEmpty(cohorts)}">
+    <button class="cohort-filter-pill active" onclick="filterCohort('all', this)">전체</button>
+    <button th:each="c : ${cohorts}"
+            class="cohort-filter-pill"
+            th:attr="onclick='filterCohort(' + ${c} + ', this)'"
+            th:text="${c + '기'}"></button>
+  </div>
+
+  <div th:if="${#lists.isEmpty(allMembers)}" class="campus-empty">
+    <div class="campus-empty-icon">👤</div>
+    <p>아직 이 캠퍼스에 등록된 멤버가 없습니다.</p>
+  </div>
+
+  <div class="campus-members-grid" id="membersGrid">
+    <a th:each="m : ${allMembers}"
+       th:href="@{/profile/{id}(id=${m.id})}"
+       class="campus-member-card"
+       th:attr="data-cohort=${m.cohort}">
+
+      <!-- 아바타 -->
+      <div class="campus-avatar-wrap">
+        <div th:if="${m.profileImageUrl != null}"
+             class="campus-avatar-img"
+             th:style="'background-image:url(' + ${m.profileImageUrl} + ')'"></div>
+        <div th:unless="${m.profileImageUrl != null}"
+             class="campus-avatar-initial"
+             th:text="${#strings.substring(m.nickname,0,1)}"></div>
+        <span th:if="${m.id == loginMember.id}" class="campus-me-badge">나</span>
+      </div>
+
+      <!-- 이름 -->
+      <div class="campus-member-nickname" th:text="${m.nickname}"></div>
+
+      <!-- 실명 (공개 조건) -->
+      <div th:if="${m.realName != null and (m.realNameScope == 'ALL' or (m.realNameScope == 'COHORT' and m.campus == loginMember.campus and m.cohort == loginMember.cohort))}"
+           class="campus-member-realname"
+           th:text="${m.realName}"></div>
+
+      <!-- 기수 -->
+      <div th:if="${m.cohort != null}" class="campus-member-cohort" th:text="${m.cohort + '기'}"></div>
+
+      <!-- 한줄소개 -->
+      <div th:if="${m.bio != null and #strings.length(m.bio) > 0}"
+           class="campus-member-bio"
+           th:text="${#strings.abbreviate(m.bio, 40)}"></div>
+    </a>
+  </div>
+
+</div><!-- /tab-members -->
+
+<!-- ══════════ 탭: 갤러리 ══════════ -->
+<div id="tab-gallery" class="campus-tab-content" style="display:none">
+  <div class="campus-section-header">
+    <h2 class="campus-section-title">📷 캠퍼스 갤러리</h2>
+  </div>
+  <div class="campus-gallery-grid">
+    <div th:each="i : ${#numbers.sequence(1, 12)}" class="campus-gallery-item">
+      <img th:src="'https://picsum.photos/seed/' + ${campus} + ${i} + '/400/300'"
+           th:alt="${campus + ' 캠퍼스 사진 ' + i}"
+           loading="lazy">
+    </div>
+  </div>
+</div><!-- /tab-gallery -->
+
+</div><!-- /container -->
+</div><!-- /section-sm -->
+
+<style>
+/* ─── 히어로 ─── */
+.campus-community-hero {
+  min-height: 380px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.campus-community-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,.45) 0%, rgba(0,0,0,.65) 100%);
+  display: flex;
+  align-items: flex-end;
+}
+.campus-community-hero-inner {
+  padding: 40px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.campus-community-badge-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.campus-community-badge {
+  background: rgba(255,255,255,.18);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.campus-community-my-badge {
+  background: var(--blue);
+  color: #fff;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.campus-community-title { color: #fff; font-size: clamp(1.6rem,4vw,2.4rem); font-weight: 800; margin: 0 0 10px; }
+.campus-community-stats { color: rgba(255,255,255,.85); font-size: 15px; margin-bottom: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+.campus-community-stats strong { color: #fff; }
+/* 캠퍼스 빠른 이동 */
+.campus-quick-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.campus-quick-link {
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.8);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 13px;
+  text-decoration: none;
+  transition: background .2s;
+}
+.campus-quick-link:hover, .campus-quick-link.active {
+  background: rgba(255,255,255,.25);
+  color: #fff;
+  border-color: rgba(255,255,255,.5);
+}
+.campus-quick-link.active { font-weight: 700; }
+
+/* ─── 탭 네비 ─── */
+.campus-tab-nav {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 60px;
+  z-index: 90;
+}
+.campus-tab-nav-inner {
+  display: flex;
+  gap: 4px;
+  padding: 0 4px;
+  overflow-x: auto;
+}
+.campus-tab-btn {
+  background: none;
+  border: none;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color .15s;
+}
+.campus-tab-btn:hover { color: var(--text); }
+.campus-tab-btn.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+.campus-tab-link { /* 게시판은 link로 */ }
+
+/* ─── 홈 탭 레이아웃 ─── */
+.campus-home-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 28px;
+  align-items: start;
+}
+@media(max-width:860px) { .campus-home-layout { grid-template-columns: 1fr; } }
+
+.campus-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.campus-section-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
+.campus-section-more { font-size: 13px; color: var(--blue); text-decoration: none; }
+.campus-section-more:hover { text-decoration: underline; }
+
+/* 게시글 카드 */
+.campus-post-list { display: flex; flex-direction: column; gap: 10px; }
+.campus-post-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: box-shadow .15s, border-color .15s;
+}
+.campus-post-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.08); border-color: var(--blue); }
+.campus-post-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.campus-post-author { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--text-muted); }
+.campus-post-avatar-img, .campus-post-avatar-initial {
+  width: 24px; height: 24px; border-radius: 50%;
+  background-size: cover; background-position: center;
+  font-size: 11px; color: #fff; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.campus-post-avatar-initial { background: var(--blue); }
+.campus-post-time { font-size: 12px; color: var(--text-muted); }
+.campus-post-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; line-height: 1.4; }
+.campus-post-stats { display: flex; gap: 12px; font-size: 12px; color: var(--text-muted); }
+
+/* 사이드 정보 카드 */
+.campus-info-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.campus-info-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.campus-info-rows { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.campus-info-row { display: flex; justify-content: space-between; align-items: flex-start; font-size: 14px; }
+.campus-info-label { color: var(--text-muted); flex-shrink: 0; }
+.campus-info-value { font-weight: 600; text-align: right; }
+.cohort-chip {
+  display: inline-block; background: rgba(37,99,235,.1); color: var(--blue);
+  border-radius: 8px; padding: 1px 8px; font-size: 12px; font-weight: 600; margin: 2px 2px 2px 0;
+}
+
+/* ─── 멤버 탭 ─── */
+.campus-cohort-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.cohort-filter-pill {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.cohort-filter-pill:hover { border-color: var(--blue); color: var(--blue); }
+.cohort-filter-pill.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+/* 멤버 그리드 */
+.campus-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+.campus-member-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 14px 16px;
+  text-align: center;
+  text-decoration: none;
+  color: var(--text);
+  transition: box-shadow .15s, transform .15s, border-color .15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.campus-member-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.10); transform: translateY(-2px); border-color: var(--blue); }
+.campus-avatar-wrap { position: relative; display: inline-block; margin-bottom: 4px; }
+.campus-avatar-img {
+  width: 64px; height: 64px; border-radius: 50%;
+  background-size: cover; background-position: center;
+  border: 2px solid var(--border);
+}
+.campus-avatar-initial {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), #7c3aed);
+  color: #fff; font-size: 24px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.campus-me-badge {
+  position: absolute; bottom: 0; right: 0;
+  background: var(--blue); color: #fff; font-size: 10px; font-weight: 700;
+  padding: 1px 5px; border-radius: 8px;
+}
+.campus-member-nickname { font-weight: 700; font-size: 14px; }
+.campus-member-realname { font-size: 12px; color: var(--text-muted); }
+.campus-member-cohort {
+  background: rgba(37,99,235,.08); color: var(--blue);
+  border-radius: 8px; padding: 1px 8px; font-size: 11px; font-weight: 600; margin-top: 2px;
+}
+.campus-member-bio { font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-top: 4px; }
+
+/* ─── 갤러리 탭 ─── */
+.campus-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.campus-gallery-item { border-radius: 10px; overflow: hidden; aspect-ratio: 4/3; background: var(--border); }
+.campus-gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
+.campus-gallery-item:hover img { transform: scale(1.04); }
+
+/* ─── 공통 ─── */
+.campus-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+.campus-empty-icon { font-size: 48px; margin-bottom: 12px; }
+</style>
+
+<script>
+// 탭 전환
+function showTab(tabId, btn) {
+  document.querySelectorAll('.campus-tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.campus-tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tabId).style.display = 'block';
+  if (btn) btn.classList.add('active');
+  history.replaceState(null, '', location.pathname + '?tab=' + tabId);
+}
+
+// 기수 필터
+function filterCohort(cohort, btn) {
+  document.querySelectorAll('.cohort-filter-pill').forEach(el => el.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('#membersGrid .campus-member-card').forEach(card => {
+    if (cohort === 'all' || card.dataset.cohort == cohort) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+// URL param으로 초기 탭 설정
+(function() {
+  const params = new URLSearchParams(location.search);
+  const tab = params.get('tab');
+  if (tab === 'members' || tab === 'gallery') {
+    document.querySelectorAll('.campus-tab-btn').forEach(el => el.classList.remove('active'));
+    // activate correct button
+    document.querySelectorAll('.campus-tab-btn').forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(tab)) btn.classList.add('active');
+    });
+    document.querySelectorAll('.campus-tab-content').forEach(el => el.style.display = 'none');
+    const el = document.getElementById('tab-' + tab);
+    if (el) el.style.display = 'block';
+  }
+})();
+</script>
+
+</th:block>
+</body>
+</html>

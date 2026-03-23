@@ -17,4 +17,9 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
     List<Post> findTop5ByOrderByViewCountDesc();
     List<Post> findTop5ByOrderByLikeCountDesc();
     List<Post> findByAuthorOrderByCreatedAtDesc(Member author);
+
+    // ── 캠퍼스 게시판 ──────────────────────────────────────────────
+    List<Post> findTop5ByCampusOrderByCreatedAtDesc(String campus);
+    Page<Post> findByCampus(String campus, Pageable pageable);
+    Page<Post> findByCampusAndTitleContainingIgnoreCase(String campus, String keyword, Pageable pageable);
 }
