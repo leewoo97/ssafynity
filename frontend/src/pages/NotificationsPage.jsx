@@ -1,52 +1,71 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../api/axios'
 import dayjs from 'dayjs'
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState([])
+  const [notifs, setNotifs] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const fetchNotifs = () =>
-    api.get('/notifications').then(r => setNotifications(r.data.data || [])).finally(() => setLoading(false))
+  useEffect(() => {
+    api.get('/notifications')
+      .then(r => setNotifs(r.data.data || []))
+      .finally(() => setLoading(false))
+  }, [])
 
-  useEffect(() => { fetchNotifs() }, [])
-
-  const handleMarkAll = async () => {
-    await api.post('/notifications/read-all')
-    fetchNotifs()
+  const deleteNotif = async (id) => {
+    await api.delete(`/notifications/${id}`).catch(() => {})
+    setNotifs(notifs.filter(n => n.id !== id))
   }
-
-  const handleDelete = async (notifId) => {
-    await api.delete(`/notifications/${notifId}`)
-    setNotifications(prev => prev.filter(n => n.id !== notifId))
-  }
-
-  if (loading) return <div className="loading">로딩 중...</div>
 
   return (
-    <div style={{ maxWidth:700, margin:'0 auto' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-        <h2>알림</h2>
-        {notifications.some(n => !n.read) && (
-          <button onClick={handleMarkAll} className="btn btn-secondary">모두 읽음</button>
-        )}
+    <>
+      <div className="page-header">
+        <div className="container">
+          <div className="page-header-inner">
+            <div>
+              <h1>알림</h1>
+              <p>활동 알림을 확인하세요 · 진입 시 자동 읽음 처리됩니다</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-        {notifications.map(n => (
-          <div key={n.id} className="card" style={{ padding:'12px 18px', display:'flex', justifyContent:'space-between', alignItems:'center', background: n.read ? undefined : '#f0f4ff' }}>
-            <div>
-              {!n.read && <span style={{ width:8, height:8, background:'var(--color-primary)', borderRadius:'50%', display:'inline-block', marginRight:8 }} />}
-              <span style={{ fontSize:14 }}>{n.message}</span>
-              <div style={{ fontSize:11, color:'var(--color-text-muted)', marginTop:2 }}>
-                {dayjs(n.createdAt).format('YYYY.MM.DD HH:mm')}
+      <div className="section-sm">
+        <div className="container-sm">
+          {loading ? (
+            <div className="empty"><div className="empty-icon">⏳</div></div>
+          ) : notifs.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">🔔</div>
+              <div className="empty-title">알림이 없습니다.</div>
+            </div>
+          ) : (
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="notif-list">
+                {notifs.map(n => (
+                  <div key={n.id} className={`notif-item${!n.read ? ' unread' : ''}`}>
+                    {!n.read ? (
+                      <div className="notif-dot" />
+                    ) : (
+                      <div className="notif-icon">🔔</div>
+                    )}
+                    <div className="notif-content">
+                      <div className="notif-msg">{n.message}</div>
+                      <div className="notif-time">{dayjs(n.createdAt).format('YYYY.MM.DD HH:mm')}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      {n.link && <Link to={n.link} className="btn btn-ghost btn-xs">보기</Link>}
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--t5)' }}
+                        onClick={() => deleteNotif(n.id)}>삭제</button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <button onClick={() => handleDelete(n.id)} style={{ background:'none', border:'none', color:'var(--color-text-muted)', cursor:'pointer', fontSize:18, lineHeight:1 }}>×</button>
-          </div>
-        ))}
-        {notifications.length === 0 && <p style={{ textAlign:'center', color:'var(--color-text-muted)', padding:40 }}>알림이 없습니다.</p>}
+          )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }

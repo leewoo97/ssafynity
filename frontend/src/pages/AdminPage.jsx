@@ -1,115 +1,106 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
+import { useAuthStore } from '../store/authStore'
 import dayjs from 'dayjs'
 
-const TABS = ['대시보드', '회원 관리', '신고 처리']
-
 export default function AdminPage() {
-  const [tab, setTab] = useState('대시보드')
-  const [stats, setStats] = useState(null)
+  const { member } = useAuthStore()
+  const navigate = useNavigate()
+  const [stats, setStats] = useState({})
   const [members, setMembers] = useState([])
-  const [memberPage, setMemberPage] = useState(0)
-  const [memberTotal, setMemberTotal] = useState(0)
   const [reports, setReports] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [tab, setTab] = useState('stats')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (tab === '대시보드') {
-      setLoading(true)
-      api.get('/admin/dashboard').then(r => setStats(r.data.data)).finally(() => setLoading(false))
-    }
-    if (tab === '회원 관리') {
-      setLoading(true)
-      api.get('/admin/members', { params: { page:0, size:20 } }).then(r => {
-        setMembers(r.data.data?.content || [])
-        setMemberTotal(r.data.data?.totalElements || 0)
-      }).finally(() => setLoading(false))
-    }
-    if (tab === '신고 처리') {
-      setLoading(true)
-      api.get('/admin/reports').then(r => setReports(r.data.data || [])).finally(() => setLoading(false))
-    }
-  }, [tab])
+    if (member?.role !== 'ADMIN') { navigate('/'); return }
+    Promise.all([
+      api.get('/admin/stats').catch(() => ({ data: { data: {} } })),
+      api.get('/admin/members').catch(() => ({ data: { data: [] } })),
+      api.get('/admin/reports').catch(() => ({ data: { data: [] } })),
+    ]).then(([s, m, r]) => {
+      setStats(s.data.data || {})
+      setMembers(m.data.data || [])
+      setReports(r.data.data || [])
+    }).finally(() => setLoading(false))
+  }, [member])
 
-  const handleBan = async (memberId, banned) => {
-    await api.patch(`/admin/members/${memberId}/${banned ? 'unban' : 'ban'}`)
-    api.get('/admin/members', { params: { page:0, size:20 } }).then(r => setMembers(r.data.data?.content || []))
+  const banMember = async (id) => {
+    if (!window.confirm('이 회원을 정지하시겠습니까?')) return
+    await api.put(`/admin/members/${id}/ban`)
+    setMembers(members.map(m => m.id === id ? { ...m, status: 'BANNED' } : m))
   }
 
-  const handleResolve = async (reportId) => {
-    await api.patch(`/admin/reports/${reportId}/resolve`)
-    setReports(prev => prev.map(r => r.id === reportId ? { ...r, resolved:true } : r))
+  const deletePost = async (id) => {
+    if (!window.confirm('게시글을 삭제하시겠습니까?')) return
+    await api.delete(`/admin/posts/${id}`)
+    setReports(reports.filter(r => r.postId !== id))
   }
+
+  if (loading) return <div className="empty"><div className="empty-icon">⏳</div></div>
 
   return (
+    <div className="section-sm"><div className="container">
     <div>
-      <h2>관리자 대시보드</h2>
-      <div style={{ display:'flex', gap:8, marginBottom:24, borderBottom:'1px solid var(--color-border)' }}>
-        {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            style={{ padding:'8px 16px', border:'none', background:'none', cursor:'pointer',
-              borderBottom: tab===t ? '2px solid var(--color-primary)' : '2px solid transparent',
-              color: tab===t ? 'var(--color-primary)' : 'inherit', fontWeight: tab===t ? 600 : 400 }}>
-            {t}
-          </button>
+      <div className="section-head"><h2>관리자 대시보드</h2></div>
+
+      {/* 통계 */}
+      <div className="stat-grid" style={{ marginBottom: 32 }}>
+        {[
+          { label: '전체 회원', value: stats.totalMembers ?? '-', icon: '👥' },
+          { label: '오늘 가입', value: stats.todayJoins ?? '-', icon: '✨' },
+          { label: '전체 게시글', value: stats.totalPosts ?? '-', icon: '📝' },
+          { label: '신고 접수', value: stats.pendingReports ?? '-', icon: '🚨' },
+        ].map(s => (
+          <div key={s.label} className="stat-card">
+            <div style={{ fontSize: 28, marginBottom: 8 }}>{s.icon}</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--blue)' }}>{s.value}</div>
+            <div style={{ fontSize: '.82rem', color: 'var(--t4)', marginTop: 2 }}>{s.label}</div>
+          </div>
         ))}
       </div>
 
-      {loading && <div>로딩 중...</div>}
+      <div className="tabs">
+        <button className={`tab${tab === 'stats' ? ' active' : ''}`} onClick={() => setTab('stats')}>통계</button>
+        <button className={`tab${tab === 'members' ? ' active' : ''}`} onClick={() => setTab('members')}>회원 관리</button>
+        <button className={`tab${tab === 'reports' ? ' active' : ''}`} onClick={() => setTab('reports')}>신고 관리</button>
+      </div>
 
-      {tab === '대시보드' && !loading && stats && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:16 }}>
-          {[
-            ['총 회원수', stats.totalMembers],
-            ['총 게시글', stats.totalPosts],
-            ['총 이벤트', stats.totalEvents],
-            ['총 프로젝트', stats.totalProjects],
-            ['미처리 신고', stats.pendingReports],
-          ].map(([label, val]) => (
-            <div key={label} className="card" style={{ padding:24, textAlign:'center' }}>
-              <div style={{ fontSize:32, fontWeight:700, color:'var(--color-primary)', marginBottom:4 }}>{val ?? '-'}</div>
-              <div style={{ fontSize:13, color:'var(--color-text-muted)' }}>{label}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {tab === '회원 관리' && !loading && (
-        <div>
-          <div style={{ marginBottom:8, fontSize:14, color:'var(--color-text-muted)' }}>총 {memberTotal}명</div>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:14 }}>
+      {tab === 'members' && (
+        <div className="card" style={{ padding: 0, marginTop: 16 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.88rem' }}>
             <thead>
-              <tr style={{ background:'var(--color-surface-secondary)', borderBottom:'1px solid var(--color-border)' }}>
-                <th style={{ padding:'10px 12px', textAlign:'left' }}>ID</th>
-                <th style={{ padding:'10px 12px', textAlign:'left' }}>닉네임</th>
-                <th style={{ padding:'10px 12px', textAlign:'left' }}>이메일</th>
-                <th style={{ padding:'10px 12px', textAlign:'left' }}>캠퍼스</th>
-                <th style={{ padding:'10px 12px', textAlign:'left' }}>역할</th>
-                <th style={{ padding:'10px 12px', textAlign:'left' }}>상태</th>
-                <th style={{ padding:'10px 12px', textAlign:'left' }}>가입일</th>
-                <th style={{ padding:'10px 12px', textAlign:'left' }}>관리</th>
+              <tr style={{ borderBottom: '1px solid var(--b1)' }}>
+                {['ID', '닉네임', '이메일', '캠퍼스', '역할', '상태', '가입일', '관리'].map(h => (
+                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--t3)' }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {members.map(m => (
-                <tr key={m.id} style={{ borderBottom:'1px solid var(--color-border)' }}>
-                  <td style={{ padding:'10px 12px' }}>{m.id}</td>
-                  <td style={{ padding:'10px 12px' }}><Link to={`/members/${m.id}`}>{m.nickname}</Link></td>
-                  <td style={{ padding:'10px 12px', fontSize:12 }}>{m.email}</td>
-                  <td style={{ padding:'10px 12px' }}>{m.campus}</td>
-                  <td style={{ padding:'10px 12px' }}>
-                    <span style={{ fontSize:11, padding:'2px 6px', borderRadius:3, background: m.role==='ADMIN' ? '#fff3cd' : '#e9ecef' }}>{m.role}</span>
+                <tr key={m.id} style={{ borderBottom: '1px solid var(--b1)' }}>
+                  <td style={{ padding: '10px 16px', color: 'var(--t4)' }}>{m.id}</td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div className="av av-xs">{m.nickname?.charAt(0)?.toUpperCase()}</div>
+                      {m.nickname}
+                    </div>
                   </td>
-                  <td style={{ padding:'10px 12px' }}>
-                    <span style={{ color: m.banned ? '#e74c3c' : 'green', fontSize:12 }}>{m.banned ? '정지' : '활성'}</span>
+                  <td style={{ padding: '10px 16px', color: 'var(--t3)' }}>{m.email}</td>
+                  <td style={{ padding: '10px 16px' }}>{m.campus}</td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <span className={`pill ${m.role === 'ADMIN' ? 'pill-blue' : 'pill-gray'}`}>{m.role}</span>
                   </td>
-                  <td style={{ padding:'10px 12px', fontSize:12 }}>{m.createdAt?.slice(0,10)}</td>
-                  <td style={{ padding:'10px 12px' }}>
-                    {m.role !== 'ADMIN' && (
-                      <button onClick={() => handleBan(m.id, m.banned)} className="btn" style={{ fontSize:12, padding:'3px 8px', background: m.banned ? 'green' : '#e74c3c', color:'#fff' }}>
-                        {m.banned ? '활성화' : '정지'}
-                      </button>
+                  <td style={{ padding: '10px 16px' }}>
+                    <span className={`pill ${m.status === 'BANNED' ? 'pill-red' : 'pill-green'}`}>
+                      {m.status === 'BANNED' ? '정지' : '활성'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 16px', color: 'var(--t4)' }}>{dayjs(m.createdAt).format('YY.MM.DD')}</td>
+                  <td style={{ padding: '10px 16px' }}>
+                    {m.role !== 'ADMIN' && m.status !== 'BANNED' && (
+                      <button className="btn btn-danger btn-xs" onClick={() => banMember(m.id)}>정지</button>
                     )}
                   </td>
                 </tr>
@@ -119,27 +110,36 @@ export default function AdminPage() {
         </div>
       )}
 
-      {tab === '신고 처리' && !loading && (
-        <div>
-          {reports.map(r => (
-            <div key={r.id} className="card" style={{ padding:'14px 20px', marginBottom:8, display:'flex', justifyContent:'space-between', alignItems:'center', opacity: r.resolved ? 0.5 : 1 }}>
-              <div>
-                <div style={{ fontWeight:500 }}>{r.reportType} 신고</div>
-                <div style={{ fontSize:13, color:'var(--color-text-muted)', marginTop:2 }}>{r.reason}</div>
-                <div style={{ fontSize:11, color:'var(--color-text-muted)', marginTop:2 }}>
-                  신고자: {r.reporterNickname} | {dayjs(r.createdAt).format('YYYY.MM.DD HH:mm')}
-                </div>
-              </div>
-              {!r.resolved ? (
-                <button onClick={() => handleResolve(r.id)} className="btn btn-primary" style={{ fontSize:12 }}>처리 완료</button>
-              ) : (
-                <span style={{ fontSize:12, color:'green' }}>처리됨</span>
-              )}
+      {tab === 'reports' && (
+        <div className="card" style={{ padding: 0, marginTop: 16 }}>
+          {reports.length === 0 ? (
+            <div className="empty" style={{ padding: 40 }}>
+              <div className="empty-icon">✅</div>
+              <div className="empty-title">처리할 신고가 없습니다</div>
             </div>
-          ))}
-          {reports.length === 0 && <p style={{ textAlign:'center', color:'var(--color-text-muted)', padding:40 }}>신고가 없습니다.</p>}
+          ) : (
+            reports.map(r => (
+              <div key={r.id} className="post-row" style={{ padding: '14px 20px' }}>
+                <div className="post-row-main">
+                  <div className="post-row-title">{r.postTitle || `게시글 #${r.postId}`}</div>
+                  <div className="post-row-meta">
+                    <span>신고자: {r.reporterNickname}</span>
+                    <span>{r.reason}</span>
+                  </div>
+                </div>
+                <button className="btn btn-danger btn-xs" onClick={() => deletePost(r.postId)}>삭제</button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {tab === 'stats' && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <p style={{ color: 'var(--t3)' }}>통계 차트 기능은 추후 추가 예정입니다.</p>
         </div>
       )}
     </div>
+    </div></div>
   )
 }

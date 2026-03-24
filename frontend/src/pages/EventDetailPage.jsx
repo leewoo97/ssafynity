@@ -8,66 +8,52 @@ export default function EventDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { member } = useAuthStore()
-  const [ev, setEv] = useState(null)
+  const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchEv = () => api.get(`/events/${id}`).then(r => setEv(r.data.data)).finally(() => setLoading(false))
-  useEffect(() => { fetchEv() }, [id])
-
-  const handleJoin = async () => {
-    try {
-      await api.post(`/events/${id}/join`)
-      fetchEv()
-    } catch (e) {
-      alert(e.response?.data?.message || '참가 실패')
-    }
-  }
+  useEffect(() => {
+    api.get(`/events/${id}`).then(r => setEvent(r.data.data)).finally(() => setLoading(false))
+  }, [id])
 
   const handleDelete = async () => {
-    if (!confirm('삭제하시겠습니까?')) return
+    if (!window.confirm('삭제하시겠습니까?')) return
     await api.delete(`/events/${id}`)
     navigate('/events')
   }
 
-  if (loading) return <div className="loading">로딩 중...</div>
-  if (!ev) return <div>이벤트를 찾을 수 없습니다.</div>
+  if (loading) return <div className="empty"><div className="empty-icon">⏳</div></div>
+  if (!event) return <div className="empty"><div className="empty-title">이벤트를 찾을 수 없습니다</div></div>
 
-  const isAuthor = member?.id === ev.organizerId
-  const full = ev.currentParticipants >= ev.maxParticipants
+  const isAdmin = member?.role === 'ADMIN'
+  const isAuthor = member?.id === event.authorId
 
   return (
-    <div style={{ maxWidth:720, margin:'0 auto' }}>
-      <div className="card" style={{ padding:28 }}>
-        <div style={{ marginBottom:16 }}>
-          <span style={{ fontSize:12, padding:'2px 8px', background:'#e9ecef', borderRadius:4 }}>{ev.eventType}</span>
-          <h2 style={{ margin:'10px 0 4px' }}>{ev.title}</h2>
-          <div style={{ fontSize:13, color:'var(--color-text-muted)' }}>주최: {ev.organizerNickname}</div>
-        </div>
-        <div style={{ lineHeight:1.9, whiteSpace:'pre-wrap', borderTop:'1px solid var(--color-border)', paddingTop:16, marginBottom:16 }}>
-          {ev.description}
-        </div>
-        <div style={{ display:'flex', gap:24, fontSize:13, marginBottom:16 }}>
-          <span>📅 시작: {dayjs(ev.startDate).format('YYYY.MM.DD HH:mm')}</span>
-          <span>📅 종료: {dayjs(ev.endDate).format('YYYY.MM.DD HH:mm')}</span>
-        </div>
-        <div style={{ fontSize:13, marginBottom:20 }}>
-          📍 {ev.location} &nbsp; 👥 {ev.currentParticipants}/{ev.maxParticipants}명
-        </div>
-        <div style={{ display:'flex', gap:8 }}>
-          {!isAuthor && (
-            <button onClick={handleJoin} disabled={full} className="btn btn-primary">
-              {full ? '마감' : '참가하기'}
-            </button>
+    <div className="section-sm"><div className="container">
+    <div style={{ maxWidth: 760, margin: '0 auto' }}>
+      <div className="card">
+        <div className="post-header">
+          <div>
+            <span className="pill pill-blue">{event.type || '행사'}</span>
+            <h2 className="post-title" style={{ marginTop: 10 }}>{event.title}</h2>
+          </div>
+          {(isAuthor || isAdmin) && (
+            <div className="post-actions">
+              <Link to={`/events/${id}/edit`} className="btn btn-ghost btn-sm">수정</Link>
+              <button className="btn btn-danger btn-sm" onClick={handleDelete}>삭제</button>
+            </div>
           )}
-          {isAuthor && (
-            <>
-              <Link to={`/events/${id}/edit`} className="btn btn-secondary">수정</Link>
-              <button onClick={handleDelete} className="btn" style={{ background:'#e74c3c', color:'#fff' }}>삭제</button>
-            </>
-          )}
-          <button onClick={() => navigate(-1)} className="btn btn-secondary">뒤로</button>
         </div>
+        <div className="post-row-meta" style={{ marginTop: 12, marginBottom: 20 }}>
+          <span>{event.organizer}</span>
+          <span>📅 {dayjs(event.startDate).format('YYYY.MM.DD')} ~ {dayjs(event.endDate).format('YYYY.MM.DD')}</span>
+          {event.url && <a href={event.url} target="_blank" rel="noreferrer" className="btn btn-tinted btn-xs">바로가기 →</a>}
+        </div>
+        <div className="post-body md-body">{event.description}</div>
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <Link to="/events" className="btn btn-ghost btn-sm">← 목록으로</Link>
       </div>
     </div>
+    </div></div>
   )
 }

@@ -24,6 +24,7 @@ public class PostResponse {
     private Long authorId;
     private String authorNickname;
     private String authorProfileImageUrl;
+    private String authorBio;
 
     public static PostResponse from(Post post) {
         return PostResponse.builder()
@@ -39,6 +40,7 @@ public class PostResponse {
                 .authorId(post.getAuthor() != null ? post.getAuthor().getId() : null)
                 .authorNickname(post.getAuthor() != null ? post.getAuthor().getNickname() : null)
                 .authorProfileImageUrl(post.getAuthor() != null ? post.getAuthor().getProfileImageUrl() : null)
+                .authorBio(post.getAuthor() != null ? post.getAuthor().getBio() : null)
                 .build();
     }
 }

@@ -7,6 +7,7 @@ import com.ssafynity.demo.dto.request.PostRequest;
 import com.ssafynity.demo.dto.response.PostResponse;
 import com.ssafynity.demo.security.CustomUserDetails;
 import com.ssafynity.demo.service.MemberService;
+import com.ssafynity.demo.service.PostLikeService;
 import com.ssafynity.demo.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class PostController {
 
     private final PostService postService;
     private final MemberService memberService;
+    private final PostLikeService postLikeService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<Map<String, Object>>> list(
@@ -95,6 +97,32 @@ public class PostController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         postService.deletePost(id, userDetails.getId(), userDetails.getRole());
         return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    /** 좋아요 토글 */
+    @PostMapping("/{id}/like")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> toggleLike(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member member = memberService.getById(userDetails.getId());
+        Post post = postService.findById(id).orElseThrow();
+        boolean liked = postLikeService.toggleLike(member, post);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("liked", liked, "likeCount", post.getLikeCount())));
+    }
+
+    /** 좋아요 여부 확인 */
+    @GetMapping("/{id}/liked")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> isLiked(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Post post = postService.findById(id).orElseThrow();
+        boolean liked = false;
+        if (userDetails != null) {
+            Member member = memberService.getById(userDetails.getId());
+            liked = postLikeService.isLiked(member, post);
+        }
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("liked", liked, "likeCount", post.getLikeCount())));
     }
 
     /** 캠퍼스 게시판 */

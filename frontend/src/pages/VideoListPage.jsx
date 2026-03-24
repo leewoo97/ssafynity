@@ -1,78 +1,148 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import api from '../api/axios'
+import { useAuthStore } from '../store/authStore'
+import dayjs from 'dayjs'
 
-const CATEGORIES = ['', 'FRONTEND', 'BACKEND', 'DEVOPS', 'AI', 'MOBILE', 'SECURITY', 'OTHER']
-
-function getYoutubeThumbnail(url) {
-  if (!url) return null
-  const match = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)
-  return match ? `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg` : null
-}
+const CATEGORIES = ['', 'Frontend', 'Backend', 'Algorithm', 'Project', 'ETC']
 
 export default function VideoListPage() {
+  const { member } = useAuthStore()
   const [videos, setVideos] = useState([])
-  const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
-  const [category, setCategory] = useState('')
   const [loading, setLoading] = useState(true)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [kw, setKw] = useState(searchParams.get('keyword') || '')
 
-  const fetchVideos = (p = 0) => {
+  const category = searchParams.get('category') || ''
+  const keyword = searchParams.get('keyword') || ''
+  const page = parseInt(searchParams.get('page') || '0')
+
+  useEffect(() => {
     setLoading(true)
-    api.get('/videos', { params: { page: p, size: 12, category: category || undefined } })
+    const params = { page, size: 12 }
+    if (category) params.category = category
+    if (keyword) params.keyword = keyword
+    api.get('/videos', { params })
       .then(r => {
-        setVideos(r.data.data.content)
-        setTotalPages(r.data.data.totalPages)
-        setPage(p)
+        const data = r.data.data
+        if (data && data.content) {
+          setVideos(data.content)
+          setTotalPages(data.totalPages || 1)
+        } else {
+          setVideos(Array.isArray(data) ? data : [])
+          setTotalPages(1)
+        }
       })
       .finally(() => setLoading(false))
+  }, [category, keyword, page])
+
+  const setParam = (key, value) => {
+    const p = new URLSearchParams(searchParams)
+    if (value) p.set(key, value); else p.delete(key)
+    p.delete('page')
+    setSearchParams(p)
   }
 
-  useEffect(() => { fetchVideos(0) }, [category])
+  const handleSearch = (e) => {
+    e.preventDefault()
+    setParam('keyword', kw)
+  }
 
   return (
-    <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-        <h2>기술 영상</h2>
-        <Link to="/videos/new" className="btn btn-primary">영상 등록</Link>
+    <>
+      <div className="page-header">
+        <div className="container">
+          <div className="page-header-inner">
+            <div>
+              <div className="label" style={{ marginBottom: 6 }}>Learning</div>
+              <h1>영상 자료</h1>
+              <p>강의, 세미나, 프로젝트 영상을 공유하세요</p>
+            </div>
+            {member && <Link to="/videos/new" className="btn btn-blue btn-md">🎬 영상 등록</Link>}
+          </div>
+        </div>
       </div>
 
-      <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
-        {CATEGORIES.map(c => (
-          <button key={c} onClick={() => setCategory(c)} className={`btn btn-secondary${category===c?' active':''}`} style={{ fontSize:12 }}>
-            {c || '전체'}
-          </button>
-        ))}
-      </div>
+      <div className="section-sm">
+        <div className="container">
+          <div className="tabs">
+            {CATEGORIES.map(c => (
+              <button key={c} onClick={() => setParam('category', c)}
+                className={`tab${category === c ? ' active' : ''}`}>
+                {c || '전체'}
+              </button>
+            ))}
+          </div>
 
-      {loading ? <div>로딩 중...</div> : (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:16 }}>
-          {videos.map(v => {
-            const thumb = getYoutubeThumbnail(v.videoUrl)
-            return (
-              <Link key={v.id} to={`/videos/${v.id}`} style={{ textDecoration:'none', color:'inherit' }}>
-                <div className="card" style={{ overflow:'hidden' }}>
-                  {thumb && <img src={thumb} alt={v.title} style={{ width:'100%', aspectRatio:'16/9', objectFit:'cover' }} />}
-                  <div style={{ padding:'12px 14px' }}>
-                    <div style={{ fontSize:11, background:'#e9ecef', padding:'1px 6px', borderRadius:3, display:'inline-block', marginBottom:6 }}>{v.category}</div>
-                    <div style={{ fontWeight:500, lineHeight:1.4 }}>{v.title}</div>
-                    <div style={{ fontSize:12, color:'var(--color-text-muted)', marginTop:4 }}>{v.authorNickname}</div>
+          <form className="search-row" style={{ marginBottom: 24 }} onSubmit={handleSearch}>
+            <input type="text" className="search-input" placeholder="영상 검색..."
+              value={kw} onChange={e => setKw(e.target.value)} />
+            <button type="submit" className="btn btn-blue btn-md">검색</button>
+          </form>
+
+          {loading ? (
+            <div className="empty"><div className="empty-icon">⏳</div></div>
+          ) : videos.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">🎬</div>
+              <div className="empty-title">등록된 영상이 없습니다.</div>
+              {member && (
+                <div className="empty-sub" style={{ marginTop: 16 }}>
+                  <Link to="/videos/new" className="btn btn-blue btn-md">첫 영상 등록하기</Link>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="video-grid">
+              {videos.map(v => (
+                <div key={v.id} className="video-card">
+                  <Link to={`/videos/${v.id}`}>
+                    <div className="video-thumb">
+                      <img
+                        src={v.youtubeId
+                          ? `https://img.youtube.com/vi/${v.youtubeId}/mqdefault.jpg`
+                          : (v.thumbnailUrl || 'https://via.placeholder.com/320x180?text=Video')}
+                        alt="thumbnail"
+                      />
+                      <div className="video-overlay">
+                        <div className="play-btn">▶</div>
+                      </div>
+                      {v.duration && <div className="video-duration">{v.duration}</div>}
+                    </div>
+                  </Link>
+                  <div className="video-body">
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 4, alignItems: 'center' }}>
+                      <span className="pill pill-gray">{v.category}</span>
+                    </div>
+                    <div className="video-title">
+                      <Link to={`/videos/${v.id}`}>{v.title}</Link>
+                    </div>
+                    <div className="video-meta">
+                      <span>{v.authorNickname}</span>
+                      <span>·</span>
+                      <span>{dayjs(v.createdAt).format('YYYY.MM.DD')}</span>
+                      <span>·</span>
+                      <span>👁 {v.viewCount || 0}</span>
+                    </div>
                   </div>
                 </div>
-              </Link>
-            )
-          })}
-          {videos.length === 0 && <p style={{ gridColumn:'1/-1', textAlign:'center', color:'var(--color-text-muted)', padding:32 }}>영상이 없습니다.</p>}
-        </div>
-      )}
+              ))}
+            </div>
+          )}
 
-      {totalPages > 1 && (
-        <div className="pagination" style={{ marginTop:24 }}>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button key={i} onClick={() => fetchVideos(i)} className={`page-btn${page===i?' active':''}`}>{i+1}</button>
-          ))}
+          {totalPages > 1 && (
+            <div className="pagination">
+              {page > 0 && <span onClick={() => setParam('page', String(page - 1))} style={{ cursor: 'pointer' }}>‹</span>}
+              {Array.from({ length: totalPages }, (_, i) => (
+                <span key={i} onClick={() => setParam('page', String(i))}
+                  className={page === i ? 'active' : ''} style={{ cursor: 'pointer' }}>{i + 1}</span>
+              ))}
+              {page < totalPages - 1 && <span onClick={() => setParam('page', String(page + 1))} style={{ cursor: 'pointer' }}>›</span>}
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </>
   )
 }

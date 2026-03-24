@@ -1,89 +1,140 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import api from '../api/axios'
 import { useAuthStore } from '../store/authStore'
+import dayjs from 'dayjs'
 
-const CATEGORIES = ['', 'FRONTEND', 'BACKEND', 'DEVOPS', 'AI', 'MOBILE', 'SECURITY', 'OTHER']
+const CATEGORIES = ['', 'Frontend', 'Backend', 'DevOps', 'Algorithm', 'Database', 'ETC']
+const CAT_LABEL = { '': '전체' }
 
 export default function DocListPage() {
   const { member } = useAuthStore()
   const [docs, setDocs] = useState([])
-  const [pinned, setPinned] = useState([])
-  const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
-  const [category, setCategory] = useState('')
   const [loading, setLoading] = useState(true)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [kw, setKw] = useState(searchParams.get('keyword') || '')
 
-  const fetchDocs = (p = 0) => {
-    setLoading(true)
-    api.get('/docs', { params: { page: p, size: 10, category: category || undefined } })
-      .then(r => {
-        const data = r.data.data
-        setDocs(data.content)
-        setTotalPages(data.totalPages)
-        setPage(p)
-      })
-      .finally(() => setLoading(false))
-  }
+  const category = searchParams.get('category') || ''
+  const keyword = searchParams.get('keyword') || ''
+  const page = parseInt(searchParams.get('page') || '0')
 
   useEffect(() => {
-    api.get('/docs', { params: { page:0, size:5, pinned:true } }).then(r => setPinned(r.data.data.content || []))
-  }, [])
+    setLoading(true)
+    const params = { page, size: 12 }
+    if (category) params.category = category
+    if (keyword) params.keyword = keyword
+    api.get('/docs', { params })
+      .then(r => {
+        const data = r.data.data
+        if (data && data.content) {
+          setDocs(data.content)
+          setTotalPages(data.totalPages || 1)
+        } else {
+          setDocs(Array.isArray(data) ? data : [])
+          setTotalPages(1)
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [category, keyword, page])
 
-  useEffect(() => { fetchDocs(0) }, [category])
+  const setParam = (key, value) => {
+    const p = new URLSearchParams(searchParams)
+    if (value) p.set(key, value); else p.delete(key)
+    p.delete('page')
+    setSearchParams(p)
+  }
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    setParam('keyword', kw)
+  }
 
   return (
-    <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-        <h2>기술 문서</h2>
-        <Link to="/docs/new" className="btn btn-primary">문서 등록</Link>
-      </div>
-
-      {pinned.length > 0 && (
-        <div style={{ marginBottom:20 }}>
-          <h4 style={{ marginBottom:8, color:'var(--color-primary)' }}>📌 고정 문서</h4>
-          {pinned.map(d => (
-            <div key={d.id} className="card" style={{ padding:'10px 16px', marginBottom:6 }}>
-              <span style={{ fontSize:11, background:'#fff3cd', padding:'2px 6px', borderRadius:3, marginRight:8 }}>{d.category}</span>
-              <Link to={`/docs/${d.id}`} style={{ fontWeight:500, color:'var(--color-text)' }}>{d.title}</Link>
-              <span style={{ float:'right', fontSize:12, color:'var(--color-text-muted)' }}>{d.authorNickname}</span>
+    <>
+      <div className="page-header">
+        <div className="container">
+          <div className="page-header-inner">
+            <div>
+              <div className="label" style={{ marginBottom: 6 }}>Knowledge Base</div>
+              <h1>기술 문서</h1>
+              <p>튜토리얼, 아키텍처, 기술 노트를 공유하세요</p>
             </div>
-          ))}
+            {member && <Link to="/docs/new" className="btn btn-blue btn-md">📄 문서 작성</Link>}
+          </div>
         </div>
-      )}
-
-      <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
-        {CATEGORIES.map(c => (
-          <button key={c} onClick={() => setCategory(c)} className={`btn btn-secondary${category===c?' active':''}`} style={{ fontSize:12 }}>
-            {c || '전체'}
-          </button>
-        ))}
       </div>
 
-      {loading ? <div>로딩 중...</div> : (
-        <>
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {docs.map(d => (
-              <div key={d.id} className="card" style={{ padding:'12px 18px', display:'flex', justifyContent:'space-between' }}>
-                <div>
-                  <span style={{ fontSize:11, background:'#e9ecef', padding:'2px 6px', borderRadius:3, marginRight:8 }}>{d.category}</span>
-                  <Link to={`/docs/${d.id}`} style={{ color:'var(--color-text)', fontWeight:500 }}>{d.title}</Link>
-                </div>
-                <span style={{ fontSize:12, color:'var(--color-text-muted)' }}>{d.authorNickname}</span>
-              </div>
+      <div className="section-sm">
+        <div className="container">
+          <div className="tabs">
+            {CATEGORIES.map(c => (
+              <button key={c} onClick={() => setParam('category', c)}
+                className={`tab${category === c ? ' active' : ''}`}>
+                {CAT_LABEL[c] || c || '전체'}
+              </button>
             ))}
-            {docs.length === 0 && <p style={{ textAlign:'center', color:'var(--color-text-muted)', padding:32 }}>문서가 없습니다.</p>}
           </div>
 
-          {totalPages > 1 && (
-            <div className="pagination" style={{ marginTop:16 }}>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button key={i} onClick={() => fetchDocs(i)} className={`page-btn${page===i?' active':''}`}>{i+1}</button>
+          <form className="search-row" style={{ marginBottom: 24 }} onSubmit={handleSearch}>
+            <input type="text" name="keyword" className="search-input"
+              placeholder="문서 검색..." value={kw} onChange={e => setKw(e.target.value)} />
+            <button type="submit" className="btn btn-blue btn-md">검색</button>
+          </form>
+
+          {loading ? (
+            <div className="empty"><div className="empty-icon">⏳</div></div>
+          ) : docs.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">📄</div>
+              <div className="empty-title">문서가 없습니다.</div>
+              {member && (
+                <div className="empty-sub" style={{ marginTop: 16 }}>
+                  <Link to="/docs/new" className="btn btn-blue btn-md">첫 문서 작성하기</Link>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="doc-grid">
+              {docs.map(doc => (
+                <div key={doc.id} className="doc-card">
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+                    <span className="pill pill-gray">{doc.category}</span>
+                  </div>
+                  <div className="doc-card-title">
+                    <Link to={`/docs/${doc.id}`}>{doc.title}</Link>
+                  </div>
+                  {doc.tags && (
+                    <div className="doc-card-tags">
+                      {doc.tags.split(',').slice(0, 4).map(t => (
+                        <span key={t} className="tag">{t.trim()}</span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="doc-card-meta">
+                    <span>{doc.authorNickname}</span>
+                    <span>·</span>
+                    <span>{dayjs(doc.createdAt).format('yyyy.MM.DD')}</span>
+                    <span>·</span>
+                    <span>👁 {doc.viewCount || 0}</span>
+                  </div>
+                </div>
               ))}
             </div>
           )}
-        </>
-      )}
-    </div>
+
+          {totalPages > 1 && (
+            <div className="pagination">
+              {page > 0 && <span onClick={() => setParam('page', String(page - 1))} style={{ cursor: 'pointer' }}>‹</span>}
+              {Array.from({ length: totalPages }, (_, i) => (
+                <span key={i} onClick={() => setParam('page', String(i))}
+                  className={page === i ? 'active' : ''} style={{ cursor: 'pointer' }}>{i + 1}</span>
+              ))}
+              {page < totalPages - 1 && <span onClick={() => setParam('page', String(page + 1))} style={{ cursor: 'pointer' }}>›</span>}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   )
 }

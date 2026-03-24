@@ -1,4 +1,4 @@
-.layout {
+/* Layout styles are now in global.css (original design) */
   min-height: 100vh;
   display: flex;
   flex-direction: column;

@@ -8,55 +8,59 @@ export default function ProjectDetailPage() {
   const navigate = useNavigate()
   const { member } = useAuthStore()
   const [project, setProject] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get(`/projects/${id}`).then(r => setProject(r.data.data))
+    api.get(`/projects/${id}`).then(r => setProject(r.data.data)).finally(() => setLoading(false))
   }, [id])
 
-  const handleLike = async () => {
-    await api.post(`/projects/${id}/like`)
-    api.get(`/projects/${id}`).then(r => setProject(r.data.data))
-  }
-
   const handleDelete = async () => {
-    if (!confirm('삭제하시겠습니까?')) return
+    if (!window.confirm('삭제하시겠습니까?')) return
     await api.delete(`/projects/${id}`)
     navigate('/projects')
   }
 
-  if (!project) return <div className="loading">로딩 중...</div>
+  if (loading) return <div className="empty"><div className="empty-icon">⏳</div></div>
+  if (!project) return <div className="empty"><div className="empty-title">프로젝트를 찾을 수 없습니다</div></div>
+
   const isAuthor = member?.id === project.authorId
+  const isAdmin = member?.role === 'ADMIN'
 
   return (
-    <div style={{ maxWidth:760, margin:'0 auto' }}>
-      <div className="card" style={{ padding:32 }}>
-        <h2 style={{ marginBottom:8 }}>{project.title}</h2>
-        <div style={{ fontSize:13, color:'var(--color-text-muted)', marginBottom:16 }}>
-          {project.authorNickname}
-        </div>
-        <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:16 }}>
-          {project.techStack?.split(',').map(t => (
-            <span key={t} style={{ fontSize:12, padding:'3px 8px', background:'#e9ecef', borderRadius:4 }}>{t.trim()}</span>
-          ))}
-        </div>
-        <div style={{ display:'flex', gap:16, marginBottom:20 }}>
-          {project.githubUrl && <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ fontSize:13 }}>GitHub</a>}
-          {project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ fontSize:13 }}>Demo</a>}
-        </div>
-        <div style={{ lineHeight:1.9, whiteSpace:'pre-wrap', borderTop:'1px solid var(--color-border)', paddingTop:16, marginBottom:20 }}>
-          {project.description}
-        </div>
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <button onClick={handleLike} className="btn btn-secondary">❤️ {project.likeCount}</button>
-          {isAuthor && (
-            <>
-              <Link to={`/projects/${id}/edit`} className="btn btn-secondary">수정</Link>
-              <button onClick={handleDelete} className="btn" style={{ background:'#e74c3c', color:'#fff' }}>삭제</button>
-            </>
+    <div className="section-sm"><div className="container">
+    <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      <div className="card">
+        {project.thumbnailUrl && (
+          <img src={project.thumbnailUrl} alt={project.title}
+            style={{ width: '100%', height: 240, objectFit: 'cover', borderRadius: 'var(--r)', marginBottom: 24 }} />
+        )}
+        <div className="post-header">
+          <h2 className="post-title">{project.title}</h2>
+          {(isAuthor || isAdmin) && (
+            <div className="post-actions">
+              <Link to={`/projects/${id}/edit`} className="btn btn-ghost btn-sm">수정</Link>
+              <button className="btn btn-danger btn-sm" onClick={handleDelete}>삭제</button>
+            </div>
           )}
-          <button onClick={() => navigate(-1)} className="btn btn-secondary">뒤로</button>
         </div>
+        {project.techStack && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '12px 0 20px' }}>
+            {project.techStack.split(',').map(t => (
+              <span key={t} className="pill pill-blue">{t.trim()}</span>
+            ))}
+          </div>
+        )}
+        <div className="post-row-meta" style={{ marginBottom: 20 }}>
+          {project.authorNickname && <span>👤 {project.authorNickname}</span>}
+          {project.githubUrl && <a href={project.githubUrl} target="_blank" rel="noreferrer" className="btn btn-dark btn-xs">GitHub →</a>}
+          {project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noreferrer" className="btn btn-tinted btn-xs">Demo →</a>}
+        </div>
+        <div className="post-body md-body">{project.description}</div>
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <Link to="/projects" className="btn btn-ghost btn-sm">← 목록으로</Link>
       </div>
     </div>
+    </div></div>
   )
 }
