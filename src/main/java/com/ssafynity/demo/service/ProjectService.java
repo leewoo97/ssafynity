@@ -1,7 +1,10 @@
 package com.ssafynity.demo.service;
 
+import com.ssafynity.demo.common.exception.BusinessException;
+import com.ssafynity.demo.common.exception.ErrorCode;
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.domain.Project;
+import com.ssafynity.demo.dto.request.ProjectRequest;
 import com.ssafynity.demo.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,26 +17,30 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
 
     @Transactional
-    public Project create(String title, String description, String techStack,
-                          String githubUrl, String demoUrl, String thumbnailUrl,
-                          int teamSize, String status, Member author) {
+    public Project create(ProjectRequest req, Member author) {
         Project project = Project.builder()
-                .title(title)
-                .description(description)
-                .techStack(techStack)
-                .githubUrl(githubUrl)
-                .demoUrl(demoUrl)
-                .thumbnailUrl(thumbnailUrl)
-                .teamSize(teamSize)
-                .status(status != null ? status : "COMPLETED")
+                .title(req.getTitle())
+                .description(req.getDescription())
+                .techStack(req.getTechStack())
+                .githubUrl(req.getGithubUrl())
+                .demoUrl(req.getDemoUrl())
+                .thumbnailUrl(req.getThumbnailUrl())
+                .teamSize(req.getTeamSize())
+                .status(req.getStatus() != null ? req.getStatus() : "COMPLETED")
                 .author(author)
                 .build();
         return projectRepository.save(project);
+    }
+
+    public Project getById(Long id) {
+        return projectRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROJECT_NOT_FOUND));
     }
 
     public Optional<Project> findById(Long id) {
@@ -42,34 +49,45 @@ public class ProjectService {
 
     @Transactional
     public Project findByIdAndIncreaseView(Long id) {
-        Project project = projectRepository.findById(id).orElseThrow();
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROJECT_NOT_FOUND));
         project.setViewCount(project.getViewCount() + 1);
         return project;
     }
 
     @Transactional
-    public void update(Long id, String title, String description, String techStack,
-                       String githubUrl, String demoUrl, String thumbnailUrl,
-                       int teamSize, String status) {
-        Project project = projectRepository.findById(id).orElseThrow();
-        project.setTitle(title);
-        project.setDescription(description);
-        project.setTechStack(techStack);
-        project.setGithubUrl(githubUrl);
-        project.setDemoUrl(demoUrl);
-        project.setThumbnailUrl(thumbnailUrl);
-        project.setTeamSize(teamSize);
-        project.setStatus(status);
+    public void update(Long id, ProjectRequest req, Long requesterId) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROJECT_NOT_FOUND));
+        if (!project.getAuthor().getId().equals(requesterId)) {
+            throw new BusinessException(ErrorCode.PROJECT_ACCESS_DENIED);
+        }
+        project.setTitle(req.getTitle());
+        project.setDescription(req.getDescription());
+        project.setTechStack(req.getTechStack());
+        project.setGithubUrl(req.getGithubUrl());
+        project.setDemoUrl(req.getDemoUrl());
+        project.setThumbnailUrl(req.getThumbnailUrl());
+        project.setTeamSize(req.getTeamSize());
+        project.setStatus(req.getStatus());
     }
 
     @Transactional
     public void like(Long id) {
-        Project project = projectRepository.findById(id).orElseThrow();
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROJECT_NOT_FOUND));
         project.setLikeCount(project.getLikeCount() + 1);
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(Long id, Long requesterId, String requesterRole) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROJECT_NOT_FOUND));
+        boolean isOwner = project.getAuthor().getId().equals(requesterId);
+        boolean isAdmin = "ADMIN".equals(requesterRole);
+        if (!isOwner && !isAdmin) {
+            throw new BusinessException(ErrorCode.PROJECT_ACCESS_DENIED);
+        }
         projectRepository.deleteById(id);
     }
 

@@ -1,13 +1,14 @@
 package com.ssafynity.demo.service;
 
+import com.ssafynity.demo.common.exception.BusinessException;
+import com.ssafynity.demo.common.exception.ErrorCode;
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.domain.Post;
+import com.ssafynity.demo.dto.request.PostRequest;
 import com.ssafynity.demo.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,18 +17,30 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PostService {
+
     private final PostRepository postRepository;
 
     @Transactional
-    public Post createPost(String title, String content, String category, Member author) {
+    public Post createPost(PostRequest req, Member author) {
         Post post = Post.builder()
-                .title(title)
-                .content(content)
-                .category(category != null && !category.isEmpty() ? category : "일반")
+                .title(req.getTitle())
+                .content(req.getContent())
+                .category(req.getCategory() != null && !req.getCategory().isEmpty() ? req.getCategory() : "일반")
+                .campus(req.getCampus())
                 .author(author)
                 .build();
         return postRepository.save(post);
+    }
+
+    public Post getById(Long id) {
+        return postRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
+    }
+
+    public Optional<Post> findById(Long id) {
+        return postRepository.findById(id);
     }
 
     public List<Post> findAll() {
@@ -66,31 +79,42 @@ public class PostService {
         return postRepository.findByAuthorOrderByCreatedAtDesc(author);
     }
 
-    public Optional<Post> findById(Long id) {
-        return postRepository.findById(id);
-    }
-
     @Transactional
     public Post findByIdAndIncreaseView(Long id) {
-        Post post = postRepository.findById(id).orElseThrow();
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
         post.setViewCount(post.getViewCount() + 1);
         return post;
     }
 
     @Transactional
-    public void updatePost(Long id, String title, String content, String category) {
-        Post post = postRepository.findById(id).orElseThrow();
-        post.setTitle(title);
-        post.setContent(content);
-        if (category != null && !category.isEmpty()) post.setCategory(category);
+    public void updatePost(Long id, PostRequest req, Long requesterId, String requesterRole) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
+        boolean isOwner = post.getAuthor().getId().equals(requesterId);
+        boolean isAdmin = "ADMIN".equals(requesterRole);
+        if (!isOwner && !isAdmin) {
+            throw new BusinessException(ErrorCode.POST_ACCESS_DENIED);
+        }
+        post.setTitle(req.getTitle());
+        post.setContent(req.getContent());
+        if (req.getCategory() != null && !req.getCategory().isEmpty()) {
+            post.setCategory(req.getCategory());
+        }
     }
 
     @Transactional
-    public void deletePost(Long id) {
+    public void deletePost(Long id, Long requesterId, String requesterRole) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
+        boolean isOwner = post.getAuthor().getId().equals(requesterId);
+        boolean isAdmin = "ADMIN".equals(requesterRole);
+        if (!isOwner && !isAdmin) {
+            throw new BusinessException(ErrorCode.POST_ACCESS_DENIED);
+        }
         postRepository.deleteById(id);
     }
 
-    // ── QueryDSL 고급 검색 ──────────────────────────────────────────
     public Page<Post> searchAdvanced(String keyword, String category, String sort, Pageable pageable) {
         return postRepository.searchAdvanced(keyword, category, sort, pageable);
     }
@@ -100,15 +124,14 @@ public class PostService {
         return postRepository.findHotPosts(since, limit);
     }
 
-    // ── 캠퍼스 전용 게시판 ────────────────────────────────────────
     @Transactional
-    public Post createCampusPost(String title, String content, Member author, String campus) {
+    public Post createCampusPost(PostRequest req, Member author) {
         Post post = Post.builder()
-                .title(title)
-                .content(content)
+                .title(req.getTitle())
+                .content(req.getContent())
                 .category("캠퍼스")
                 .author(author)
-                .campus(campus)
+                .campus(req.getCampus())
                 .build();
         return postRepository.save(post);
     }

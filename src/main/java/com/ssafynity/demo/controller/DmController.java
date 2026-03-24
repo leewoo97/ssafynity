@@ -1,163 +1,116 @@
 package com.ssafynity.demo.controller;
 
+import com.ssafynity.demo.common.response.ApiResponse;
 import com.ssafynity.demo.domain.DirectMessage;
 import com.ssafynity.demo.domain.DirectRoom;
 import com.ssafynity.demo.domain.Member;
+import com.ssafynity.demo.dto.request.GroupChatRequest;
+import com.ssafynity.demo.dto.response.DirectMessageResponse;
+import com.ssafynity.demo.dto.response.DirectRoomResponse;
+import com.ssafynity.demo.dto.response.MemberResponse;
+import com.ssafynity.demo.security.CustomUserDetails;
 import com.ssafynity.demo.service.DirectMessageService;
-import com.ssafynity.demo.service.FriendshipService;
 import com.ssafynity.demo.service.MemberService;
-import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
-/**
- * DM / 그룹 채팅 HTTP 컨트롤러
- *
- * GET  /dm                        → 내 대화 목록
- * POST /dm/start/{friendId}       → DM 시작 (없으면 생성)
- * POST /dm/group                  → 그룹 채팅 생성
- * GET  /dm/{roomId}               → 채팅방 입장
- * POST /dm/{roomId}/invite/{id}   → 멤버 초대 (그룹)
- * POST /dm/{roomId}/leave         → 나가기
- */
-@Controller
-@RequestMapping("/dm")
+@RestController
+@RequestMapping("/api/dm")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class DmController {
 
     private final DirectMessageService directMessageService;
     private final MemberService memberService;
-    private final FriendshipService friendshipService;
 
-    /** 내 대화 목록 */
-    @GetMapping
-    public String list(HttpSession session, Model model) {
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        if (loginMember == null) return "redirect:/member/login";
-        Member fresh = memberService.findById(loginMember.getId()).orElseThrow();
-
-        List<DirectRoom> rooms = directMessageService.getRoomsForMember(fresh);
-
-        // 각 방 정보 보강
-        Map<Long, Member> dmOtherMember = new HashMap<>();
-        Map<Long, List<Member>> roomMembers = new HashMap<>();
-        Map<Long, DirectMessage> lastMessages = new HashMap<>();
-
-        for (DirectRoom room : rooms) {
-            List<Member> members = directMessageService.getMemberList(room);
-            roomMembers.put(room.getId(), members);
-            if ("DM".equals(room.getType())) {
-                members.stream()
-                        .filter(m -> !m.getId().equals(fresh.getId()))
-                        .findFirst()
-                        .ifPresent(m -> dmOtherMember.put(room.getId(), m));
-            }
-            directMessageService.getLastMessage(room)
-                    .ifPresent(msg -> lastMessages.put(room.getId(), msg));
-        }
-
-        model.addAttribute("loginMember", fresh);
-        model.addAttribute("rooms", rooms);
-        model.addAttribute("dmOtherMember", dmOtherMember);
-        model.addAttribute("roomMembers", roomMembers);
-        model.addAttribute("lastMessages", lastMessages);
-        model.addAttribute("myFriends", friendshipService.getFriends(fresh));
-        return "dm/list";
+    /** 내 DM 방 목록 */
+    @GetMapping("/rooms")
+    public ResponseEntity<ApiResponse<List<DirectRoomResponse>>> myRooms(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member me = memberService.getById(userDetails.getId());
+        List<DirectRoom> rooms = directMessageService.getRoomsForMember(me);
+        List<DirectRoomResponse> result = rooms.stream()
+                .map((DirectRoom room) -> {
+                    Member other = "GROUP".equals(room.getType()) ? null : directMessageService.getOtherMember(room, me);
+                    List<Member> members = "GROUP".equals(room.getType()) ? directMessageService.getMemberList(room) : null;
+                    DirectMessage last = directMessageService.getLastMessage(room).orElse(null);
+                    return DirectRoomResponse.from(room, other, members, last);
+                }).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
-    /** 친구와 1:1 DM 시작 (없으면 생성, 있으면 기존 방 이동) */
-    @PostMapping("/start/{friendId}")
-    public String startDm(@PathVariable Long friendId, HttpSession session) {
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        if (loginMember == null) return "redirect:/member/login";
-        Member fresh = memberService.findById(loginMember.getId()).orElseThrow();
-        Member friend = memberService.findById(friendId).orElseThrow();
-        DirectRoom room = directMessageService.findOrCreateDm(fresh, friend);
-        return "redirect:/dm/" + room.getId();
+    /** 1:1 DM 시작 (또는 기존 방 반환) */
+    @PostMapping("/users/{targetId}")
+    public ResponseEntity<ApiResponse<DirectRoomResponse>> startDm(
+            @PathVariable Long targetId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member me = memberService.getById(userDetails.getId());
+        Member target = memberService.getById(targetId);
+        DirectRoom room = directMessageService.findOrCreateDm(me, target);
+        return ResponseEntity.ok(ApiResponse.ok(
+                DirectRoomResponse.from(room, target, null, null)));
     }
 
-    /** 그룹 채팅 생성 */
+    /** 그룹 DM 방 생성 */
     @PostMapping("/group")
-    public String createGroup(@RequestParam String name,
-                              @RequestParam(required = false) List<Long> memberIds,
-                              HttpSession session) {
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        if (loginMember == null) return "redirect:/member/login";
-        Member fresh = memberService.findById(loginMember.getId()).orElseThrow();
-        List<Long> ids = memberIds != null ? memberIds : new ArrayList<>();
-        DirectRoom room = directMessageService.createGroup(fresh, name, ids);
-        return "redirect:/dm/" + room.getId();
-    }
-
-    /** 채팅방 입장 */
-    @GetMapping("/{roomId}")
-    public String enterRoom(@PathVariable Long roomId, HttpSession session, Model model) {
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        if (loginMember == null) return "redirect:/member/login";
-        Member fresh = memberService.findById(loginMember.getId()).orElseThrow();
-
-        DirectRoom room = directMessageService.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다."));
-
-        // 참여자 아닌 경우 목록으로
-        if (!directMessageService.isMember(room, fresh)) return "redirect:/dm";
-
-        List<DirectMessage> messages = directMessageService.getMessages(room);
+    public ResponseEntity<ApiResponse<DirectRoomResponse>> createGroup(
+            @Valid @RequestBody GroupChatRequest req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member me = memberService.getById(userDetails.getId());
+        DirectRoom room = directMessageService.createGroup(me, req.getName(), req.getMemberIds());
         List<Member> members = directMessageService.getMemberList(room);
-        Set<Long> memberIdSet = members.stream().map(Member::getId).collect(Collectors.toSet());
+        return ResponseEntity.ok(ApiResponse.ok(
+                DirectRoomResponse.from(room, null, members, null)));
+    }
 
-        // 방 제목 + DM 상대방
-        Member otherMember = null;
-        String roomTitle;
-        if ("DM".equals(room.getType())) {
-            otherMember = members.stream()
-                    .filter(m -> !m.getId().equals(fresh.getId()))
-                    .findFirst().orElse(null);
-            roomTitle = otherMember != null ? otherMember.getNickname() : "DM";
-        } else {
-            roomTitle = room.getName();
+    /** 방의 메시지 목록 */
+    @GetMapping("/rooms/{roomId}/messages")
+    public ResponseEntity<ApiResponse<List<DirectMessageResponse>>> messages(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member me = memberService.getById(userDetails.getId());
+        DirectRoom room = directMessageService.findById(roomId)
+                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
+                        com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
+        if (!directMessageService.isMember(room, me)) {
+            throw new com.ssafynity.demo.common.exception.BusinessException(
+                    com.ssafynity.demo.common.exception.ErrorCode.DM_ACCESS_DENIED);
         }
-
-        // 초대 가능한 친구 (이미 방에 없는 친구만)
-        List<Member> invitableFriends = friendshipService.getFriends(fresh).stream()
-                .filter(f -> !memberIdSet.contains(f.getId()))
-                .collect(Collectors.toList());
-
-        model.addAttribute("loginMember", fresh);
-        model.addAttribute("room", room);
-        model.addAttribute("messages", messages);
-        model.addAttribute("members", members);
-        model.addAttribute("roomTitle", roomTitle);
-        model.addAttribute("otherMember", otherMember);
-        model.addAttribute("invitableFriends", invitableFriends);
-        return "dm/room";
+        List<DirectMessageResponse> result = directMessageService.getMessages(room).stream()
+                .map(DirectMessageResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
-    /** 그룹 채팅에 멤버 초대 */
-    @PostMapping("/{roomId}/invite/{memberId}")
-    public String invite(@PathVariable Long roomId, @PathVariable Long memberId,
-                         HttpSession session) {
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        if (loginMember == null) return "redirect:/member/login";
-        DirectRoom room = directMessageService.findById(roomId).orElseThrow();
-        Member invitee = memberService.findById(memberId).orElseThrow();
-        directMessageService.addMember(room, invitee);
-        return "redirect:/dm/" + roomId;
+    /** 방 나가기 */
+    @DeleteMapping("/rooms/{roomId}/leave")
+    public ResponseEntity<ApiResponse<Void>> leaveRoom(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member me = memberService.getById(userDetails.getId());
+        DirectRoom room = directMessageService.findById(roomId)
+                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
+                        com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
+        directMessageService.leaveRoom(room, me);
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
-    /** 채팅방 나가기 */
-    @PostMapping("/{roomId}/leave")
-    public String leave(@PathVariable Long roomId, HttpSession session) {
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        if (loginMember == null) return "redirect:/member/login";
-        Member fresh = memberService.findById(loginMember.getId()).orElseThrow();
-        DirectRoom room = directMessageService.findById(roomId).orElseThrow();
-        directMessageService.leaveRoom(room, fresh);
-        return "redirect:/dm";
+    /** 멤버 추가 (그룹 방) */
+    @PostMapping("/rooms/{roomId}/members/{memberId}")
+    public ResponseEntity<ApiResponse<Void>> addMember(
+            @PathVariable Long roomId,
+            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        DirectRoom room = directMessageService.findById(roomId)
+                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
+                        com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
+        Member newMember = memberService.getById(memberId);
+        directMessageService.addMember(room, newMember);
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 }

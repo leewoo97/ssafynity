@@ -1,135 +1,96 @@
 package com.ssafynity.demo.controller;
 
+import com.ssafynity.demo.common.response.ApiResponse;
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.domain.TechVideo;
-import com.ssafynity.demo.service.BookmarkService;
+import com.ssafynity.demo.dto.request.TechVideoRequest;
+import com.ssafynity.demo.dto.response.TechVideoResponse;
+import com.ssafynity.demo.security.CustomUserDetails;
+import com.ssafynity.demo.service.MemberService;
 import com.ssafynity.demo.service.TechVideoService;
-import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/videos")
 @RequiredArgsConstructor
-@RequestMapping("/videos")
 public class TechVideoController {
 
     private final TechVideoService techVideoService;
-    private final BookmarkService bookmarkService;
+    private final MemberService memberService;
 
     @GetMapping
-    public String list(@RequestParam(required = false) String keyword,
-                       @RequestParam(required = false) String category,
-                       @RequestParam(defaultValue = "0") int page,
-                       Model model) {
-        Pageable pageable = PageRequest.of(page, 12);
-        Page<TechVideo> videoPage;
-        boolean hasKeyword = keyword != null && !keyword.isBlank();
-        boolean hasCat     = category != null && !category.isBlank();
-        if (hasKeyword)    videoPage = techVideoService.searchByTitle(keyword, pageable);
-        else if (hasCat)   videoPage = techVideoService.findByCategory(category, pageable);
-        else               videoPage = techVideoService.findAllPaged(pageable);
-        model.addAttribute("videos", videoPage.getContent());
-        model.addAttribute("totalPages", videoPage.getTotalPages());
-        model.addAttribute("currentPage", page);
-        model.addAttribute("keyword", keyword);
-        model.addAttribute("category", category);
-        model.addAttribute("categories", techVideoService.getCategories());
-        model.addAttribute("pinnedVideos", techVideoService.getPinned());
-        return "videos/list";
+    public ResponseEntity<ApiResponse<Map<String, Object>>> list(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<TechVideo> page;
+        if (keyword != null) {
+            page = techVideoService.searchByTitle(keyword, pageable);
+        } else if (category != null) {
+            page = techVideoService.findByCategory(category, pageable);
+        } else {
+            page = techVideoService.findAllPaged(pageable);
+        }
+        List<TechVideoResponse> content = page.getContent().stream().map(TechVideoResponse::from).toList();
+        Map<String, Object> result = Map.of(
+                "content", content,
+                "totalPages", page.getTotalPages(),
+                "totalElements", page.getTotalElements(),
+                "categories", List.of(techVideoService.getCategories())
+        );
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model, HttpSession session) {
+    public ResponseEntity<ApiResponse<TechVideoResponse>> detail(@PathVariable Long id) {
         TechVideo video = techVideoService.findByIdAndIncreaseView(id);
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        model.addAttribute("video", video);
-        model.addAttribute("isBookmarked", bookmarkService.isBookmarked(loginMember, "VIDEO", id));
-        model.addAttribute("relatedVideos", techVideoService.getTopViewed());
-        return "videos/detail";
-    }
-
-    @GetMapping("/new")
-    public String createForm(HttpSession session, Model model) {
-        if (session.getAttribute("loginMember") == null) return "redirect:/member/login";
-        model.addAttribute("video", new TechVideo());
-        model.addAttribute("categories", techVideoService.getCategories());
-        return "videos/form";
+        return ResponseEntity.ok(ApiResponse.ok(TechVideoResponse.from(video)));
     }
 
     @PostMapping
-    public String create(@RequestParam String title,
-                         @RequestParam(required = false) String description,
-                         @RequestParam String youtubeUrl,
-                         @RequestParam(required = false) String duration,
-                         @RequestParam(required = false) String category,
-                         @RequestParam(required = false) String tags,
-                         HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        if (member == null) return "redirect:/member/login";
-        TechVideo video = techVideoService.create(title, description, youtubeUrl, duration, category, tags, member);
-        return "redirect:/videos/" + video.getId();
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<TechVideoResponse>> create(
+            @Valid @RequestBody TechVideoRequest req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member member = memberService.getById(userDetails.getId());
+        TechVideo video = techVideoService.create(req, member);
+        return ResponseEntity.ok(ApiResponse.ok(TechVideoResponse.from(video)));
     }
 
-    @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, HttpSession session, Model model) {
-        Member member = (Member) session.getAttribute("loginMember");
-        TechVideo video = techVideoService.findById(id).orElseThrow();
-        if (member == null || !video.getAuthor().getId().equals(member.getId())) {
-            return "redirect:/videos/" + id;
-        }
-        model.addAttribute("video", video);
-        model.addAttribute("categories", techVideoService.getCategories());
-        return "videos/form";
+    @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> update(
+            @PathVariable Long id,
+            @Valid @RequestBody TechVideoRequest req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        techVideoService.update(id, req, userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
-    @PostMapping("/{id}/edit")
-    public String edit(@PathVariable Long id,
-                       @RequestParam String title,
-                       @RequestParam(required = false) String description,
-                       @RequestParam String youtubeUrl,
-                       @RequestParam(required = false) String duration,
-                       @RequestParam(required = false) String category,
-                       @RequestParam(required = false) String tags,
-                       HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        TechVideo video = techVideoService.findById(id).orElseThrow();
-        if (member == null || !video.getAuthor().getId().equals(member.getId())) {
-            return "redirect:/videos/" + id;
-        }
-        techVideoService.update(id, title, description, youtubeUrl, duration, category, tags);
-        return "redirect:/videos/" + id;
-    }
-
-    @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        TechVideo video = techVideoService.findById(id).orElseThrow();
-        boolean isOwner = member != null && video.getAuthor().getId().equals(member.getId());
-        boolean isAdmin = member != null && "ADMIN".equals(member.getRole());
-        if (!isOwner && !isAdmin) return "redirect:/videos/" + id;
-        techVideoService.delete(id);
-        return "redirect:/videos";
+    @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        techVideoService.delete(id, userDetails.getId(), userDetails.getRole());
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     @PostMapping("/{id}/pin")
-    public String togglePin(@PathVariable Long id, HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        if (member == null || !"ADMIN".equals(member.getRole())) return "redirect:/videos/" + id;
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> togglePin(@PathVariable Long id) {
         techVideoService.togglePin(id);
-        return "redirect:/videos/" + id;
-    }
-
-    @PostMapping("/{id}/bookmark")
-    public String bookmark(@PathVariable Long id, HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        if (member == null) return "redirect:/member/login";
-        TechVideo video = techVideoService.findById(id).orElseThrow();
-        bookmarkService.toggle(member, "VIDEO", id, video.getTitle());
-        return "redirect:/videos/" + id;
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 }

@@ -1,126 +1,96 @@
 package com.ssafynity.demo.controller;
 
+import com.ssafynity.demo.common.response.ApiResponse;
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.domain.TechDoc;
-import com.ssafynity.demo.service.BookmarkService;
+import com.ssafynity.demo.dto.request.TechDocRequest;
+import com.ssafynity.demo.dto.response.TechDocResponse;
+import com.ssafynity.demo.security.CustomUserDetails;
+import com.ssafynity.demo.service.MemberService;
 import com.ssafynity.demo.service.TechDocService;
-import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/docs")
 @RequiredArgsConstructor
-@RequestMapping("/docs")
 public class TechDocController {
 
     private final TechDocService techDocService;
-    private final BookmarkService bookmarkService;
+    private final MemberService memberService;
 
     @GetMapping
-    public String list(@RequestParam(required = false) String keyword,
-                       @RequestParam(required = false) String category,
-                       @RequestParam(defaultValue = "0") int page,
-                       Model model, HttpSession session) {
-        Pageable pageable = PageRequest.of(page, 12);
-        Page<TechDoc> docPage = techDocService.searchDocs(keyword, category, pageable);
-        model.addAttribute("docs", docPage.getContent());
-        model.addAttribute("totalPages", docPage.getTotalPages());
-        model.addAttribute("currentPage", page);
-        model.addAttribute("keyword", keyword);
-        model.addAttribute("category", category);
-        model.addAttribute("categories", techDocService.getCategories());
-        model.addAttribute("pinnedDocs", techDocService.getPinned());
-        return "docs/list";
+    public ResponseEntity<ApiResponse<Map<String, Object>>> list(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<TechDoc> page = techDocService.searchDocs(keyword, category, pageable);
+        List<TechDocResponse> content = page.getContent().stream().map(TechDocResponse::from).toList();
+        Map<String, Object> result = Map.of(
+                "content", content,
+                "totalPages", page.getTotalPages(),
+                "totalElements", page.getTotalElements(),
+                "categories", List.of(techDocService.getCategories())
+        );
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @GetMapping("/pinned")
+    public ResponseEntity<ApiResponse<List<TechDocResponse>>> pinned() {
+        List<TechDocResponse> result = techDocService.getPinned().stream()
+                .map(TechDocResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model, HttpSession session) {
+    public ResponseEntity<ApiResponse<TechDocResponse>> detail(@PathVariable Long id) {
         TechDoc doc = techDocService.findByIdAndIncreaseView(id);
-        Member loginMember = (Member) session.getAttribute("loginMember");
-        model.addAttribute("doc", doc);
-        model.addAttribute("isBookmarked", bookmarkService.isBookmarked(loginMember, "DOC", id));
-        model.addAttribute("relatedDocs", techDocService.getTopViewed());
-        return "docs/detail";
-    }
-
-    @GetMapping("/new")
-    public String createForm(HttpSession session, Model model) {
-        if (session.getAttribute("loginMember") == null) return "redirect:/member/login";
-        model.addAttribute("doc", new TechDoc());
-        model.addAttribute("categories", techDocService.getCategories());
-        return "docs/form";
+        return ResponseEntity.ok(ApiResponse.ok(TechDocResponse.from(doc)));
     }
 
     @PostMapping
-    public String create(@RequestParam String title,
-                         @RequestParam String content,
-                         @RequestParam(required = false) String category,
-                         @RequestParam(required = false) String tags,
-                         HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        if (member == null) return "redirect:/member/login";
-        TechDoc doc = techDocService.create(title, content, category, tags, member);
-        return "redirect:/docs/" + doc.getId();
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<TechDocResponse>> create(
+            @Valid @RequestBody TechDocRequest req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member member = memberService.getById(userDetails.getId());
+        TechDoc doc = techDocService.create(req, member);
+        return ResponseEntity.ok(ApiResponse.ok(TechDocResponse.from(doc)));
     }
 
-    @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, HttpSession session, Model model) {
-        Member member = (Member) session.getAttribute("loginMember");
-        TechDoc doc = techDocService.findById(id).orElseThrow();
-        if (member == null || !doc.getAuthor().getId().equals(member.getId())) {
-            return "redirect:/docs/" + id;
-        }
-        model.addAttribute("doc", doc);
-        model.addAttribute("categories", techDocService.getCategories());
-        return "docs/form";
+    @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> update(
+            @PathVariable Long id,
+            @Valid @RequestBody TechDocRequest req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        techDocService.update(id, req, userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
-    @PostMapping("/{id}/edit")
-    public String edit(@PathVariable Long id,
-                       @RequestParam String title,
-                       @RequestParam String content,
-                       @RequestParam(required = false) String category,
-                       @RequestParam(required = false) String tags,
-                       HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        TechDoc doc = techDocService.findById(id).orElseThrow();
-        if (member == null || !doc.getAuthor().getId().equals(member.getId())) {
-            return "redirect:/docs/" + id;
-        }
-        techDocService.update(id, title, content, category, tags);
-        return "redirect:/docs/" + id;
-    }
-
-    @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        TechDoc doc = techDocService.findById(id).orElseThrow();
-        boolean isOwner = member != null && doc.getAuthor().getId().equals(member.getId());
-        boolean isAdmin = member != null && "ADMIN".equals(member.getRole());
-        if (!isOwner && !isAdmin) return "redirect:/docs/" + id;
-        techDocService.delete(id);
-        return "redirect:/docs";
+    @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        techDocService.delete(id, userDetails.getId(), userDetails.getRole());
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     @PostMapping("/{id}/pin")
-    public String togglePin(@PathVariable Long id, HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        if (member == null || !"ADMIN".equals(member.getRole())) return "redirect:/docs/" + id;
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> togglePin(@PathVariable Long id) {
         techDocService.togglePin(id);
-        return "redirect:/docs/" + id;
-    }
-
-    @PostMapping("/{id}/bookmark")
-    public String bookmark(@PathVariable Long id, HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        if (member == null) return "redirect:/member/login";
-        TechDoc doc = techDocService.findById(id).orElseThrow();
-        bookmarkService.toggle(member, "DOC", id, doc.getTitle());
-        return "redirect:/docs/" + id;
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 }

@@ -1,34 +1,57 @@
 package com.ssafynity.demo.controller;
 
+import com.ssafynity.demo.common.response.ApiResponse;
 import com.ssafynity.demo.domain.Member;
-import com.ssafynity.demo.service.*;
-import jakarta.servlet.http.HttpSession;
+import com.ssafynity.demo.dto.response.NotificationResponse;
+import com.ssafynity.demo.security.CustomUserDetails;
+import com.ssafynity.demo.service.MemberService;
+import com.ssafynity.demo.service.NotificationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/notifications")
 @RequiredArgsConstructor
-@RequestMapping("/notifications")
+@PreAuthorize("isAuthenticated()")
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final MemberService memberService;
 
     @GetMapping
-    public String list(HttpSession session, Model model) {
-        Member member = (Member) session.getAttribute("loginMember");
-        if (member == null) return "redirect:/member/login";
-        notificationService.markAllRead(member);
-        model.addAttribute("notifications", notificationService.findByReceiver(member));
-        return "notification/list";
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> list(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member me = memberService.getById(userDetails.getId());
+        List<NotificationResponse> result = notificationService.findByReceiver(me).stream()
+                .map(NotificationResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
-    @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        if (member == null) return "redirect:/member/login";
+    @GetMapping("/unread-count")
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> unreadCount(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member me = memberService.getById(userDetails.getId());
+        int count = notificationService.countUnread(me);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("count", count)));
+    }
+
+    @PostMapping("/read-all")
+    public ResponseEntity<ApiResponse<Void>> markAllRead(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member me = memberService.getById(userDetails.getId());
+        notificationService.markAllRead(me);
+        return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         notificationService.deleteNotification(id);
-        return "redirect:/notifications";
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 }

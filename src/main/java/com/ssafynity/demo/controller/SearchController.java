@@ -1,44 +1,54 @@
 package com.ssafynity.demo.controller;
 
-import com.ssafynity.demo.service.*;
+import com.ssafynity.demo.common.response.ApiResponse;
+import com.ssafynity.demo.dto.response.PostResponse;
+import com.ssafynity.demo.dto.response.ProjectResponse;
+import com.ssafynity.demo.dto.response.TechDocResponse;
+import com.ssafynity.demo.dto.response.MemberResponse;
+import com.ssafynity.demo.service.MemberService;
+import com.ssafynity.demo.service.PostService;
+import com.ssafynity.demo.service.ProjectService;
+import com.ssafynity.demo.service.TechDocService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/search")
 @RequiredArgsConstructor
-@RequestMapping("/search")
 public class SearchController {
 
     private final PostService postService;
-    private final TechDocService techDocService;
-    private final TechVideoService techVideoService;
     private final ProjectService projectService;
+    private final TechDocService techDocService;
+    private final MemberService memberService;
 
     @GetMapping
-    public String search(@RequestParam(required = false) String q, Model model) {
-        if (q == null || q.isBlank()) {
-            model.addAttribute("q", "");
-            return "search/results";
-        }
-        Pageable pageable = PageRequest.of(0, 10);
+    public ResponseEntity<ApiResponse<Map<String, Object>>> search(
+            @RequestParam String q,
+            @PageableDefault(size = 10) Pageable pageable) {
+        List<PostResponse> posts = postService.searchByTitle(q).stream()
+                .map(PostResponse::from).toList();
+        List<ProjectResponse> projects = projectService.searchByKeyword(q, pageable).getContent().stream()
+                .map(ProjectResponse::from).toList();
+        List<TechDocResponse> docs = techDocService.searchDocs(q, null, pageable).getContent().stream()
+                .map(TechDocResponse::from).toList();
+        List<MemberResponse> members = memberService.findAll().stream()
+                .filter(m -> m.getNickname().contains(q) || m.getUsername().contains(q))
+                .map(MemberResponse::of).toList();
 
-        // QueryDSL 고급 검색 (제목+본문 모두 검색)
-        var posts    = postService.searchAdvanced(q, null, "createdAt", pageable).getContent();
-        var docs     = techDocService.searchDocs(q, null, PageRequest.of(0, 6)).getContent();
-        var videos   = techVideoService.searchByTitle(q, PageRequest.of(0, 6)).getContent();
-        var projects = projectService.searchByKeyword(q, PageRequest.of(0, 4)).getContent();
-        model.addAttribute("posts", posts);
-        model.addAttribute("docs", docs);
-        model.addAttribute("videos", videos);
-        model.addAttribute("projects", projects);
-        model.addAttribute("totalCount", posts.size() + docs.size() + videos.size() + projects.size());
-        model.addAttribute("q", q);
-        return "search/results";
+        Map<String, Object> result = Map.of(
+                "query", q,
+                "posts", posts,
+                "projects", projects,
+                "docs", docs,
+                "members", members
+        );
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 }

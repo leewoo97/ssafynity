@@ -1,71 +1,94 @@
 package com.ssafynity.demo.controller;
 
+import com.ssafynity.demo.common.response.ApiResponse;
 import com.ssafynity.demo.domain.Member;
+import com.ssafynity.demo.dto.request.ChangePasswordRequest;
+import com.ssafynity.demo.dto.request.ProfileUpdateRequest;
+import com.ssafynity.demo.dto.response.MemberResponse;
+import com.ssafynity.demo.security.CustomUserDetails;
+import com.ssafynity.demo.service.FriendshipService;
 import com.ssafynity.demo.service.MemberService;
-import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
+import java.util.List;
+
+/**
+ * 회원 REST API
+ * GET    /api/members/me              → 내 정보
+ * PUT    /api/members/me              → 내 정보 수정
+ * POST   /api/members/me/password     → 비밀번호 변경
+ * DELETE /api/members/me              → 탈퇴
+ * GET    /api/members/{id}            → 특정 회원 조회
+ * GET    /api/members                 → 전체 목록 (ADMIN)
+ */
+@RestController
+@RequestMapping("/api/members")
 @RequiredArgsConstructor
-@RequestMapping("/member")
 public class MemberController {
+
     private final MemberService memberService;
+    private final FriendshipService friendshipService;
 
-    @GetMapping("/register")
-    public String registerForm() {
-        return "member/register";
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<MemberResponse>> me(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member member = memberService.getById(userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.ok(MemberResponse.ofWithRealName(member)));
     }
 
-    @PostMapping("/register")
-    public String register(@RequestParam String username,
-                          @RequestParam String password,
-                          @RequestParam String nickname,
-                          @RequestParam(required = false) String email,
-                          @RequestParam(required = false) String realName,
-                          @RequestParam(required = false) String campus,
-                          @RequestParam(required = false) Integer cohort,
-                          @RequestParam(required = false) Integer classCode,
-                          Model model) {
-        try {
-            memberService.register(username, password, nickname, email, realName, campus, cohort, classCode);
-            return "redirect:/member/login";
-        } catch (IllegalArgumentException e) {
-            model.addAttribute("error", e.getMessage());
-            return "member/register";
+    @PutMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<MemberResponse>> updateProfile(
+            @Valid @RequestBody ProfileUpdateRequest req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        memberService.updateProfile(userDetails.getId(), req);
+        Member updated = memberService.getById(userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.ok(MemberResponse.ofWithRealName(updated)));
+    }
+
+    @PostMapping("/me/password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        memberService.changePassword(userDetails.getId(), req.getCurrentPassword(), req.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    @DeleteMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> withdraw(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        memberService.deleteMember(userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<MemberResponse>> profile(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member target = memberService.getById(id);
+        if (userDetails != null) {
+            Member viewer = memberService.getById(userDetails.getId());
+            boolean canSeeReal = friendshipService.canSeeRealName(viewer, target);
+            return ResponseEntity.ok(ApiResponse.ok(
+                    canSeeReal ? MemberResponse.ofWithRealName(target) : MemberResponse.of(target)
+            ));
         }
+        return ResponseEntity.ok(ApiResponse.ok(MemberResponse.of(target)));
     }
 
-    @GetMapping("/login")
-    public String loginForm() {
-        return "member/login";
-    }
-
-    @PostMapping("/login")
-    public String login(@RequestParam String username,
-                       @RequestParam String password,
-                       HttpSession session,
-                       Model model) {
-        return memberService.findByUsername(username)
-                .filter(member -> memberService.checkPassword(password, member.getPassword()))
-                .map(member -> {
-                    session.setAttribute("loginMember", member);
-                    return "redirect:/";
-                })
-                .orElseGet(() -> {
-                    model.addAttribute("error", "아이디 또는 비밀번호가 올바르지 않습니다.");
-                    return "member/login";
-                });
-    }
-
-    @GetMapping("/logout")
-    public String logout(HttpSession session) {
-        session.invalidate();
-        return "redirect:/";
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<MemberResponse>>> listAll() {
+        List<MemberResponse> result = memberService.findAll().stream()
+                .map(MemberResponse::ofWithRealName).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 }

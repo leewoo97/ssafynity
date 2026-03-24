@@ -1,51 +1,85 @@
 package com.ssafynity.demo.config;
 
+import com.ssafynity.demo.security.CustomUserDetails;
+import com.ssafynity.demo.security.CustomUserDetailsService;
+import com.ssafynity.demo.security.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.simp.stomp.StompCommand;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.StringUtils;
 import org.springframework.web.socket.config.annotation.*;
-import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
 
 /**
  * Spring WebSocket + STOMP 설정
  *
+ * 인증 흐름:
+ *   STOMP CONNECT 프레임 헤더에 Authorization: Bearer {token} 를 실어서 전송
+ *   → ChannelInterceptor가 JWT 검증 → SecurityContext 에 Authentication 주입
+ *
  * 메시지 흐름:
  *   Client ──STOMP──▶ /ws (SockJS)
- *     └─▶ /app/chat.message   →  ChatController.sendMessage()
- *                                 └─▶ RedisPublisher.publish()
- *                                       └─▶ Redis topic "chat"
- *                                             └─▶ RedisSubscriber.onMessage()
- *                                                   └─▶ /topic/chat/{roomId}
- *     └─▶ /app/chat.join      →  ChatController.joinRoom()
- *     └─▶ /app/chat.leave     →  ChatController.leaveRoom()
- *
- * 구독:
- *   Client subscribes to /topic/chat/{roomId}
+ *     └─▶ /app/chat.message   →  ChatController   → Redis → /topic/chat/{roomId}
+ *     └─▶ /app/dm.send        →  DmChatController → Redis → /topic/dm/{roomId}
  */
+@Slf4j
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final JwtTokenProvider jwtTokenProvider;
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // 클라이언트에게 메시지 브로드캐스트할 경로 prefix
-        // /topic  → 1:N 브로드캐스트 (채팅방)
-        // /queue  → 1:1 개인 메시지 (향후 DM 기능 확장용)
         config.enableSimpleBroker("/topic", "/queue");
-
-        // @MessageMapping 메서드를 라우팅할 prefix
         config.setApplicationDestinationPrefixes("/app");
-
-        // @SendToUser 등 1:1 메시지 prefix
         config.setUserDestinationPrefix("/user");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                // HTTP 세션의 loginMember 속성을 WebSocket 세션으로 복사
-                // → ChatController에서 @MessageMapping 내부에서 세션 정보 접근 가능
-                .addInterceptors(new HttpSessionHandshakeInterceptor())
                 .setAllowedOriginPatterns("*")
-                .withSockJS();   // SockJS 폴백 (IE, 방화벽 환경 대응)
+                .withSockJS();
+    }
+
+    /** STOMP CONNECT 시 JWT 검증 */
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(new ChannelInterceptor() {
+            @Override
+            public Message<?> preSend(Message<?> message, MessageChannel channel) {
+                StompHeaderAccessor accessor =
+                        MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
+                    String bearer = accessor.getFirstNativeHeader("Authorization");
+                    if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
+                        String token = bearer.substring(7);
+                        if (jwtTokenProvider.validateToken(token)) {
+                            String username = jwtTokenProvider.getUsernameFromToken(token);
+                            CustomUserDetails userDetails =
+                                    (CustomUserDetails) userDetailsService.loadUserByUsername(username);
+                            UsernamePasswordAuthenticationToken auth =
+                                    new UsernamePasswordAuthenticationToken(
+                                            userDetails, null, userDetails.getAuthorities());
+                            accessor.setUser(auth);
+                            SecurityContextHolder.getContext().setAuthentication(auth);
+                        }
+                    }
+                }
+                return message;
+            }
+        });
     }
 }

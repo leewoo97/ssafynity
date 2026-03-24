@@ -1,113 +1,94 @@
 package com.ssafynity.demo.controller;
 
+import com.ssafynity.demo.common.exception.BusinessException;
+import com.ssafynity.demo.common.exception.ErrorCode;
+import com.ssafynity.demo.common.response.ApiResponse;
 import com.ssafynity.demo.domain.Event;
 import com.ssafynity.demo.domain.Member;
+import com.ssafynity.demo.dto.request.EventRequest;
+import com.ssafynity.demo.dto.response.EventResponse;
+import com.ssafynity.demo.security.CustomUserDetails;
 import com.ssafynity.demo.service.EventService;
-import jakarta.servlet.http.HttpSession;
+import com.ssafynity.demo.service.MemberService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
-@Controller
+/**
+ * 이벤트 REST API
+ * GET    /api/events            → 전체 목록
+ * GET    /api/events/{id}       → 상세 조회
+ * POST   /api/events            → 생성 (로그인 필요)
+ * PUT    /api/events/{id}       → 수정 (주최자만)
+ * DELETE /api/events/{id}       → 삭제 (주최자 or ADMIN)
+ * POST   /api/events/{id}/join  → 참가
+ */
+@RestController
+@RequestMapping("/api/events")
 @RequiredArgsConstructor
-@RequestMapping("/events")
 public class EventController {
 
     private final EventService eventService;
+    private final MemberService memberService;
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("upcomingEvents", eventService.findUpcoming());
-        model.addAttribute("ongoingEvents", eventService.findOngoing());
-        model.addAttribute("allEvents", eventService.findAll());
-        model.addAttribute("eventTypes", eventService.getEventTypes());
-        return "events/list";
+    public ResponseEntity<ApiResponse<List<EventResponse>>> list() {
+        List<EventResponse> result = eventService.findAll().stream()
+                .map(EventResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @GetMapping("/upcoming")
+    public ResponseEntity<ApiResponse<List<EventResponse>>> upcoming() {
+        List<EventResponse> result = eventService.findUpcoming().stream()
+                .map(EventResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        Event event = eventService.findById(id).orElseThrow();
-        model.addAttribute("event", event);
-        model.addAttribute("otherEvents", eventService.findUpcomingTop4());
-        return "events/detail";
-    }
-
-    @GetMapping("/new")
-    public String createForm(HttpSession session, Model model) {
-        if (session.getAttribute("loginMember") == null) return "redirect:/member/login";
-        model.addAttribute("event", new Event());
-        model.addAttribute("eventTypes", eventService.getEventTypes());
-        model.addAttribute("locations", eventService.getLocations());
-        return "events/form";
+    public ResponseEntity<ApiResponse<EventResponse>> detail(@PathVariable Long id) {
+        Event event = eventService.getById(id);
+        return ResponseEntity.ok(ApiResponse.ok(EventResponse.from(event)));
     }
 
     @PostMapping
-    public String create(@RequestParam String title,
-                         @RequestParam(required = false) String description,
-                         @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime startDate,
-                         @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime endDate,
-                         @RequestParam(defaultValue = "ONLINE") String location,
-                         @RequestParam(defaultValue = "기타") String eventType,
-                         @RequestParam(defaultValue = "0") int maxParticipants,
-                         HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        if (member == null) return "redirect:/member/login";
-        Event event = eventService.create(title, description, startDate, endDate,
-                location, eventType, maxParticipants, member);
-        return "redirect:/events/" + event.getId();
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<EventResponse>> create(
+            @Valid @RequestBody EventRequest req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member member = memberService.getById(userDetails.getId());
+        Event event = eventService.create(req, member);
+        return ResponseEntity.ok(ApiResponse.ok(EventResponse.from(event)));
     }
 
-    @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, HttpSession session, Model model) {
-        Member member = (Member) session.getAttribute("loginMember");
-        Event event = eventService.findById(id).orElseThrow();
-        if (member == null || !event.getOrganizer().getId().equals(member.getId())) {
-            return "redirect:/events/" + id;
-        }
-        model.addAttribute("event", event);
-        model.addAttribute("eventTypes", eventService.getEventTypes());
-        model.addAttribute("locations", eventService.getLocations());
-        return "events/form";
+    @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> update(
+            @PathVariable Long id,
+            @Valid @RequestBody EventRequest req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        eventService.update(id, req, userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
-    @PostMapping("/{id}/edit")
-    public String edit(@PathVariable Long id,
-                       @RequestParam String title,
-                       @RequestParam(required = false) String description,
-                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime startDate,
-                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime endDate,
-                       @RequestParam(defaultValue = "ONLINE") String location,
-                       @RequestParam(defaultValue = "기타") String eventType,
-                       @RequestParam(defaultValue = "0") int maxParticipants,
-                       HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        Event event = eventService.findById(id).orElseThrow();
-        if (member == null || !event.getOrganizer().getId().equals(member.getId())) {
-            return "redirect:/events/" + id;
-        }
-        eventService.update(id, title, description, startDate, endDate, location, eventType, maxParticipants);
-        return "redirect:/events/" + id;
+    @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        eventService.delete(id, userDetails.getId(), userDetails.getRole());
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     @PostMapping("/{id}/join")
-    public String join(@PathVariable Long id, HttpSession session) {
-        if (session.getAttribute("loginMember") == null) return "redirect:/member/login";
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> join(@PathVariable Long id) {
         eventService.join(id);
-        return "redirect:/events/" + id;
-    }
-
-    @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, HttpSession session) {
-        Member member = (Member) session.getAttribute("loginMember");
-        Event event = eventService.findById(id).orElseThrow();
-        boolean isOwner = member != null && event.getOrganizer().getId().equals(member.getId());
-        boolean isAdmin = member != null && "ADMIN".equals(member.getRole());
-        if (!isOwner && !isAdmin) return "redirect:/events/" + id;
-        eventService.delete(id);
-        return "redirect:/events";
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 }

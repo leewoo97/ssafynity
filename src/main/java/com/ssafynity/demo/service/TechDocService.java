@@ -1,7 +1,10 @@
 package com.ssafynity.demo.service;
 
+import com.ssafynity.demo.common.exception.BusinessException;
+import com.ssafynity.demo.common.exception.ErrorCode;
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.domain.TechDoc;
+import com.ssafynity.demo.dto.request.TechDocRequest;
 import com.ssafynity.demo.repository.TechDocRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,6 +17,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class TechDocService {
 
     private final TechDocRepository techDocRepository;
@@ -22,20 +26,24 @@ public class TechDocService {
         "튜토리얼", "아키텍처", "알고리즘", "DevOps", "데이터베이스", "프론트엔드", "백엔드", "기타"
     };
 
-    public String[] getCategories() {
-        return CATEGORIES;
-    }
+    public String[] getCategories() { return CATEGORIES; }
 
     @Transactional
-    public TechDoc create(String title, String content, String category, String tags, Member author) {
+    public TechDoc create(TechDocRequest req, Member author) {
         TechDoc doc = TechDoc.builder()
-                .title(title)
-                .content(content)
-                .category(category != null && !category.isBlank() ? category : "기타")
-                .tags(tags)
+                .title(req.getTitle())
+                .content(req.getContent())
+                .category(req.getCategory() != null && !req.getCategory().isBlank() ? req.getCategory() : "기타")
+                .tags(req.getTags())
+                .markdown(req.isMarkdown())
                 .author(author)
                 .build();
         return techDocRepository.save(doc);
+    }
+
+    public TechDoc getById(Long id) {
+        return techDocRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TECH_DOC_NOT_FOUND));
     }
 
     public Optional<TechDoc> findById(Long id) {
@@ -44,28 +52,41 @@ public class TechDocService {
 
     @Transactional
     public TechDoc findByIdAndIncreaseView(Long id) {
-        TechDoc doc = techDocRepository.findById(id).orElseThrow();
+        TechDoc doc = techDocRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TECH_DOC_NOT_FOUND));
         doc.setViewCount(doc.getViewCount() + 1);
         return doc;
     }
 
     @Transactional
-    public void update(Long id, String title, String content, String category, String tags) {
-        TechDoc doc = techDocRepository.findById(id).orElseThrow();
-        doc.setTitle(title);
-        doc.setContent(content);
-        doc.setCategory(category);
-        doc.setTags(tags);
+    public void update(Long id, TechDocRequest req, Long requesterId) {
+        TechDoc doc = techDocRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TECH_DOC_NOT_FOUND));
+        if (!doc.getAuthor().getId().equals(requesterId)) {
+            throw new BusinessException(ErrorCode.TECH_DOC_ACCESS_DENIED);
+        }
+        doc.setTitle(req.getTitle());
+        doc.setContent(req.getContent());
+        doc.setCategory(req.getCategory());
+        doc.setTags(req.getTags());
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(Long id, Long requesterId, String requesterRole) {
+        TechDoc doc = techDocRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TECH_DOC_NOT_FOUND));
+        boolean isOwner = doc.getAuthor().getId().equals(requesterId);
+        boolean isAdmin = "ADMIN".equals(requesterRole);
+        if (!isOwner && !isAdmin) {
+            throw new BusinessException(ErrorCode.TECH_DOC_ACCESS_DENIED);
+        }
         techDocRepository.deleteById(id);
     }
 
     @Transactional
     public void togglePin(Long id) {
-        TechDoc doc = techDocRepository.findById(id).orElseThrow();
+        TechDoc doc = techDocRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TECH_DOC_NOT_FOUND));
         doc.setPinned(!doc.isPinned());
     }
 

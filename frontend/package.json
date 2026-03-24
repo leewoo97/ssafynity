@@ -1,0 +1,29 @@
+{
+  "name": "ssafynity-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.27.0",
+    "axios": "^1.7.7",
+    "zustand": "^5.0.0",
+    "@stomp/stompjs": "^7.0.0",
+    "sockjs-client": "^1.6.1",
+    "dayjs": "^1.11.13",
+    "react-markdown": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "vite": "^5.4.10"
+  }
+}

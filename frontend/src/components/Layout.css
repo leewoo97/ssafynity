@@ -1,0 +1,77 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: var(--header-height);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.header-nav {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.header-nav a {
+  font-size: 14px;
+  color: var(--color-text);
+  white-space: nowrap;
+  padding: 4px 0;
+}
+.header-nav a:hover {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.header-right a {
+  color: var(--color-text);
+  position: relative;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: var(--color-danger);
+  color: white;
+  border-radius: 10px;
+  font-size: 10px;
+  padding: 1px 4px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.main-content {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+}

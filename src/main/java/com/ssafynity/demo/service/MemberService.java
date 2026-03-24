@@ -1,9 +1,12 @@
 package com.ssafynity.demo.service;
 
+import com.ssafynity.demo.common.exception.BusinessException;
+import com.ssafynity.demo.common.exception.ErrorCode;
 import com.ssafynity.demo.domain.Member;
+import com.ssafynity.demo.dto.request.ProfileUpdateRequest;
 import com.ssafynity.demo.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,15 +15,17 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MemberService {
+
     private final MemberRepository memberRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public Member register(String username, String password, String nickname, String email,
-                          String realName, String campus, Integer cohort, Integer classCode) {
+                           String realName, String campus, Integer cohort, Integer classCode) {
         if (memberRepository.findByUsername(username).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_USERNAME);
         }
         Member member = Member.builder()
                 .username(username)
@@ -40,6 +45,11 @@ public class MemberService {
         return memberRepository.findByUsername(username);
     }
 
+    public Member getById(Long id) {
+        return memberRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
     public Optional<Member> findById(Long id) {
         return memberRepository.findById(id);
     }
@@ -53,25 +63,28 @@ public class MemberService {
     }
 
     @Transactional
-    public void updateProfile(Long memberId, String nickname, String email, String bio,
-                              String profileImageUrl, String realName,
-                              String campus, Integer cohort, Integer classCode) {
-        Member member = memberRepository.findById(memberId).orElseThrow();
-        member.setNickname(nickname);
-        member.setEmail(email);
-        member.setBio(bio);
-        if (profileImageUrl != null && !profileImageUrl.isBlank()) {
-            member.setProfileImageUrl(profileImageUrl);
+    public void updateProfile(Long memberId, ProfileUpdateRequest req) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        member.setNickname(req.getNickname());
+        member.setEmail(req.getEmail());
+        member.setBio(req.getBio());
+        if (req.getProfileImageUrl() != null && !req.getProfileImageUrl().isBlank()) {
+            member.setProfileImageUrl(req.getProfileImageUrl());
         }
-        member.setRealName((realName != null && !realName.isBlank()) ? realName : null);
-        member.setCampus((campus != null && !campus.isBlank()) ? campus : null);
-        member.setCohort(cohort);
-        member.setClassCode(classCode);
+        member.setRealName((req.getRealName() != null && !req.getRealName().isBlank()) ? req.getRealName() : null);
+        member.setCampus((req.getCampus() != null && !req.getCampus().isBlank()) ? req.getCampus() : null);
+        member.setCohort(req.getCohort());
+        member.setClassCode(req.getClassCode());
     }
 
     @Transactional
-    public void changePassword(Long memberId, String newPassword) {
-        Member member = memberRepository.findById(memberId).orElseThrow();
+    public void changePassword(Long memberId, String currentPassword, String newPassword) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        if (!passwordEncoder.matches(currentPassword, member.getPassword())) {
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+        }
         member.setPassword(passwordEncoder.encode(newPassword));
     }
 
@@ -92,11 +105,6 @@ public class MemberService {
         return memberRepository.findByCampusAndCohortAndClassCodeOrderByNicknameAsc(campus, cohort, classCode);
     }
 
-    /**
-     * viewer가 target의 실명을 볼 수 있는지:
-     * 1. 같은 캠퍼스 + 같은 기수 + 같은 반
-     * 2. 친구 관계 (FriendshipService에서 판단)
-     */
     public boolean isSameClass(Member viewer, Member target) {
         if (viewer == null || target == null) return false;
         return target.getCampus() != null && target.getCampus().equals(viewer.getCampus())
