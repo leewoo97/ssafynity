@@ -51,6 +51,7 @@ import SearchPage from './pages/SearchPage'
 import NotificationsPage from './pages/NotificationsPage'
 import MentorListPage from './pages/MentorListPage'
 import MentoringPage from './pages/MentoringPage'
+import MentorRegisterPage from './pages/MentorRegisterPage'
 import AdminPage from './pages/AdminPage'
 
 // 로그인 필요한 라우트 - Outlet 기반 (Layout 위에서 동작)
@@ -114,6 +115,7 @@ export default function App() {
             <Route path="mypage" element={<MyPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="mentoring/my" element={<MentoringPage />} />
+            <Route path="mentors/register" element={<MentorRegisterPage />} />
             <Route path="admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
           </Route>
         </Route>

@@ -38,6 +38,16 @@ public class MentoringController {
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
+    @GetMapping("/api/mentors/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<MentorProfileResponse>> myProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member member = memberService.getById(userDetails.getId());
+        return mentoringService.findByMember(member)
+                .map(profile -> ResponseEntity.ok(ApiResponse.ok(MentorProfileResponse.from(profile))))
+                .orElse(ResponseEntity.ok(ApiResponse.ok(null)));
+    }
+
     @GetMapping("/api/mentors/{id}")
     public ResponseEntity<ApiResponse<MentorProfileResponse>> detail(@PathVariable Long id) {
         MentorProfile profile = mentoringService.findById(id)
