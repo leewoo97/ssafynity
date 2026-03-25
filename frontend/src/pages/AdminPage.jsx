@@ -16,7 +16,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (member?.role !== 'ADMIN') { navigate('/'); return }
     Promise.all([
-      api.get('/admin/stats').catch(() => ({ data: { data: {} } })),
+      api.get('/admin/dashboard').catch(() => ({ data: { data: {} } })),
       api.get('/admin/members').catch(() => ({ data: { data: [] } })),
       api.get('/admin/reports').catch(() => ({ data: { data: [] } })),
     ]).then(([s, m, r]) => {
@@ -26,16 +26,15 @@ export default function AdminPage() {
     }).finally(() => setLoading(false))
   }, [member])
 
-  const banMember = async (id) => {
-    if (!window.confirm('이 회원을 정지하시겠습니까?')) return
-    await api.put(`/admin/members/${id}/ban`)
-    setMembers(members.map(m => m.id === id ? { ...m, status: 'BANNED' } : m))
+  const deleteMember = async (id) => {
+    if (!window.confirm('이 회원을 삭제하시겠습니까? 복구할 수 없습니다.')) return
+    await api.delete(`/admin/members/${id}`)
+    setMembers(members.filter(m => m.id !== id))
   }
 
-  const deletePost = async (id) => {
-    if (!window.confirm('게시글을 삭제하시겠습니까?')) return
-    await api.delete(`/admin/posts/${id}`)
-    setReports(reports.filter(r => r.postId !== id))
+  const resolveReport = async (id) => {
+    await api.post(`/admin/reports/${id}/resolve`)
+    setReports(reports.filter(r => r.id !== id))
   }
 
   if (loading) return <div className="empty"><div className="empty-icon">⏳</div></div>
@@ -99,8 +98,8 @@ export default function AdminPage() {
                   </td>
                   <td style={{ padding: '10px 16px', color: 'var(--t4)' }}>{dayjs(m.createdAt).format('YY.MM.DD')}</td>
                   <td style={{ padding: '10px 16px' }}>
-                    {m.role !== 'ADMIN' && m.status !== 'BANNED' && (
-                      <button className="btn btn-danger btn-xs" onClick={() => banMember(m.id)}>정지</button>
+                    {m.role !== 'ADMIN' && (
+                      <button className="btn btn-danger btn-xs" onClick={() => deleteMember(m.id)}>삭제</button>
                     )}
                   </td>
                 </tr>
@@ -121,13 +120,12 @@ export default function AdminPage() {
             reports.map(r => (
               <div key={r.id} className="post-row" style={{ padding: '14px 20px' }}>
                 <div className="post-row-main">
-                  <div className="post-row-title">{r.postTitle || `게시글 #${r.postId}`}</div>
+                  <div className="post-row-title">{r.targetType} #{r.targetId} — {r.reason}</div>
                   <div className="post-row-meta">
                     <span>신고자: {r.reporterNickname}</span>
-                    <span>{r.reason}</span>
                   </div>
                 </div>
-                <button className="btn btn-danger btn-xs" onClick={() => deletePost(r.postId)}>삭제</button>
+                <button className="btn btn-ghost btn-xs" onClick={() => resolveReport(r.id)}>처리</button>
               </div>
             ))
           )}

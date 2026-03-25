@@ -138,9 +138,11 @@ public class MentoringController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> accept(
             @PathVariable Long requestId,
+            @RequestBody(required = false) Map<String, String> body,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Member mentor = memberService.getById(userDetails.getId());
-        mentoringService.acceptRequest(requestId, mentor);
+        String reply = (body != null) ? body.getOrDefault("reply", "") : "";
+        mentoringService.acceptRequest(requestId, mentor, reply);
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
@@ -148,9 +150,11 @@ public class MentoringController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> reject(
             @PathVariable Long requestId,
+            @RequestBody(required = false) Map<String, String> body,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Member mentor = memberService.getById(userDetails.getId());
-        mentoringService.rejectRequest(requestId, mentor);
+        String reply = (body != null) ? body.getOrDefault("reply", "") : "";
+        mentoringService.rejectRequest(requestId, mentor, reply);
         return ResponseEntity.ok(ApiResponse.ok());
     }
 }

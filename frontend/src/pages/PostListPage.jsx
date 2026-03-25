@@ -4,8 +4,8 @@ import api from '../api/axios'
 import { useAuthStore } from '../store/authStore'
 import dayjs from 'dayjs'
 
-const CATEGORIES = ['', 'FREE', 'QUESTION', 'INFO', 'REVIEW', 'RECRUIT']
-const CAT_LABEL = { '': '전체', FREE: '자유', QUESTION: 'Q&A', INFO: '정보', REVIEW: '후기', RECRUIT: '모집' }
+const CATEGORIES = ['', '일반', '질문', '정보', '공지', '잡담']
+const CAT_LABEL = { '': '전체' }
 
 export default function PostListPage() {
   const { member } = useAuthStore()
@@ -110,7 +110,7 @@ export default function PostListPage() {
                           ) : posts.map(post => (
                             <tr key={post.id}>
                               <td><Link to={`/posts/${post.id}`} className="table-link">{post.title}</Link></td>
-                              <td><span className="pill pill-gray">{CAT_LABEL[post.category] || post.category}</span></td>
+                              <td><span className="pill pill-gray">{post.category}</span></td>
                               <td>{post.authorNickname}</td>
                               <td>{post.viewCount}</td>
                               <td>{post.likeCount}</td>

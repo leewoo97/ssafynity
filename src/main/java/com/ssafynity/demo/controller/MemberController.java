@@ -4,10 +4,14 @@ import com.ssafynity.demo.common.response.ApiResponse;
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.dto.request.ChangePasswordRequest;
 import com.ssafynity.demo.dto.request.ProfileUpdateRequest;
+import com.ssafynity.demo.dto.response.CommentResponse;
 import com.ssafynity.demo.dto.response.MemberResponse;
+import com.ssafynity.demo.dto.response.PostResponse;
 import com.ssafynity.demo.security.CustomUserDetails;
+import com.ssafynity.demo.service.CommentService;
 import com.ssafynity.demo.service.FriendshipService;
 import com.ssafynity.demo.service.MemberService;
+import com.ssafynity.demo.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +37,36 @@ public class MemberController {
 
     private final MemberService memberService;
     private final FriendshipService friendshipService;
+    private final PostService postService;
+    private final CommentService commentService;
+
+    @GetMapping("/me/posts")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<PostResponse>>> myPosts(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member member = memberService.getById(userDetails.getId());
+        List<PostResponse> result = postService.findByAuthor(member).stream()
+                .map(PostResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @GetMapping("/me/comments")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<CommentResponse>>> myComments(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member member = memberService.getById(userDetails.getId());
+        List<CommentResponse> result = commentService.findByAuthor(member).stream()
+                .map(CommentResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @GetMapping("/{id}/posts")
+    public ResponseEntity<ApiResponse<List<PostResponse>>> memberPosts(@PathVariable Long id) {
+        Member member = memberService.getById(id);
+        List<PostResponse> result = postService.findByAuthor(member).stream()
+                .map(PostResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")

@@ -25,7 +25,7 @@ export default function EventDetailPage() {
   if (!event) return <div className="empty"><div className="empty-title">이벤트를 찾을 수 없습니다</div></div>
 
   const isAdmin = member?.role === 'ADMIN'
-  const isAuthor = member?.id === event.authorId
+  const isAuthor = member?.id === event.organizerId
 
   return (
     <div className="section-sm"><div className="container">
@@ -33,7 +33,7 @@ export default function EventDetailPage() {
       <div className="card">
         <div className="post-header">
           <div>
-            <span className="pill pill-blue">{event.type || '행사'}</span>
+            <span className="pill pill-blue">{event.eventType || '행사'}</span>
             <h2 className="post-title" style={{ marginTop: 10 }}>{event.title}</h2>
           </div>
           {(isAuthor || isAdmin) && (
@@ -44,11 +44,12 @@ export default function EventDetailPage() {
           )}
         </div>
         <div className="post-row-meta" style={{ marginTop: 12, marginBottom: 20 }}>
-          <span>{event.organizer}</span>
+          {event.organizerNickname && <span>👤 {event.organizerNickname}</span>}
+          {event.location && <span>📍 {event.location}</span>}
           <span>📅 {dayjs(event.startDate).format('YYYY.MM.DD')} ~ {dayjs(event.endDate).format('YYYY.MM.DD')}</span>
-          {event.url && <a href={event.url} target="_blank" rel="noreferrer" className="btn btn-tinted btn-xs">바로가기 →</a>}
+          {event.maxParticipants > 0 && <span>👥 {event.currentParticipants}/{event.maxParticipants}명</span>}
         </div>
-        <div className="post-body md-body">{event.description}</div>
+        <div className="post-body md-body" dangerouslySetInnerHTML={{ __html: event.description }} />
       </div>
       <div style={{ marginTop: 16 }}>
         <Link to="/events" className="btn btn-ghost btn-sm">← 목록으로</Link>

@@ -55,7 +55,7 @@ export default function ProjectDetailPage() {
           {project.githubUrl && <a href={project.githubUrl} target="_blank" rel="noreferrer" className="btn btn-dark btn-xs">GitHub →</a>}
           {project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noreferrer" className="btn btn-tinted btn-xs">Demo →</a>}
         </div>
-        <div className="post-body md-body">{project.description}</div>
+        <div className="post-body md-body" dangerouslySetInnerHTML={{ __html: project.description }} />
       </div>
       <div style={{ marginTop: 16 }}>
         <Link to="/projects" className="btn btn-ghost btn-sm">← 목록으로</Link>

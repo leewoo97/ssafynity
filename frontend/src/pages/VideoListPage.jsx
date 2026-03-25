@@ -4,7 +4,7 @@ import api from '../api/axios'
 import { useAuthStore } from '../store/authStore'
 import dayjs from 'dayjs'
 
-const CATEGORIES = ['', 'Frontend', 'Backend', 'Algorithm', 'Project', 'ETC']
+const CATEGORIES = ['강의', '세미나', '코드리뷰', '프로젝트발표', '기타']
 
 export default function VideoListPage() {
   const { member } = useAuthStore()
@@ -67,10 +67,12 @@ export default function VideoListPage() {
       <div className="section-sm">
         <div className="container">
           <div className="tabs">
+            <button onClick={() => setParam('category', '')}
+              className={`tab${category === '' ? ' active' : ''}`}>전체</button>
             {CATEGORIES.map(c => (
               <button key={c} onClick={() => setParam('category', c)}
                 className={`tab${category === c ? ' active' : ''}`}>
-                {c || '전체'}
+                {c}
               </button>
             ))}
           </div>

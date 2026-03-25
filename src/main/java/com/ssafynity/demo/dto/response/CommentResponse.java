@@ -18,6 +18,9 @@ public class CommentResponse {
     private String authorNickname;
     private String authorProfileImageUrl;
 
+    private Long postId;
+    private String postTitle;
+
     public static CommentResponse from(Comment comment) {
         return CommentResponse.builder()
                 .id(comment.getId())
@@ -26,6 +29,8 @@ public class CommentResponse {
                 .authorId(comment.getAuthor() != null ? comment.getAuthor().getId() : null)
                 .authorNickname(comment.getAuthor() != null ? comment.getAuthor().getNickname() : null)
                 .authorProfileImageUrl(comment.getAuthor() != null ? comment.getAuthor().getProfileImageUrl() : null)
+                .postId(comment.getPost() != null ? comment.getPost().getId() : null)
+                .postTitle(comment.getPost() != null ? comment.getPost().getTitle() : null)
                 .build();
     }
 }

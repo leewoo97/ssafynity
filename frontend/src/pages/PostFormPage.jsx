@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../api/axios'
 import { useAuthStore } from '../store/authStore'
+import RichEditor from '../components/RichEditor'
 
-const CATEGORIES = ['FREE', 'QUESTION', 'INFO', 'REVIEW', 'RECRUIT']
-const CAT_LABEL = { FREE: '자유', QUESTION: 'Q&A', INFO: '정보', REVIEW: '후기', RECRUIT: '모집' }
+const CATEGORIES = ['일반', '질문', '정보', '공지', '잡담']
 const CAMPUS_LIST = ['서울', '부산', '대전', '광주', '구미', '강원']
 
 export default function PostFormPage() {
@@ -14,7 +14,7 @@ export default function PostFormPage() {
   const isEdit = Boolean(id)
 
   const [form, setForm] = useState({
-    title: '', content: '', category: 'FREE', campus: member?.campus || '서울'
+    title: '', content: '', category: '일반', campus: member?.campus || '서울'
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -61,7 +61,7 @@ export default function PostFormPage() {
             <div className="form-group">
               <label className="form-label">카테고리</label>
               <select className="form-select" value={form.category} onChange={set('category')}>
-                {CATEGORIES.map(c => <option key={c} value={c}>{CAT_LABEL[c]}</option>)}
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="form-group">
@@ -77,8 +77,7 @@ export default function PostFormPage() {
           </div>
           <div className="form-group">
             <label className="form-label">내용</label>
-            <textarea className="form-textarea" rows={14} value={form.content}
-              onChange={set('content')} required placeholder="내용을 입력하세요..." />
+            <RichEditor value={form.content} onChange={val => setForm({ ...form, content: val })} placeholder="내용을 입력하세요..." />
           </div>
           {error && <p className="alert alert-error" style={{ marginBottom: 12 }}>{error}</p>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

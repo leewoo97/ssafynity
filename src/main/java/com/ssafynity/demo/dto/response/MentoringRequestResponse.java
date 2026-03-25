@@ -22,6 +22,8 @@ public class MentoringRequestResponse {
     private Long mentorProfileId;
     private String mentorTitle;
     private String mentorNickname;
+    private String reply;
+    private Long chatRoomId;
 
     public static MentoringRequestResponse from(MentoringRequest request) {
         return MentoringRequestResponse.builder()
@@ -35,6 +37,8 @@ public class MentoringRequestResponse {
                 .mentorProfileId(request.getMentorProfile().getId())
                 .mentorTitle(request.getMentorProfile().getTitle())
                 .mentorNickname(request.getMentorProfile().getMember().getNickname())
+                .reply(request.getReply())
+                .chatRoomId(request.getChatRoomId())
                 .build();
     }
 }

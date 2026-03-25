@@ -1,16 +1,36 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../api/axios'
+import RichEditor from '../components/RichEditor'
+
+const EVENT_TYPES = ['공모전', '해커톤', '세미나', '특강', '기타']
+const LOCATIONS = ['ONLINE', '서울', '대전', '광주', '구미', '부울경']
 
 export default function EventFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const isEdit = Boolean(id)
-  const [form, setForm] = useState({ title: '', description: '', organizer: '', type: '공모전', startDate: '', endDate: '', url: '' })
+  const [form, setForm] = useState({
+    title: '', description: '', eventType: '기타',
+    location: 'ONLINE', startDate: '', endDate: '', maxParticipants: 0
+  })
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (isEdit) api.get(`/events/${id}`).then(r => setForm(r.data.data))
+    if (isEdit) {
+      api.get(`/events/${id}`).then(r => {
+        const ev = r.data.data
+        setForm({
+          title: ev.title || '',
+          description: ev.description || '',
+          eventType: ev.eventType || '기타',
+          location: ev.location || 'ONLINE',
+          startDate: ev.startDate ? ev.startDate.slice(0, 10) : '',
+          endDate: ev.endDate ? ev.endDate.slice(0, 10) : '',
+          maxParticipants: ev.maxParticipants || 0,
+        })
+      })
+    }
   }, [id])
 
   const set = f => e => setForm({ ...form, [f]: e.target.value })
@@ -32,18 +52,20 @@ export default function EventFormPage() {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">유형</label>
-              <select className="form-select" value={form.type} onChange={set('type')}>
-                {['공모전', '해커톤', '세미나', '특강', '기타'].map(t => <option key={t}>{t}</option>)}
+              <select className="form-select" value={form.eventType} onChange={set('eventType')}>
+                {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">장소</label>
+              <select className="form-select" value={form.location} onChange={set('location')}>
+                {LOCATIONS.map(l => <option key={l}>{l}</option>)}
               </select>
             </div>
           </div>
           <div className="form-group">
             <label className="form-label">제목</label>
             <input className="form-input" value={form.title} onChange={set('title')} required />
-          </div>
-          <div className="form-group">
-            <label className="form-label">주최기관</label>
-            <input className="form-input" value={form.organizer} onChange={set('organizer')} />
           </div>
           <div className="form-row">
             <div className="form-group">
@@ -56,12 +78,13 @@ export default function EventFormPage() {
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">링크 URL</label>
-            <input className="form-input" type="url" value={form.url} onChange={set('url')} placeholder="https://" />
+            <label className="form-label">최대 참가 인원</label>
+            <input type="number" className="form-input" min={0} value={form.maxParticipants}
+              onChange={e => setForm({ ...form, maxParticipants: parseInt(e.target.value) || 0 })} />
           </div>
           <div className="form-group">
             <label className="form-label">설명</label>
-            <textarea className="form-textarea" rows={8} value={form.description} onChange={set('description')} />
+            <RichEditor value={form.description} onChange={val => setForm({ ...form, description: val })} placeholder="이벤트 내용을 입력하세요..." />
           </div>
           {error && <p className="alert alert-error">{error}</p>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

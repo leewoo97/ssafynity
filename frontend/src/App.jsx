@@ -50,6 +50,7 @@ import DmRoomPage from './pages/DmRoomPage'
 import SearchPage from './pages/SearchPage'
 import NotificationsPage from './pages/NotificationsPage'
 import MentorListPage from './pages/MentorListPage'
+import MentoringPage from './pages/MentoringPage'
 import AdminPage from './pages/AdminPage'
 
 // 로그인 필요한 라우트 - Outlet 기반 (Layout 위에서 동작)
@@ -112,6 +113,7 @@ export default function App() {
             <Route path="dm/:id" element={<DmRoomPage />} />
             <Route path="mypage" element={<MyPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="mentoring/my" element={<MentoringPage />} />
             <Route path="admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
           </Route>
         </Route>

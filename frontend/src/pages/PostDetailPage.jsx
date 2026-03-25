@@ -85,7 +85,7 @@ export default function PostDetailPage() {
                 </div>
               </div>
 
-              <div className="post-body">{post.content}</div>
+              <div className="post-body" dangerouslySetInnerHTML={{ __html: post.content }} />
 
               <div className="post-actions">
                 {member && (

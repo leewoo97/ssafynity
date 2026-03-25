@@ -3,8 +3,10 @@ package com.ssafynity.demo.controller;
 import com.ssafynity.demo.common.response.ApiResponse;
 import com.ssafynity.demo.domain.ChatRoom;
 import com.ssafynity.demo.domain.Member;
+import com.ssafynity.demo.dto.ChatMessageDto;
 import com.ssafynity.demo.dto.response.ChatRoomResponse;
 import com.ssafynity.demo.security.CustomUserDetails;
+import com.ssafynity.demo.service.ChatMessageService;
 import com.ssafynity.demo.service.ChatRoomService;
 import com.ssafynity.demo.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
     private final MemberService memberService;
+    private final ChatMessageService chatMessageService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> list() {
@@ -50,6 +53,11 @@ public class ChatRoomController {
                 body.getOrDefault("description", ""),
                 member);
         return ResponseEntity.ok(ApiResponse.ok(ChatRoomResponse.from(room)));
+    }
+
+    @GetMapping("/{id}/messages")
+    public ResponseEntity<ApiResponse<List<ChatMessageDto>>> messages(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(chatMessageService.getRecentMessages(id)));
     }
 
     @DeleteMapping("/{id}")

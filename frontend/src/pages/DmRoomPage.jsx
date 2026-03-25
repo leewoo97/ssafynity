@@ -15,17 +15,18 @@ export default function DmRoomPage() {
   const bottomRef = useRef(null)
 
   useEffect(() => {
-    api.get(`/dm/rooms/${id}/messages`).then(r => setMessages(r.data.data || []))
-    api.get(`/dm/rooms/${id}`).then(r => {
-      const otherMember = r.data.data?.members?.find(m => m.id !== member?.id)
-      setOther(otherMember)
-    })
+    api.get(`/dm/rooms/${id}/messages`).then(r => setMessages(r.data.data || [])).catch(() => {})
+    api.get('/dm/rooms').then(r => {
+      const rooms = r.data.data || []
+      const room = rooms.find(rm => String(rm.id) === String(id))
+      if (room) setOther(room.otherMember || room.members?.find(m => m.id !== member?.id))
+    }).catch(() => {})
 
     const client = new Client({
       webSocketFactory: () => new SockJS('/ws'),
       connectHeaders: { Authorization: `Bearer ${token}` },
       onConnect: () => {
-        client.subscribe(`/user/queue/dm/${id}`, msg => {
+        client.subscribe(`/topic/dm/${id}`, msg => {
           setMessages(prev => [...prev, JSON.parse(msg.body)])
         })
       },
@@ -41,8 +42,8 @@ export default function DmRoomPage() {
     e.preventDefault()
     if (!input.trim() || !stompRef.current?.connected) return
     stompRef.current.publish({
-      destination: `/app/dm/${id}`,
-      body: JSON.stringify({ content: input }),
+      destination: '/app/dm.send',
+      body: JSON.stringify({ type: 'CHAT', roomId: Number(id), content: input }),
     })
     setInput('')
   }

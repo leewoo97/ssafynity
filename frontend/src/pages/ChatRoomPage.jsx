@@ -38,8 +38,8 @@ export default function ChatRoomPage() {
     e.preventDefault()
     if (!input.trim() || !stompRef.current?.connected) return
     stompRef.current.publish({
-      destination: `/app/chat/${id}`,
-      body: JSON.stringify({ content: input }),
+      destination: '/app/chat.message',
+      body: JSON.stringify({ type: 'CHAT', roomId: Number(id), content: input }),
     })
     setInput('')
   }

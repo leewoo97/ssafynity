@@ -30,13 +30,13 @@ export default function DmListPage() {
         <div className="card" style={{ padding: 0 }}>
           <div className="room-list">
             {rooms.map(room => {
-              const other = room.members?.find(m => m.id !== member?.id)
+              const other = room.otherMember || room.members?.find(m => m.id !== member?.id)
               return (
                 <Link key={room.id} to={`/dm/${room.id}`} className="room-item" style={{ textDecoration: 'none' }}>
                   <div className="av av-md">{other?.nickname?.charAt(0)?.toUpperCase()}</div>
                   <div className="room-info">
                     <div className="room-name">{other?.nickname}</div>
-                    <div style={{ fontSize: '.78rem', color: 'var(--t4)' }}>{room.lastMessage || '메시지 없음'}</div>
+                    <div style={{ fontSize: '.78rem', color: 'var(--t4)' }}>{room.lastMessageContent || '메시지 없음'}</div>
                   </div>
                   {room.lastMessageAt && (
                     <span style={{ fontSize: '.75rem', color: 'var(--t4)', marginLeft: 'auto' }}>

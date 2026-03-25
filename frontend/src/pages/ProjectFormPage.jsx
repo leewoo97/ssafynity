@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../api/axios'
+import RichEditor from '../components/RichEditor'
 
 export default function ProjectFormPage() {
   const { id } = useParams()
@@ -53,7 +54,7 @@ export default function ProjectFormPage() {
           </div>
           <div className="form-group">
             <label className="form-label">프로젝트 설명</label>
-            <textarea className="form-textarea" rows={10} value={form.description} onChange={set('description')} required placeholder="프로젝트에 대해 소개해주세요..." />
+            <RichEditor value={form.description} onChange={val => setForm({ ...form, description: val })} placeholder="프로젝트에 대해 소개해주세요..." />
           </div>
           {error && <p className="alert alert-error">{error}</p>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

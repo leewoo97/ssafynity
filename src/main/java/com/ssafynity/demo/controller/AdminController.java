@@ -2,8 +2,8 @@ package com.ssafynity.demo.controller;
 
 import com.ssafynity.demo.common.response.ApiResponse;
 import com.ssafynity.demo.domain.Member;
-import com.ssafynity.demo.domain.Report;
 import com.ssafynity.demo.dto.response.MemberResponse;
+import com.ssafynity.demo.dto.response.ReportResponse;
 import com.ssafynity.demo.service.BookmarkService;
 import com.ssafynity.demo.service.CommentService;
 import com.ssafynity.demo.service.MemberService;
@@ -12,6 +12,7 @@ import com.ssafynity.demo.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,8 +54,11 @@ public class AdminController {
     }
 
     @GetMapping("/reports")
-    public ResponseEntity<ApiResponse<List<Report>>> reports() {
-        return ResponseEntity.ok(ApiResponse.ok(reportService.findPending()));
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<List<ReportResponse>>> reports() {
+        List<ReportResponse> result = reportService.findPending().stream()
+                .map(ReportResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @PostMapping("/reports/{id}/resolve")

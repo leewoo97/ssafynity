@@ -69,6 +69,25 @@ public class DmController {
                 DirectRoomResponse.from(room, null, members, null)));
     }
 
+    /** 단일 방 조회 */
+    @GetMapping("/rooms/{roomId}")
+    public ResponseEntity<ApiResponse<DirectRoomResponse>> getRoom(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member me = memberService.getById(userDetails.getId());
+        DirectRoom room = directMessageService.findById(roomId)
+                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
+                        com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
+        if (!directMessageService.isMember(room, me)) {
+            throw new com.ssafynity.demo.common.exception.BusinessException(
+                    com.ssafynity.demo.common.exception.ErrorCode.DM_ACCESS_DENIED);
+        }
+        Member other = "GROUP".equals(room.getType()) ? null : directMessageService.getOtherMember(room, me);
+        List<Member> members = "GROUP".equals(room.getType()) ? directMessageService.getMemberList(room) : null;
+        DirectMessage last = directMessageService.getLastMessage(room).orElse(null);
+        return ResponseEntity.ok(ApiResponse.ok(DirectRoomResponse.from(room, other, members, last)));
+    }
+
     /** 방의 메시지 목록 */
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<ApiResponse<List<DirectMessageResponse>>> messages(

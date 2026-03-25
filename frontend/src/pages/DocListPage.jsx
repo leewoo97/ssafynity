@@ -4,7 +4,7 @@ import api from '../api/axios'
 import { useAuthStore } from '../store/authStore'
 import dayjs from 'dayjs'
 
-const CATEGORIES = ['', 'Frontend', 'Backend', 'DevOps', 'Algorithm', 'Database', 'ETC']
+const CATEGORIES = ['튜토리얼', '아키텍처', '알고리즘', 'DevOps', '데이터베이스', '프론트엔드', '백엔드', '기타']
 const CAT_LABEL = { '': '전체' }
 
 export default function DocListPage() {
@@ -68,10 +68,12 @@ export default function DocListPage() {
       <div className="section-sm">
         <div className="container">
           <div className="tabs">
+            <button onClick={() => setParam('category', '')}
+              className={`tab${category === '' ? ' active' : ''}`}>전체</button>
             {CATEGORIES.map(c => (
               <button key={c} onClick={() => setParam('category', c)}
                 className={`tab${category === c ? ' active' : ''}`}>
-                {CAT_LABEL[c] || c || '전체'}
+                {CAT_LABEL[c] || c}
               </button>
             ))}
           </div>

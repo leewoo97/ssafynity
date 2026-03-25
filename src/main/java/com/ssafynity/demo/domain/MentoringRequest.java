@@ -39,6 +39,10 @@ public class MentoringRequest {
     /** 승낙 시 생성된 1:1 채팅방 ID */
     private Long chatRoomId;
 
+    /** 멘토의 답변 메시지 (수락/거절 시 입력) */
+    @Column(columnDefinition = "TEXT")
+    private String reply;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

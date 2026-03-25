@@ -167,7 +167,7 @@ export default function MyPage() {
                         {f.campus && <div style={{ fontSize: '.78rem', color: 'var(--t5)', marginTop: 2 }}>{f.campus} {f.cohort && `${f.cohort}기`}</div>}
                       </Link>
                       <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 10 }}
-                        onClick={() => api.post(`/dm/start/${f.id}`).then(r => navigate(`/dm/${r.data.data.id}`))}>
+                        onClick={() => api.post(`/dm/users/${f.id}`).then(r => navigate(`/dm/${r.data.data.id}`))}>
                         💬 DM
                       </button>
                     </div>

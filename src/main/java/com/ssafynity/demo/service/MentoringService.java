@@ -3,6 +3,7 @@ package com.ssafynity.demo.service;
 import com.ssafynity.demo.domain.*;
 import com.ssafynity.demo.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,10 @@ public class MentoringService {
     private final MentoringRequestRepository mentoringRequestRepository;
     private final ChatRoomService chatRoomService;
     private final NotificationService notificationService;
+
+    /** 메일 서버 미설정 시 null이 허용됩니다 */
+    @Autowired(required = false)
+    private EmailService emailService;
 
     // ── 멘토 등록 ─────────────────────────────────────────────────────────────
     @Transactional
@@ -107,19 +112,32 @@ public class MentoringService {
                 .build();
         MentoringRequest saved = mentoringRequestRepository.save(request);
 
-        // 멘토에게 알림 발송
+        // 멘토에게 사이트 알림 발송
         notificationService.send(
                 profile.getMember(),
                 "🎓 " + mentee.getNickname() + "님이 멘토링을 신청했습니다.",
                 "/mentoring/my"
         );
 
+        // 멘토에게 이메일 발송
+        if (emailService != null) {
+            String mentorEmail = profile.getMember().getEmail();
+            if (mentorEmail != null && !mentorEmail.isBlank()) {
+                emailService.sendApplicationEmail(
+                        mentorEmail,
+                        profile.getMember().getNickname(),
+                        mentee.getNickname(),
+                        message
+                );
+            }
+        }
+
         return saved;
     }
 
     // ── 신청 승낙 ────────────────────────────────────────────────────────────
     @Transactional
-    public void acceptRequest(Long requestId, Member mentor) {
+    public void acceptRequest(Long requestId, Member mentor, String reply) {
         MentoringRequest request = mentoringRequestRepository.findById(requestId).orElseThrow();
         if (!request.getMentorProfile().getMember().getId().equals(mentor.getId())) {
             throw new IllegalStateException("권한이 없습니다.");
@@ -129,6 +147,7 @@ public class MentoringService {
         }
 
         request.setStatus("ACCEPTED");
+        request.setReply(reply);
 
         // 1:1 채팅방 생성
         String roomName = mentor.getNickname() + " ↔ " + request.getMentee().getNickname() + " 멘토링";
@@ -141,17 +160,31 @@ public class MentoringService {
         profile.setCurrentMentees(profile.getCurrentMentees() + 1);
         profile.setSessionCount(profile.getSessionCount() + 1);
 
-        // 멘티에게 알림 발송
+        // 멘티에게 사이트 알림 발송
         notificationService.send(
                 request.getMentee(),
                 "🎉 " + mentor.getNickname() + " 멘토님이 멘토링 신청을 승낙했습니다! 채팅에서 이야기하세요.",
                 "/chat/" + chatRoom.getId()
         );
+
+        // 멘티에게 이메일 발송
+        if (emailService != null) {
+            String menteeEmail = request.getMentee().getEmail();
+            if (menteeEmail != null && !menteeEmail.isBlank()) {
+                emailService.sendReplyEmail(
+                        menteeEmail,
+                        request.getMentee().getNickname(),
+                        mentor.getNickname(),
+                        true,
+                        reply
+                );
+            }
+        }
     }
 
     // ── 신청 거절 ────────────────────────────────────────────────────────────
     @Transactional
-    public void rejectRequest(Long requestId, Member mentor) {
+    public void rejectRequest(Long requestId, Member mentor, String reply) {
         MentoringRequest request = mentoringRequestRepository.findById(requestId).orElseThrow();
         if (!request.getMentorProfile().getMember().getId().equals(mentor.getId())) {
             throw new IllegalStateException("권한이 없습니다.");
@@ -161,13 +194,28 @@ public class MentoringService {
         }
 
         request.setStatus("REJECTED");
+        request.setReply(reply);
 
-        // 멘티에게 알림 발송
+        // 멘티에게 사이트 알림 발송
         notificationService.send(
                 request.getMentee(),
                 "😢 " + mentor.getNickname() + " 멘토님이 멘토링 신청을 검토했지만 아쉽게도 수락하지 못했습니다.",
-                "/mentors"
+                "/mentoring/my"
         );
+
+        // 멘티에게 이메일 발송
+        if (emailService != null) {
+            String menteeEmail = request.getMentee().getEmail();
+            if (menteeEmail != null && !menteeEmail.isBlank()) {
+                emailService.sendReplyEmail(
+                        menteeEmail,
+                        request.getMentee().getNickname(),
+                        mentor.getNickname(),
+                        false,
+                        reply
+                );
+            }
+        }
     }
 
     // ── 멘토 기준: 받은 신청 목록 ───────────────────────────────────────────
