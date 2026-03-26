@@ -35,8 +35,11 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // 이미 데이터가 있으면 실행하지 않음 (중복 방지)
-        if (memberRepository.count() > 0) return;
+        // 테스트 계정은 항상 (없는 경우만) 생성
+        initTestAccounts();
+
+        // 이미 데이터가 있으면 나머지 실행하지 않음 (중복 방지)
+        if (memberRepository.count() > 200) return;
 
         // ──────────── 회원 (6명) ────────────
         Member admin = memberRepository.save(Member.builder()
@@ -951,5 +954,31 @@ public class DataInitializer implements CommandLineRunner {
                 .requester(lee).receiver(jung).status("ACCEPTED").build());
         friendshipRepository.save(Friendship.builder()
                 .requester(kim).receiver(choi).status("PENDING").build());
+    }
+
+    /** dldnwls001 ~ dldnwls200 테스트 계정 (서버 재시작 시 없는 계정만 생성) */
+    private void initTestAccounts() {
+        String[] campuses = {"서울", "대전", "광주", "구미", "부울경"};
+
+        for (int i = 1; i <= 200; i++) {
+            String username = String.format("dldnwls%03d", i);
+            if (memberRepository.findByUsername(username).isPresent()) continue;
+
+            String campus  = campuses[(i - 1) % campuses.length];
+            int cohort     = 11 + ((i - 1) % 4);          // 11 ~ 14기
+            int classCode  = ((i - 1) % 8) + 1;           // 1 ~ 8반
+            memberRepository.save(Member.builder()
+                    .username(username)
+                    .password(passwordEncoder.encode("011!011lee"))
+                    .nickname(username)
+                    .email("dldnwls009@gmail.com")
+                    .bio("테스트 계정 " + username)
+                    .campus(campus)
+                    .cohort(cohort)
+                    .classCode(classCode)
+                    .realName(username)
+                    .role("USER")
+                    .build());
+        }
     }
 }
