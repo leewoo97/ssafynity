@@ -2,6 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useEffect, useState } from 'react'
 import api from '../api/axios'
+import ChatPanel from './ChatPanel'
 
 export default function Layout() {
   const { member, logout } = useAuthStore()
@@ -9,6 +10,7 @@ export default function Layout() {
   const location = useLocation()
   const [unread, setUnread] = useState(0)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
@@ -47,7 +49,6 @@ export default function Layout() {
             <Link to="/videos">영상</Link>
             <Link to="/events">이벤트</Link>
             <Link to="/chat">채팅</Link>
-            <Link to="/dm">DM</Link>
             <Link to="/mentors">멘토링</Link>
           </div>
 
@@ -85,6 +86,11 @@ export default function Layout() {
               <Link to="/admin" className="nav-btn nav-btn-ghost">관리자</Link>
             )}
 
+            {member && (
+              <button onClick={()=>setChatOpen(p=>!p)} className="nav-btn" style={{background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.15)',color:'#fff',display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:20,cursor:'pointer',fontWeight:600,fontSize:13}}>
+                💬 팀 채팅
+              </button>
+            )}
             <button onClick={handleLogout} className="nav-btn nav-btn-ghost">로그아웃</button>
           </div>
 
@@ -113,6 +119,8 @@ export default function Layout() {
           <Link to="#" onClick={() => { setDrawerOpen(false); handleLogout() }}>로그아웃</Link>
         </div>
       </div>
+
+      <ChatPanel open={chatOpen} onClose={()=>setChatOpen(false)} />
 
       <main className="page">
         <Outlet />

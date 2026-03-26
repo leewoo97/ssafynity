@@ -86,8 +86,7 @@ export default function MentorRegisterPage() {
       if (!res.ok) {
         setError(data.message || '저장에 실패했습니다.')
       } else {
-        setDone(true)
-        setTimeout(() => navigate('/mentors'), 1800)
+        navigate('/mentors')
       }
     } catch {
       setError('네트워크 오류가 발생했습니다.')
@@ -110,28 +109,15 @@ export default function MentorRegisterPage() {
 
   if (loading) {
     return (
-      <div className="page-container">
+      <div className="section-sm"><div className="container">
         <div className="loading">불러오는 중...</div>
-      </div>
-    )
-  }
-
-  if (done) {
-    return (
-      <div className="page-container" style={{ maxWidth: 560, textAlign: 'center', paddingTop: 80 }}>
-        <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
-          {isEdit ? '프로필이 수정되었습니다!' : '멘토 등록이 완료되었습니다!'}
-        </h2>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
-          멘토 목록으로 이동합니다...
-        </p>
-      </div>
+      </div></div>
     )
   }
 
   return (
-    <div className="page-container" style={{ maxWidth: 720 }}>
+    <div className="section-sm"><div className="container">
+    <div style={{ maxWidth: 720, margin: '0 auto' }}>
       {/* 헤더 */}
       <div style={{ marginBottom: 24 }}>
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/mentors')}>
@@ -345,5 +331,6 @@ export default function MentorRegisterPage() {
         </form>
       </div>
     </div>
+    </div></div>
   )
 }

@@ -1,33 +1,64 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 import api from '../api/axios'
 import { useAuthStore } from '../store/authStore'
+import dayjs from 'dayjs'
+
+function isSameDay(a, b) {
+  return dayjs(a).format('YYYY-MM-DD') === dayjs(b).format('YYYY-MM-DD')
+}
+
+function DateDivider({ date }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', userSelect: 'none' }}>
+      <div style={{ flex: 1, height: 1, background: 'var(--b1)' }} />
+      <span style={{ fontSize: 12, color: 'var(--t4)', whiteSpace: 'nowrap' }}>
+        {dayjs(date).format('YYYY년 M월 D일')}
+      </span>
+      <div style={{ flex: 1, height: 1, background: 'var(--b1)' }} />
+    </div>
+  )
+}
 
 export default function DmRoomPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { member, token } = useAuthStore()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
-  const [other, setOther] = useState(null)
+  const [room, setRoom] = useState(null)
   const stompRef = useRef(null)
   const bottomRef = useRef(null)
+  const inputRef = useRef(null)
 
   useEffect(() => {
-    api.get(`/dm/rooms/${id}/messages`).then(r => setMessages(r.data.data || [])).catch(() => {})
-    api.get('/dm/rooms').then(r => {
-      const rooms = r.data.data || []
-      const room = rooms.find(rm => String(rm.id) === String(id))
-      if (room) setOther(room.otherMember || room.members?.find(m => m.id !== member?.id))
-    }).catch(() => {})
+    // 방 진입 시 읽음 처리 (unread badge 리셋)
+    try {
+      const lr = JSON.parse(localStorage.getItem('dm_lastRead') || '{}')
+      lr[String(id)] = Date.now()
+      localStorage.setItem('dm_lastRead', JSON.stringify(lr))
+    } catch {}
 
+    // 방 정보 + 메시지 로드
+    api.get('/dm/rooms').then(r => {
+      const rm = (r.data.data || []).find(rm => String(rm.id) === String(id))
+      if (rm) setRoom(rm)
+    }).catch(() => {})
+    api.get(`/dm/rooms/${id}/messages`).then(r => setMessages(r.data.data || [])).catch(() => {})
+
+    // WebSocket
     const client = new Client({
       webSocketFactory: () => new SockJS('/ws'),
       connectHeaders: { Authorization: `Bearer ${token}` },
       onConnect: () => {
         client.subscribe(`/topic/dm/${id}`, msg => {
           setMessages(prev => [...prev, JSON.parse(msg.body)])
+        })
+        client.publish({
+          destination: '/app/dm.join',
+          body: JSON.stringify({ type: 'JOIN', roomId: Number(id) }),
         })
       },
     })
@@ -36,55 +67,156 @@ export default function DmRoomPage() {
     return () => client.deactivate()
   }, [id])
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const sendMessage = (e) => {
     e.preventDefault()
     if (!input.trim() || !stompRef.current?.connected) return
     stompRef.current.publish({
       destination: '/app/dm.send',
-      body: JSON.stringify({ type: 'CHAT', roomId: Number(id), content: input }),
+      body: JSON.stringify({ type: 'CHAT', roomId: Number(id), content: input.trim() }),
     })
     setInput('')
+    inputRef.current?.focus()
   }
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e) }
+  }
+
+  const isGroup = room?.type === 'GROUP'
+  const other = room?.otherMember || room?.members?.find(m => m.id !== member?.id)
+  const roomName = isGroup
+    ? (room?.name || room?.members?.map(m => m.nickname).join(', ') || '그룹')
+    : (other?.nickname || 'DM')
+  const memberCount = room?.members?.length || 0
+
+  // 날짜 구분선 포함 메시지 렌더링
+  const rendered = []
+  messages.forEach((msg, i) => {
+    const prev = messages[i - 1]
+    if (!prev || !isSameDay(prev.createdAt, msg.createdAt)) {
+      rendered.push({ type: 'date', date: msg.createdAt, key: `date-${i}` })
+    }
+    rendered.push({ type: 'msg', msg, key: msg.id || `msg-${i}` })
+  })
+
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto' }}>
-      <div className="section-head">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="av av-md">{other?.nickname?.charAt(0)?.toUpperCase()}</div>
-          <h2 style={{ margin: 0 }}>{other?.nickname || 'DM'}</h2>
+    <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 72px)' }}>
+      {/* 헤더 */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px',
+        borderBottom: '1px solid var(--b1)', background: '#fff', flexShrink: 0,
+      }}>
+        <button onClick={() => navigate('/dm')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--t3)', padding: '4px 8px' }}>←</button>
+        <div className="av av-md" style={{ background: isGroup ? '#f3e8ff' : undefined, color: isGroup ? '#9333ea' : undefined, fontSize: isGroup ? 18 : undefined }}>
+          {isGroup ? '👥' : other?.nickname?.charAt(0)?.toUpperCase()}
         </div>
-        <Link to="/dm" className="btn btn-ghost btn-sm">← 목록</Link>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>{roomName}</div>
+          {isGroup && memberCount > 0 && (
+            <div style={{ fontSize: 12, color: 'var(--t4)' }}>{memberCount}명</div>
+          )}
+        </div>
       </div>
 
-      <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column', height: 520 }}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
-          {messages.map((msg, i) => {
-            const isMe = msg.senderId === member?.id
+      {/* 메시지 영역 */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', background: 'var(--surface-1, #f8f9fa)' }}>
+        {rendered.map(item => {
+          if (item.type === 'date') return <DateDivider key={item.key} date={item.date} />
+
+          const msg = item.msg
+          if (msg.type === 'JOIN' || msg.type === 'LEAVE') {
             return (
-              <div key={i} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: 12 }}>
-                {!isMe && <div className="av av-sm" style={{ marginRight: 8 }}>{other?.nickname?.charAt(0)?.toUpperCase()}</div>}
-                <div style={{
-                  background: isMe ? 'var(--blue)' : 'var(--bg)',
-                  color: isMe ? '#fff' : 'var(--t1)',
-                  borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                  padding: '10px 14px', fontSize: '.9rem', maxWidth: 280
-                }}>
-                  {msg.content}
-                </div>
+              <div key={item.key} style={{ textAlign: 'center', fontSize: 12, color: 'var(--t4)', margin: '8px 0' }}>
+                {msg.senderNickname} {msg.type === 'JOIN' ? '님이 입장했습니다' : '님이 나갔습니다'}
               </div>
             )
-          })}
-          <div ref={bottomRef} />
-        </div>
+          }
 
-        <form onSubmit={sendMessage} style={{ borderTop: '1px solid var(--b1)', padding: '12px 16px', display: 'flex', gap: 8 }}>
-          <input className="form-input" value={input} onChange={e => setInput(e.target.value)}
-            placeholder="메시지 입력..." style={{ flex: 1 }} />
-          <button type="submit" className="btn btn-blue btn-sm">전송</button>
-        </form>
+          const isMe = msg.senderId === member?.id
+          const time = dayjs(msg.createdAt).format('HH:mm')
+
+          return (
+            <div key={item.key} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: 4, alignItems: 'flex-end', gap: 6 }}>
+              {/* 상대방: 아바타 + 메시지 */}
+              {!isMe && (
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                  <div>
+                    <div className="av av-sm" style={{ marginBottom: 2 }}>
+                      {msg.senderNickname?.charAt(0)?.toUpperCase()}
+                    </div>
+                  </div>
+                  <div>
+                    {isGroup && <div style={{ fontSize: 11, color: 'var(--t4)', marginBottom: 3, paddingLeft: 2 }}>{msg.senderNickname}</div>}
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+                      <div style={{
+                        background: '#fff', color: 'var(--t1)',
+                        borderRadius: '0 18px 18px 18px',
+                        padding: '9px 14px', fontSize: 14, maxWidth: 280,
+                        boxShadow: '0 1px 2px rgba(0,0,0,.08)',
+                        lineHeight: 1.5, wordBreak: 'break-word',
+                      }}>
+                        {msg.content}
+                      </div>
+                      <span style={{ fontSize: 10, color: 'var(--t5)', flexShrink: 0 }}>{time}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 내 메시지 */}
+              {isMe && (
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+                  <span style={{ fontSize: 10, color: 'var(--t5)', flexShrink: 0 }}>{time}</span>
+                  <div style={{
+                    background: '#FEE500', color: '#3c1e1e',
+                    borderRadius: '18px 0 18px 18px',
+                    padding: '9px 14px', fontSize: 14, maxWidth: 280,
+                    lineHeight: 1.5, wordBreak: 'break-word',
+                  }}>
+                    {msg.content}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+        <div ref={bottomRef} />
       </div>
+
+      {/* 입력창 */}
+      <form onSubmit={sendMessage} style={{
+        borderTop: '1px solid var(--b1)', padding: '10px 14px',
+        display: 'flex', gap: 8, background: '#fff', flexShrink: 0,
+        alignItems: 'flex-end',
+      }}>
+        <textarea
+          ref={inputRef}
+          rows={1}
+          value={input}
+          onChange={e => {
+            setInput(e.target.value)
+            e.target.style.height = 'auto'
+            e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder="메시지 입력..."
+          style={{
+            flex: 1, resize: 'none', border: '1px solid var(--b2)', borderRadius: 22,
+            padding: '10px 16px', fontSize: 14, outline: 'none', overflowY: 'auto',
+            fontFamily: 'inherit', lineHeight: 1.5,
+          }}
+        />
+        <button type="submit" style={{
+          width: 40, height: 40, borderRadius: '50%', border: 'none',
+          background: input.trim() ? '#FEE500' : 'var(--surface-2)',
+          cursor: input.trim() ? 'pointer' : 'default',
+          fontSize: 18, flexShrink: 0, transition: 'background .15s',
+        }}>↑</button>
+      </form>
     </div>
   )
 }

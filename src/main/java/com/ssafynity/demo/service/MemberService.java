@@ -105,6 +105,10 @@ public class MemberService {
         return memberRepository.findByCampusAndCohortAndClassCodeOrderByNicknameAsc(campus, cohort, classCode);
     }
 
+    public List<Member> searchByNickname(String nickname) {
+        return memberRepository.findByNicknameContainingIgnoreCaseOrderByNicknameAsc(nickname);
+    }
+
     public boolean isSameClass(Member viewer, Member target) {
         if (viewer == null || target == null) return false;
         return target.getCampus() != null && target.getCampus().equals(viewer.getCampus())

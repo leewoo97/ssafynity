@@ -118,6 +118,21 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.ok(MemberResponse.of(target)));
     }
 
+    @GetMapping("/search")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<MemberResponse>>> search(
+            @RequestParam(required = false, defaultValue = "") String q,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long selfId = userDetails.getId();
+        List<MemberResponse> result = (q.isBlank()
+                ? memberService.findAll()
+                : memberService.searchByNickname(q.trim())
+        ).stream()
+                .filter(m -> !m.getId().equals(selfId))
+                .map(MemberResponse::of).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<MemberResponse>>> listAll() {
