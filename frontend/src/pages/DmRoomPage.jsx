@@ -97,8 +97,8 @@ export default function DmRoomPage() {
   const rendered = []
   messages.forEach((msg, i) => {
     const prev = messages[i - 1]
-    if (!prev || !isSameDay(prev.createdAt, msg.createdAt)) {
-      rendered.push({ type: 'date', date: msg.createdAt, key: `date-${i}` })
+    if (!prev || !isSameDay(prev.createdAt || prev.timestamp, msg.createdAt || msg.timestamp)) {
+      rendered.push({ type: 'date', date: msg.createdAt || msg.timestamp, key: `date-${i}` })
     }
     rendered.push({ type: 'msg', msg, key: msg.id || `msg-${i}` })
   })
@@ -137,7 +137,7 @@ export default function DmRoomPage() {
           }
 
           const isMe = msg.senderId === member?.id
-          const time = dayjs(msg.createdAt).format('HH:mm')
+          const time = dayjs(msg.createdAt || msg.timestamp).format('HH:mm')
 
           return (
             <div key={item.key} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: 4, alignItems: 'flex-end', gap: 6 }}>

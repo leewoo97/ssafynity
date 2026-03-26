@@ -48,8 +48,8 @@ public class HomeController {
         return ResponseEntity.ok(ApiResponse.ok(data));
     }
 
-    /** React SPA fallback: /api/** 이 아닌 모든 GET 요청을 index.html로 전달 */
-    @GetMapping(value = {"/{path:[^\\.]*}", "/{path:[^\\.]*}/**"})
+    /** React SPA fallback: /api/**, /ws/**, /uploads/** 이 아닌 모든 GET 요청을 index.html로 전달 */
+    @GetMapping(value = {"/{path:^(?!ws|api|uploads|h2-console)[^\\.]*}", "/{path:^(?!ws|api|uploads|h2-console)[^\\.]*}/**"})
     public String spa() {
         return "forward:/index.html";
     }

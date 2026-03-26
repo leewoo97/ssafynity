@@ -4,6 +4,7 @@ import com.ssafynity.demo.chat.RedisPublisher;
 import com.ssafynity.demo.domain.DirectRoom;
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.dto.ChatMessageDto;
+import com.ssafynity.demo.security.CustomUserDetails;
 import com.ssafynity.demo.service.DirectMessageService;
 import com.ssafynity.demo.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -12,10 +13,10 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Controller;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
  * DM / 그룹 채팅 WebSocket STOMP 컨트롤러
@@ -39,12 +40,7 @@ public class DmChatController {
     /** DM / 그룹 메시지 전송 */
     @MessageMapping("/dm.send")
     public void sendDm(@Payload ChatMessageDto dto, SimpMessageHeaderAccessor headerAccessor) {
-        Map<String, Object> attrs = headerAccessor.getSessionAttributes();
-        if (attrs == null) return;
-        Member sender = (Member) attrs.get("loginMember");
-        if (sender == null) return;
-
-        Member fresh = memberService.findById(sender.getId()).orElse(null);
+        Member fresh = getMember(headerAccessor);
         if (fresh == null) return;
 
         DirectRoom room = directMessageService.findById(dto.getRoomId()).orElse(null);
@@ -73,17 +69,32 @@ public class DmChatController {
     /** 입장 알림 (시스템 메시지, Redis 우회하여 직접 브로드캐스트) */
     @MessageMapping("/dm.join")
     public void joinDm(@Payload ChatMessageDto dto, SimpMessageHeaderAccessor headerAccessor) {
-        Map<String, Object> attrs = headerAccessor.getSessionAttributes();
-        String nickname = "누군가";
-        if (attrs != null) {
-            Member sender = (Member) attrs.get("loginMember");
-            if (sender != null) nickname = sender.getNickname();
-        }
+        Member m = getMember(headerAccessor);
+        String nickname = m != null ? m.getNickname() : "누군가";
         dto.setType("JOIN");
         dto.setChannel("DM");
         dto.setSenderNickname(nickname);
         dto.setContent(nickname + "님이 입장했습니다.");
         dto.setTimestamp(LocalDateTime.now().toString());
         messagingTemplate.convertAndSend("/topic/dm/" + dto.getRoomId(), dto);
+    }
+
+    // ── helper ──────────────────────────────────────────────────────────────────────
+    private Member getMember(SimpMessageHeaderAccessor h) {
+        if (h.getUser() == null) {
+            log.warn("[DmChatController] h.getUser() == null → JWT 미인증 상태로 메시지 도달. CONNECT 시 토큰 확인 필요");
+            return null;
+        }
+        try {
+            UsernamePasswordAuthenticationToken auth = (UsernamePasswordAuthenticationToken) h.getUser();
+            CustomUserDetails ud = (CustomUserDetails) auth.getPrincipal();
+            return memberService.findById(ud.getId()).orElseGet(() -> {
+                log.warn("[DmChatController] memberId={} DB에 없음", ud.getId());
+                return null;
+            });
+        } catch (Exception e) {
+            log.error("[DmChatController] getMember 오류: {}", e.getMessage(), e);
+            return null;
+        }
     }
 }

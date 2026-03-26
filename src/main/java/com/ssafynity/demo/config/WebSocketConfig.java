@@ -62,20 +62,32 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
                 StompHeaderAccessor accessor =
                         MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-                if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
+                if (accessor == null) return message;
+
+                if (StompCommand.CONNECT.equals(accessor.getCommand())) {
                     String bearer = accessor.getFirstNativeHeader("Authorization");
-                    if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
-                        String token = bearer.substring(7);
-                        if (jwtTokenProvider.validateToken(token)) {
-                            String username = jwtTokenProvider.getUsernameFromToken(token);
-                            CustomUserDetails userDetails =
-                                    (CustomUserDetails) userDetailsService.loadUserByUsername(username);
-                            UsernamePasswordAuthenticationToken auth =
-                                    new UsernamePasswordAuthenticationToken(
-                                            userDetails, null, userDetails.getAuthorities());
-                            accessor.setUser(auth);
-                            SecurityContextHolder.getContext().setAuthentication(auth);
-                        }
+                    if (!StringUtils.hasText(bearer) || !bearer.startsWith("Bearer ")) {
+                        log.warn("[WS CONNECT] Authorization 헤더 없음 또는 잘못된 형식");
+                        return message;
+                    }
+                    String token = bearer.substring(7);
+                    if (!jwtTokenProvider.validateToken(token)) {
+                        log.warn("[WS CONNECT] JWT 유효하지 않음 (만료 또는 서명 오류)");
+                        return message;
+                    }
+                    try {
+                        String username = jwtTokenProvider.getUsernameFromToken(token);
+                        CustomUserDetails userDetails =
+                                (CustomUserDetails) userDetailsService.loadUserByUsername(username);
+                        UsernamePasswordAuthenticationToken auth =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails, null, userDetails.getAuthorities());
+                        accessor.setUser(auth);
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                        log.info("[WS CONNECT] 인증 성공 user={} id={}",
+                                userDetails.getUsername(), userDetails.getId());
+                    } catch (Exception e) {
+                        log.error("[WS CONNECT] 인증 처리 중 오류: {}", e.getMessage(), e);
                     }
                 }
                 return message;

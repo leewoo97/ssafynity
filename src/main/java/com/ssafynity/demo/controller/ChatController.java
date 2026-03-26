@@ -4,13 +4,16 @@ import com.ssafynity.demo.chat.RedisPublisher;
 import com.ssafynity.demo.domain.ChatRoom;
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.dto.ChatMessageDto;
+import com.ssafynity.demo.security.CustomUserDetails;
 import com.ssafynity.demo.service.ChatMessageService;
 import com.ssafynity.demo.service.ChatRoomService;
+import com.ssafynity.demo.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Controller;
 
 import java.time.LocalDateTime;
@@ -36,6 +39,7 @@ public class ChatController {
     private final RedisPublisher redisPublisher;
     private final ChatMessageService chatMessageService;
     private final ChatRoomService chatRoomService;
+    private final MemberService memberService;
 
     /**
      * 일반 채팅 메시지 전송
@@ -128,15 +132,10 @@ public class ChatController {
     }
 
     // ── private helpers ──────────────────────────────────────────────────────
-
-    /**
-     * HttpSessionHandshakeInterceptor 가 HTTP 세션을 WS 세션으로 복사했으므로
-     * sessionAttributes 에서 loginMember 를 꺼낸다.
-     */
-    private Member getLoginMember(SimpMessageHeaderAccessor headerAccessor) {
-        Map<String, Object> attrs = headerAccessor.getSessionAttributes();
-        if (attrs == null) return null;
-        Object member = attrs.get("loginMember");
-        return member instanceof Member m ? m : null;
+    private Member getLoginMember(SimpMessageHeaderAccessor h) {
+        if (h.getUser() == null) return null;
+        UsernamePasswordAuthenticationToken auth = (UsernamePasswordAuthenticationToken) h.getUser();
+        CustomUserDetails ud = (CustomUserDetails) auth.getPrincipal();
+        return memberService.findById(ud.getId()).orElse(null);
     }
 }
