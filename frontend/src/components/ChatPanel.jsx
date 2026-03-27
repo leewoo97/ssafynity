@@ -143,13 +143,16 @@ function InlineRoom({ room, myId, token, onBack, onMarkRead }) {
   const isGroup = room.type==='GROUP'
 
   useEffect(() => {
-    api.get(`/dm/rooms/${room.id}/messages`).then(r=>setMessages(r.data.data||[])).catch(()=>{})
+    // 메시지 로드 완료 후 읽음 처리 (순서 보장)
+    api.get(`/dm/rooms/${room.id}/messages`).then(r=>{
+      setMessages(r.data.data||[])
+      return api.post(`/dm/rooms/${room.id}/read`)
+    }).catch(()=>{})
     try {
       const lr = JSON.parse(localStorage.getItem('dm_lastRead')||'{}')
       lr[String(room.id)] = Date.now()
       localStorage.setItem('dm_lastRead',JSON.stringify(lr))
     } catch {}
-    api.post(`/dm/rooms/${room.id}/read`).catch(()=>{})
     onMarkRead(room.id)
 
     const client = new Client({
@@ -216,20 +219,22 @@ function InlineRoom({ room, myId, token, onBack, onMarkRead }) {
                 <div style={{fontSize:10,color:TEXT3,marginBottom:2,marginTop:6,paddingLeft:2}}>{msg.senderNickname}</div>
               )}
               <div style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:4}}>
+                {/* 상대방 시간: 말풍선 왼쪽 */}
                 {!isMine&&<span style={{fontSize:9,color:TEXT3,marginBottom:1}}>{dayjs(ts).format('HH:mm')}</span>}
+                {/* 내 메시지: 숫자+시간이 말풍선 왼쪽 */}
+                {isMine&&(
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2,marginBottom:1,flexShrink:0}}>
+                    {msg.unreadCount>0&&(
+                      <span style={{fontSize:10,fontWeight:700,color:'#FEE500',lineHeight:1}}>{msg.unreadCount}</span>
+                    )}
+                    <span style={{fontSize:9,color:TEXT3,lineHeight:1}}>{dayjs(ts).format('HH:mm')}</span>
+                  </div>
+                )}
                 <div style={{maxWidth:'72%',padding:'7px 10px',wordBreak:'break-word',fontSize:12.5,lineHeight:1.5,
                   borderRadius:isMine?'12px 2px 12px 12px':'2px 12px 12px 12px',
                   background:isMine?'#FEE500':'rgba(255,255,255,.12)',color:isMine?'#1a1a1a':TEXT1}}>
                   {msg.content}
                 </div>
-                {isMine&&(
-                  <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2,marginBottom:1,flexShrink:0}}>
-                    {msg.unreadCount>0&&(
-                      <span style={{background:'#FEE500',color:'#3c1e1e',fontSize:9,fontWeight:700,lineHeight:1,borderRadius:8,padding:'2px 5px'}}>{msg.unreadCount}</span>
-                    )}
-                    <span style={{fontSize:9,color:TEXT3,lineHeight:1}}>{dayjs(ts).format('HH:mm')}</span>
-                  </div>
-                )}
               </div>
             </div>
           )

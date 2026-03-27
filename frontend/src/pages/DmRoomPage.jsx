@@ -46,15 +46,11 @@ export default function DmRoomPage() {
       const rm = (r.data.data || []).find(rm => String(rm.id) === String(id))
       if (rm) setRoom(rm)
     }).catch(() => {})
+    // 메시지 로드 완료 후 읽음 처리 (순서 보장 - read 전에 unreadCount 렌더)
     api.get(`/dm/rooms/${id}/messages`).then(r => {
-      const msgs = r.data.data || []
-      console.log('[DmRoomPage] messages loaded:', msgs.map(m => ({ id: m.id, senderId: m.senderId, unreadCount: m.unreadCount })))
-      console.log('[DmRoomPage] member.id:', member?.id, 'type:', typeof member?.id)
-      setMessages(msgs)
+      setMessages(r.data.data || [])
+      return api.post(`/dm/rooms/${id}/read`)
     }).catch(() => {})
-
-    // 읽음 처리 REST
-    api.post(`/dm/rooms/${id}/read`).catch(() => {})
 
     // WebSocket
     const client = new Client({
@@ -69,7 +65,7 @@ export default function DmRoomPage() {
             setMessages(prev => prev.map(m => {
               const msgTime = new Date(m.createdAt || m.timestamp).getTime()
               // 메시지 발신자와 읽은 사람이 같으면 감소 안 함 (발신자는 unreadCount 계산에서 제외)
-              if (msgTime <= readTime && m.unreadCount > 0 && m.senderId !== msg.readerId) {
+              if (msgTime <= readTime && m.unreadCount > 0 && String(m.senderId) !== String(msg.readerId)) {
                 return { ...m, unreadCount: m.unreadCount - 1 }
               }
               return m
@@ -78,7 +74,7 @@ export default function DmRoomPage() {
           }
           // 실시간 CHAT 메시지: 내가 보낸 메시지은 unreadCount = 멤버 - 1 (나 제외한 모두)
           let finalMsg = msg
-          if (msg.type === 'CHAT' && msg.senderId === member?.id) {
+          if (msg.type === 'CHAT' && String(msg.senderId) === String(member?.id)) {
             const memberCount = room?.members?.length || 2
             finalMsg = { ...msg, unreadCount: memberCount - 1 }
           }
@@ -200,11 +196,7 @@ export default function DmRoomPage() {
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
                     {msg.unreadCount > 0 && (
-                      <span style={{
-                        background: '#FEE500', color: '#3c1e1e',
-                        fontSize: 10, fontWeight: 700, lineHeight: 1,
-                        borderRadius: 8, padding: '2px 5px',
-                      }}>{msg.unreadCount}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#D97706', lineHeight: 1 }}>{msg.unreadCount}</span>
                     )}
                     <span style={{ fontSize: 10, color: 'var(--t5)' }}>{time}</span>
                   </div>
