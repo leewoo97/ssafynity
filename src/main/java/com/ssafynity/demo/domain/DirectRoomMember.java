@@ -29,6 +29,9 @@ public class DirectRoomMember {
 
     private LocalDateTime joinedAt;
 
+    /** 마지막으로 이 방을 읽은 시각 (미읽음 카운트 계산에 사용) */
+    private LocalDateTime lastReadAt;
+
     @PrePersist
     public void prePersist() {
         joinedAt = LocalDateTime.now();

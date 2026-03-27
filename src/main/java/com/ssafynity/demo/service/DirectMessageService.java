@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -98,6 +99,32 @@ public class DirectMessageService {
     public DirectMessage saveMessage(DirectRoom room, Member sender, String content) {
         return directMessageRepository.save(DirectMessage.builder()
                 .room(room).sender(sender).content(content).build());
+    }
+
+    /**
+     * 읽음 처리: 해당 멤버의 lastReadAt을 현재 시각으로 갱신.
+     * @return 갱신된 lastReadAt (READ 이벤트 브로드캐스트 시 사용)
+     */
+    @Transactional
+    public LocalDateTime markAsRead(DirectRoom room, Member member) {
+        DirectRoomMember drm = directRoomMemberRepository
+                .findByRoomAndMember(room, member)
+                .orElseThrow();
+        LocalDateTime now = LocalDateTime.now();
+        drm.setLastReadAt(now);
+        return now;
+    }
+
+    /**
+     * 특정 메시지의 미읽음 수 계산.
+     * 전체 참여자 수 - 1(발신자) - 이미 읽은 수
+     */
+    public int getUnreadCount(DirectRoom room, DirectMessage msg) {
+        long totalMembers = directRoomMemberRepository.findByRoom(room).size();
+        Long senderId = msg.getSender() != null ? msg.getSender().getId() : -1L;
+        long readCount = directRoomMemberRepository.countReadersAfter(room, senderId, msg.getCreatedAt());
+        long unread = (totalMembers - 1) - readCount;
+        return (int) Math.max(0, unread);
     }
 
     /** 그룹 채팅에 멤버 초대 */

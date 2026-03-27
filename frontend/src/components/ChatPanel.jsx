@@ -149,15 +149,32 @@ function InlineRoom({ room, myId, token, onBack, onMarkRead }) {
       lr[String(room.id)] = Date.now()
       localStorage.setItem('dm_lastRead',JSON.stringify(lr))
     } catch {}
+    api.post(`/dm/rooms/${room.id}/read`).catch(()=>{})
     onMarkRead(room.id)
 
     const client = new Client({
       webSocketFactory:()=>new SockJS('/ws'),
       connectHeaders:{Authorization:`Bearer ${token}`},
       onConnect:()=>{
-        client.subscribe(`/topic/dm/${room.id}`,msg=>{
-          setMessages(prev=>[...prev,JSON.parse(msg.body)])
+        client.subscribe(`/topic/dm/${room.id}`, frame=>{
+          const msg = JSON.parse(frame.body)
+          if(msg.type==='READ') {
+            const readTime = new Date(msg.readAt).getTime()
+            setMessages(prev=>prev.map(m=>{
+              const msgTime = new Date(m.createdAt||m.timestamp).getTime()
+              if(msgTime<=readTime && m.unreadCount>0 && String(m.senderId)!==String(msg.readerId))
+                return {...m, unreadCount: m.unreadCount-1}
+              return m
+            }))
+            return
+          }
+          let finalMsg = msg
+          if(msg.type==='CHAT' && String(msg.senderId)===String(myId)) {
+            finalMsg = {...msg, unreadCount: (room.members?.length||2)-1}
+          }
+          setMessages(prev=>[...prev, finalMsg])
         })
+        client.publish({destination:'/app/dm.join', body:JSON.stringify({type:'JOIN',roomId:room.id})})
       },
     })
     client.activate()
@@ -205,7 +222,14 @@ function InlineRoom({ room, myId, token, onBack, onMarkRead }) {
                   background:isMine?'#FEE500':'rgba(255,255,255,.12)',color:isMine?'#1a1a1a':TEXT1}}>
                   {msg.content}
                 </div>
-                {isMine&&<span style={{fontSize:9,color:TEXT3,marginBottom:1}}>{dayjs(ts).format('HH:mm')}</span>}
+                {isMine&&(
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2,marginBottom:1,flexShrink:0}}>
+                    {msg.unreadCount>0&&(
+                      <span style={{background:'#FEE500',color:'#3c1e1e',fontSize:9,fontWeight:700,lineHeight:1,borderRadius:8,padding:'2px 5px'}}>{msg.unreadCount}</span>
+                    )}
+                    <span style={{fontSize:9,color:TEXT3,lineHeight:1}}>{dayjs(ts).format('HH:mm')}</span>
+                  </div>
+                )}
               </div>
             </div>
           )

@@ -50,4 +50,11 @@ public class ChatMessageDto implements Serializable {
      */
     @Builder.Default
     private String channel = "CHAT";
+
+    /**
+     * READ 이벤트 전용 필드
+     * type=READ 일 때 사용: 어떤 멤버가 어떤 시각까지 읽었는지를 브로드캐스트
+     */
+    private Long readerId;      // 읽은 사람 memberId
+    private String readAt;      // 읽은 시각 (ISO-8601), 이 시각 이전 메시지의 unreadCount 감소
 }

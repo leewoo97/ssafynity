@@ -102,7 +102,8 @@ public class DmController {
                     com.ssafynity.demo.common.exception.ErrorCode.DM_ACCESS_DENIED);
         }
         List<DirectMessageResponse> result = directMessageService.getMessages(room).stream()
-                .map(DirectMessageResponse::from).toList();
+                .map(msg -> DirectMessageResponse.from(msg, directMessageService.getUnreadCount(room, msg)))
+                .toList();
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
@@ -130,6 +131,24 @@ public class DmController {
                         com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
         Member newMember = memberService.getById(memberId);
         directMessageService.addMember(room, newMember);
+        return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    /**
+     * 읽음 처리 — 호출 시 lastReadAt 갱신, READ 이벤트는 프론트엔드가 WS로 별도 브로드캐스트.
+     * 실제 실시간 알림은 DmChatController의 /app/dm.read 를 통해 이루어짐.
+     */
+    @PostMapping("/rooms/{roomId}/read")
+    public ResponseEntity<ApiResponse<Void>> markRead(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member me = memberService.getById(userDetails.getId());
+        DirectRoom room = directMessageService.findById(roomId)
+                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
+                        com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
+        if (directMessageService.isMember(room, me)) {
+            directMessageService.markAsRead(room, me);
+        }
         return ResponseEntity.ok(ApiResponse.ok());
     }
 }

@@ -66,17 +66,45 @@ public class DmChatController {
         log.debug("[DmChatController] 전송 roomId={} sender={}", dto.getRoomId(), fresh.getNickname());
     }
 
-    /** 입장 알림 (시스템 메시지, Redis 우회하여 직접 브로드캐스트) */
+    /** 입장 알림 — lastReadAt 갱신 후 READ 이벤트 브로드캐스트 */
     @MessageMapping("/dm.join")
     public void joinDm(@Payload ChatMessageDto dto, SimpMessageHeaderAccessor headerAccessor) {
         Member m = getMember(headerAccessor);
         String nickname = m != null ? m.getNickname() : "누군가";
+
+        // 읽음 처리
+        if (m != null && dto.getRoomId() != null) {
+            DirectRoom room = directMessageService.findById(dto.getRoomId()).orElse(null);
+            if (room != null && directMessageService.isMember(room, m)) {
+                LocalDateTime readAt = directMessageService.markAsRead(room, m);
+                ChatMessageDto readEvent = ChatMessageDto.builder()
+                        .type("READ").channel("DM").roomId(dto.getRoomId())
+                        .readerId(m.getId()).readAt(readAt.toString()).build();
+                messagingTemplate.convertAndSend("/topic/dm/" + dto.getRoomId(), readEvent);
+            }
+        }
+
         dto.setType("JOIN");
         dto.setChannel("DM");
         dto.setSenderNickname(nickname);
         dto.setContent(nickname + "님이 입장했습니다.");
         dto.setTimestamp(LocalDateTime.now().toString());
         messagingTemplate.convertAndSend("/topic/dm/" + dto.getRoomId(), dto);
+    }
+
+    /** 명시적 읽음 처리 — /app/dm.read 구독 시 사용 */
+    @MessageMapping("/dm.read")
+    public void readDm(@Payload ChatMessageDto dto, SimpMessageHeaderAccessor headerAccessor) {
+        Member m = getMember(headerAccessor);
+        if (m == null || dto.getRoomId() == null) return;
+        DirectRoom room = directMessageService.findById(dto.getRoomId()).orElse(null);
+        if (room == null || !directMessageService.isMember(room, m)) return;
+
+        LocalDateTime readAt = directMessageService.markAsRead(room, m);
+        ChatMessageDto readEvent = ChatMessageDto.builder()
+                .type("READ").channel("DM").roomId(dto.getRoomId())
+                .readerId(m.getId()).readAt(readAt.toString()).build();
+        messagingTemplate.convertAndSend("/topic/dm/" + dto.getRoomId(), readEvent);
     }
 
     // ── helper ──────────────────────────────────────────────────────────────────────

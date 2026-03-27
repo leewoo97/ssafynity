@@ -46,15 +46,43 @@ export default function DmRoomPage() {
       const rm = (r.data.data || []).find(rm => String(rm.id) === String(id))
       if (rm) setRoom(rm)
     }).catch(() => {})
-    api.get(`/dm/rooms/${id}/messages`).then(r => setMessages(r.data.data || [])).catch(() => {})
+    api.get(`/dm/rooms/${id}/messages`).then(r => {
+      const msgs = r.data.data || []
+      console.log('[DmRoomPage] messages loaded:', msgs.map(m => ({ id: m.id, senderId: m.senderId, unreadCount: m.unreadCount })))
+      console.log('[DmRoomPage] member.id:', member?.id, 'type:', typeof member?.id)
+      setMessages(msgs)
+    }).catch(() => {})
+
+    // 읽음 처리 REST
+    api.post(`/dm/rooms/${id}/read`).catch(() => {})
 
     // WebSocket
     const client = new Client({
       webSocketFactory: () => new SockJS('/ws'),
       connectHeaders: { Authorization: `Bearer ${token}` },
       onConnect: () => {
-        client.subscribe(`/topic/dm/${id}`, msg => {
-          setMessages(prev => [...prev, JSON.parse(msg.body)])
+        client.subscribe(`/topic/dm/${id}`, frame => {
+          const msg = JSON.parse(frame.body)
+          // READ 이벤트: 해당 readAt 이전 메시지의 unreadCount 차감
+          if (msg.type === 'READ') {
+            const readTime = new Date(msg.readAt).getTime()
+            setMessages(prev => prev.map(m => {
+              const msgTime = new Date(m.createdAt || m.timestamp).getTime()
+              // 메시지 발신자와 읽은 사람이 같으면 감소 안 함 (발신자는 unreadCount 계산에서 제외)
+              if (msgTime <= readTime && m.unreadCount > 0 && m.senderId !== msg.readerId) {
+                return { ...m, unreadCount: m.unreadCount - 1 }
+              }
+              return m
+            }))
+            return
+          }
+          // 실시간 CHAT 메시지: 내가 보낸 메시지은 unreadCount = 멤버 - 1 (나 제외한 모두)
+          let finalMsg = msg
+          if (msg.type === 'CHAT' && msg.senderId === member?.id) {
+            const memberCount = room?.members?.length || 2
+            finalMsg = { ...msg, unreadCount: memberCount - 1 }
+          }
+          setMessages(prev => [...prev, finalMsg])
         })
         client.publish({
           destination: '/app/dm.join',
@@ -136,7 +164,7 @@ export default function DmRoomPage() {
             )
           }
 
-          const isMe = msg.senderId === member?.id
+          const isMe = String(msg.senderId) === String(member?.id)
           const time = dayjs(msg.createdAt || msg.timestamp).format('HH:mm')
 
           return (
@@ -170,7 +198,16 @@ export default function DmRoomPage() {
               {/* 내 메시지 */}
               {isMe && (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
-                  <span style={{ fontSize: 10, color: 'var(--t5)', flexShrink: 0 }}>{time}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
+                    {msg.unreadCount > 0 && (
+                      <span style={{
+                        background: '#FEE500', color: '#3c1e1e',
+                        fontSize: 10, fontWeight: 700, lineHeight: 1,
+                        borderRadius: 8, padding: '2px 5px',
+                      }}>{msg.unreadCount}</span>
+                    )}
+                    <span style={{ fontSize: 10, color: 'var(--t5)' }}>{time}</span>
+                  </div>
                   <div style={{
                     background: '#FEE500', color: '#3c1e1e',
                     borderRadius: '18px 0 18px 18px',

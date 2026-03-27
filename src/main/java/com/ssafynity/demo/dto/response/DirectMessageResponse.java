@@ -18,6 +18,9 @@ public class DirectMessageResponse {
     private String senderNickname;
     private String senderProfileImageUrl;
 
+    /** 아직 읽지 않은 참여자 수 (발신자 본인 제외) */
+    private int unreadCount;
+
     public static DirectMessageResponse from(DirectMessage msg) {
         return DirectMessageResponse.builder()
                 .id(msg.getId())
@@ -26,6 +29,19 @@ public class DirectMessageResponse {
                 .senderId(msg.getSender() != null ? msg.getSender().getId() : null)
                 .senderNickname(msg.getSender() != null ? msg.getSender().getNickname() : null)
                 .senderProfileImageUrl(msg.getSender() != null ? msg.getSender().getProfileImageUrl() : null)
+                .unreadCount(0)
+                .build();
+    }
+
+    public static DirectMessageResponse from(DirectMessage msg, int unreadCount) {
+        return DirectMessageResponse.builder()
+                .id(msg.getId())
+                .content(msg.getContent())
+                .createdAt(msg.getCreatedAt())
+                .senderId(msg.getSender() != null ? msg.getSender().getId() : null)
+                .senderNickname(msg.getSender() != null ? msg.getSender().getNickname() : null)
+                .senderProfileImageUrl(msg.getSender() != null ? msg.getSender().getProfileImageUrl() : null)
+                .unreadCount(unreadCount)
                 .build();
     }
 }
