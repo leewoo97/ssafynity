@@ -185,7 +185,12 @@ export default function DmRoomPage() {
                       }}>
                         {msg.content}
                       </div>
-                      <span style={{ fontSize: 10, color: 'var(--t5)', flexShrink: 0 }}>{time}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, flexShrink: 0 }}>
+                        {msg.unreadCount > 0 && (
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#D97706', lineHeight: 1 }}>{msg.unreadCount}</span>
+                        )}
+                        <span style={{ fontSize: 10, color: 'var(--t5)' }}>{time}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

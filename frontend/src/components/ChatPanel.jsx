@@ -219,8 +219,7 @@ function InlineRoom({ room, myId, token, onBack, onMarkRead }) {
                 <div style={{fontSize:10,color:TEXT3,marginBottom:2,marginTop:6,paddingLeft:2}}>{msg.senderNickname}</div>
               )}
               <div style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:4}}>
-                {/* 상대방 시간: 말풍선 왼쪽 */}
-                {!isMine&&<span style={{fontSize:9,color:TEXT3,marginBottom:1}}>{dayjs(ts).format('HH:mm')}</span>}
+                {/* 상대방 시간+숫자: 말풍선 오른쪽 — isMine 아래에서 처리 */}
                 {/* 내 메시지: 숫자+시간이 말풍선 왼쪽 */}
                 {isMine&&(
                   <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2,marginBottom:1,flexShrink:0}}>
@@ -235,6 +234,15 @@ function InlineRoom({ room, myId, token, onBack, onMarkRead }) {
                   background:isMine?'#FEE500':'rgba(255,255,255,.12)',color:isMine?'#1a1a1a':TEXT1}}>
                   {msg.content}
                 </div>
+                {/* 받은 메시지: 숫자+시간 말풍선 오른쪽 */}
+                {!isMine&&(
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',gap:2,marginBottom:1,flexShrink:0}}>
+                    {msg.unreadCount>0&&(
+                      <span style={{fontSize:10,fontWeight:700,color:'#FEE500',lineHeight:1}}>{msg.unreadCount}</span>
+                    )}
+                    <span style={{fontSize:9,color:TEXT3,lineHeight:1}}>{dayjs(ts).format('HH:mm')}</span>
+                  </div>
+                )}
               </div>
             </div>
           )
