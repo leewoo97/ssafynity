@@ -72,11 +72,22 @@ export default function DmRoomPage() {
             }))
             return
           }
-          // 실시간 CHAT 메시지: 내가 보낸 메시지은 unreadCount = 멤버 - 1 (나 제외한 모두)
+          // 실시간 CHAT 메시지
           let finalMsg = msg
-          if (msg.type === 'CHAT' && String(msg.senderId) === String(member?.id)) {
-            const memberCount = room?.members?.length || 2
-            finalMsg = { ...msg, unreadCount: memberCount - 1 }
+          if (msg.type === 'CHAT') {
+            if (String(msg.senderId) === String(member?.id)) {
+              // 내가 보낸 메시지: unreadCount = 참여자 수 - 1
+              const memberCount = room?.members?.length || 2
+              finalMsg = { ...msg, unreadCount: memberCount - 1 }
+            } else {
+              // 상대방 메시지: unreadCount 초기화 + 즉시 읽음 신호 전송
+              const memberCount = room?.members?.length || 2
+              finalMsg = { ...msg, unreadCount: memberCount - 1 }
+              client.publish({
+                destination: '/app/dm.read',
+                body: JSON.stringify({ type: 'READ', roomId: Number(id) }),
+              })
+            }
           }
           setMessages(prev => [...prev, finalMsg])
         })
