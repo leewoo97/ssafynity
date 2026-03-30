@@ -1,17 +1,25 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Client } from '@stomp/stompjs'
+import SockJS from 'sockjs-client'
 import api from '../api/axios'
 import { useAuthStore } from '../store/authStore'
 import dayjs from 'dayjs'
 
 export default function AdminPage() {
-  const { member } = useAuthStore()
+  const { member, token } = useAuthStore()
   const navigate = useNavigate()
   const [stats, setStats] = useState({})
   const [members, setMembers] = useState([])
   const [reports, setReports] = useState([])
   const [tab, setTab] = useState('stats')
   const [loading, setLoading] = useState(true)
+
+  // 채팅 모니터 상태
+  const [roomMonitor, setRoomMonitor] = useState([])
+  const [activeCounts, setActiveCounts] = useState({})
+  const [activeNicknames, setActiveNicknames] = useState({}) // roomId → string[]
+  const [wsConnected, setWsConnected] = useState(false)
 
   useEffect(() => {
     if (member?.role !== 'ADMIN') { navigate('/'); return }
@@ -25,6 +33,57 @@ export default function AdminPage() {
       setReports(r.data.data || [])
     }).finally(() => setLoading(false))
   }, [member])
+
+  // 채팅 모니터 탭 전환 시 WebSocket 연결
+  useEffect(() => {
+    if (tab !== 'monitor') return
+
+    let client = null
+    let mounted = true
+
+    api.get('/admin/chat/rooms').then(r => {
+      if (!mounted) return
+      const rooms = r.data.data || []
+      setRoomMonitor(rooms)
+      setActiveCounts(Object.fromEntries(rooms.map(room => [room.id, room.activeUsers])))
+      setActiveNicknames(Object.fromEntries(rooms.map(room => [room.id, room.activeUserNicknames || []])))
+
+      client = new Client({
+        webSocketFactory: () => new SockJS('/ws'),
+        connectHeaders: { Authorization: `Bearer ${token}` },
+        onConnect: () => {
+          if (!mounted) return
+          setWsConnected(true)
+          rooms.forEach(room => {
+            client.subscribe(`/topic/chat/${room.id}`, msg => {
+              const data = JSON.parse(msg.body)
+              if (data.type === 'JOIN') {
+                setActiveCounts(prev => ({ ...prev, [room.id]: (prev[room.id] ?? 0) + 1 }))
+                setActiveNicknames(prev => ({
+                  ...prev,
+                  [room.id]: [...new Set([...(prev[room.id] ?? []), data.senderNickname])]
+                }))
+              } else if (data.type === 'LEAVE') {
+                setActiveCounts(prev => ({ ...prev, [room.id]: Math.max(0, (prev[room.id] ?? 0) - 1) }))
+                setActiveNicknames(prev => ({
+                  ...prev,
+                  [room.id]: (prev[room.id] ?? []).filter(n => n !== data.senderNickname)
+                }))
+              }
+            })
+          })
+        },
+        onDisconnect: () => setWsConnected(false),
+      })
+      client.activate()
+    })
+
+    return () => {
+      mounted = false
+      client?.deactivate()
+      setWsConnected(false)
+    }
+  }, [tab, token])
 
   const deleteMember = async (id) => {
     if (!window.confirm('이 회원을 삭제하시겠습니까? 복구할 수 없습니다.')) return
@@ -64,6 +123,7 @@ export default function AdminPage() {
         <button className={`tab${tab === 'stats' ? ' active' : ''}`} onClick={() => setTab('stats')}>통계</button>
         <button className={`tab${tab === 'members' ? ' active' : ''}`} onClick={() => setTab('members')}>회원 관리</button>
         <button className={`tab${tab === 'reports' ? ' active' : ''}`} onClick={() => setTab('reports')}>신고 관리</button>
+        <button className={`tab${tab === 'monitor' ? ' active' : ''}`} onClick={() => setTab('monitor')}>채팅 모니터</button>
       </div>
 
       {tab === 'members' && (
@@ -135,6 +195,64 @@ export default function AdminPage() {
       {tab === 'stats' && (
         <div className="card" style={{ marginTop: 16 }}>
           <p style={{ color: 'var(--t3)' }}>통계 차트 기능은 추후 추가 예정입니다.</p>
+        </div>
+      )}
+
+      {tab === 'monitor' && (
+        <div style={{ marginTop: 16 }}>
+          {/* WebSocket 연결 상태 표시 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <span className={wsConnected ? 'live-dot' : 'live-dot-off'} />
+            <span style={{ fontSize: '.85rem', color: 'var(--t3)' }}>
+              {wsConnected ? '실시간 연결됨' : '연결 중...'}
+            </span>
+            <span style={{ marginLeft: 'auto', fontSize: '.8rem', color: 'var(--t4)' }}>
+              채팅방 {roomMonitor.length}개
+            </span>
+          </div>
+
+          {/* 채팅방 그리드 */}
+          {roomMonitor.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">💬</div>
+              <div className="empty-title">채팅방이 없습니다</div>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+              {roomMonitor.map(room => {
+                const count = activeCounts[room.id] ?? 0
+                const nicknames = activeNicknames[room.id] ?? []
+                return (
+                  <div key={room.id} className="card anim-in" style={{ padding: '20px 24px', position: 'relative' }}>
+                    {count > 0 && (
+                      <span className="pill pill-green" style={{ position: 'absolute', top: 14, right: 14, fontSize: '.72rem' }}>
+                        LIVE
+                      </span>
+                    )}
+                    <div style={{ fontSize: '.92rem', fontWeight: 600, marginBottom: 4 }}>
+                      # {room.name}
+                    </div>
+                    <div style={{ fontSize: '.78rem', color: 'var(--t4)', marginBottom: 16, minHeight: 18, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {room.description || '설명 없음'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: nicknames.length > 0 ? 12 : 0 }}>
+                      <span style={{ fontSize: '2rem', fontWeight: 700, color: count > 0 ? 'var(--blue)' : 'var(--t5)', lineHeight: 1 }}>
+                        {count}
+                      </span>
+                      <span style={{ fontSize: '.8rem', color: 'var(--t4)' }}>명 접속 중</span>
+                    </div>
+                    {nicknames.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {nicknames.map(nick => (
+                          <span key={nick} className="pill pill-blue" style={{ fontSize: '.72rem' }}>{nick}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

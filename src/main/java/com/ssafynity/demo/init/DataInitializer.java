@@ -30,6 +30,7 @@ public class DataInitializer implements CommandLineRunner {
     private final MentorProfileRepository mentorProfileRepository;
     private final MentoringRequestRepository mentoringRequestRepository;
     private final FriendshipRepository friendshipRepository;
+    private final ChatRoomRepository   chatRoomRepository;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -37,6 +38,8 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         // 테스트 계정은 항상 (없는 경우만) 생성
         initTestAccounts();
+        // 채팅방은 항상 (없는 경우만) 생성
+        initChatRooms();
 
         // 이미 데이터가 있으면 나머지 실행하지 않음 (중복 방지)
         if (memberRepository.count() > 200) return;
@@ -954,6 +957,22 @@ public class DataInitializer implements CommandLineRunner {
                 .requester(lee).receiver(jung).status("ACCEPTED").build());
         friendshipRepository.save(Friendship.builder()
                 .requester(kim).receiver(choi).status("PENDING").build());
+    }
+
+    /** 채팅방 더미 데이터 (없는 경우만 생성) */
+    private void initChatRooms() {
+        if (chatRoomRepository.count() > 0) return;
+        Member admin = memberRepository.findByUsername("admin").orElse(null);
+        if (admin == null) return;
+        List.of(
+            new String[]{"SSAFY 일반", "SSAFY 관련 자유 주제 대화방입니다."},
+            new String[]{"알고리즘 스터디", "알고리즘 문제 풀이 및 코딩 테스트 연습 대화방입니다."},
+            new String[]{"Spring Boot 관련", "Spring Boot, JPA, 보안 등 백엔드 기술 토론방입니다."},
+            new String[]{"React 프론트엔드", "React, Vue, 프론트엔드 기술 공유방입니다."},
+            new String[]{"취준 정보 공유", "취준 활동, 면접 후기, 이력서 큰전 대화방입니다."}
+        ).forEach(arr -> chatRoomRepository.save(
+            ChatRoom.builder().name(arr[0]).description(arr[1]).creator(admin).build()
+        ));
     }
 
     /** dldnwls001 ~ dldnwls200 테스트 계정 (서버 재시작 시 없는 계정만 생성) */

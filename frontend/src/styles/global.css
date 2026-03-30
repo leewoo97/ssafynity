@@ -1804,8 +1804,11 @@ footer {
 /* ─── ANIMATIONS ──────────────────────────────────────────── */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ws-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.8); } }
 .anim-up { animation: fadeUp .5s ease forwards; }
 .anim-in { animation: fadeIn .4s ease forwards; }
+.live-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--green); animation: ws-pulse 1.5s ease-in-out infinite; }
+.live-dot-off { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--t5); }
 
 /* ─── MODAL ───────────────────────────────────────────────── */
 .modal-bg {

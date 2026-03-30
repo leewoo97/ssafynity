@@ -1,5 +1,6 @@
 package com.ssafynity.demo.controller;
 
+import com.ssafynity.demo.chat.ChatSessionRegistry;
 import com.ssafynity.demo.chat.RedisPublisher;
 import com.ssafynity.demo.domain.ChatRoom;
 import com.ssafynity.demo.domain.Member;
@@ -40,6 +41,7 @@ public class ChatController {
     private final ChatMessageService chatMessageService;
     private final ChatRoomService chatRoomService;
     private final MemberService memberService;
+    private final ChatSessionRegistry chatSessionRegistry;
 
     /**
      * 일반 채팅 메시지 전송
@@ -80,17 +82,21 @@ public class ChatController {
      */
     @MessageMapping("/chat.join")
     public void joinRoom(@Payload ChatMessageDto dto, SimpMessageHeaderAccessor headerAccessor) {
+        System.out.println("채팅방들어옴");
         Member sender = getLoginMember(headerAccessor);
         String nickname = sender != null ? sender.getNickname() : "익명";
 
-        // WebSocket 세션에 채팅방 ID 저장 (퇴장 처리 시 활용)
+        // WebSocket 세션에 채팅방 ID·nickname 저장 (비정상 종료 시 EventListener가 활용)
         Map<String, Object> sessionAttrs = headerAccessor.getSessionAttributes();
         if (sessionAttrs != null) {
             sessionAttrs.put("roomId", dto.getRoomId());
             sessionAttrs.put("nickname", nickname);
         }
 
-        // 활성 유저 수 +1
+        // Redis에 세션 상태 저장 + 활성 유저 수 +1
+        if (sender != null) {
+            chatSessionRegistry.userJoin(headerAccessor.getSessionId(), dto.getRoomId(), sender.getId());
+        }
         chatRoomService.incrementActiveUsers(dto.getRoomId());
 
         // 입장 알림 브로드캐스트
@@ -115,7 +121,11 @@ public class ChatController {
         Member sender = getLoginMember(headerAccessor);
         String nickname = sender != null ? sender.getNickname() : "익명";
 
-        // 활성 유저 수 -1
+        // Redis 세션 상태 제거 + 활성 유저 수 -1
+        // (여기서 제거하면 이후 SessionDisconnectEvent 가 발생해도 중복 처리 안 됨)
+        if (sender != null) {
+            chatSessionRegistry.userLeave(headerAccessor.getSessionId(), dto.getRoomId(), sender.getId());
+        }
         chatRoomService.decrementActiveUsers(dto.getRoomId());
 
         // 퇴장 알림 브로드캐스트

@@ -86,6 +86,7 @@ public class EventService {
 
     @Transactional
     public void join(Long id) {
+        System.out.println("이벤트 참가 시도 id=" + id);
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.EVENT_NOT_FOUND));
         if (event.getMaxParticipants() > 0

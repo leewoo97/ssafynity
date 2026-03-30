@@ -25,11 +25,24 @@ export default function ChatRoomPage() {
         client.subscribe(`/topic/chat/${id}`, msg => {
           setMessages(prev => [...prev, JSON.parse(msg.body)])
         })
+        // 입장 알림 → Redis 세션 등록
+        client.publish({
+          destination: '/app/chat.join',
+          body: JSON.stringify({ type: 'JOIN', roomId: Number(id) }),
+        })
       },
     })
     client.activate()
     stompRef.current = client
-    return () => client.deactivate()
+    return () => {
+      if (client.connected) {
+        client.publish({
+          destination: '/app/chat.leave',
+          body: JSON.stringify({ type: 'LEAVE', roomId: Number(id) }),
+        })
+      }
+      client.deactivate()
+    }
   }, [id])
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])

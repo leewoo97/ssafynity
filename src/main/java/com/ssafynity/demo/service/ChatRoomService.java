@@ -1,14 +1,18 @@
 package com.ssafynity.demo.service;
 
+import com.ssafynity.demo.chat.ChatSessionRegistry;
 import com.ssafynity.demo.domain.ChatRoom;
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.repository.ChatRoomRepository;
+import com.ssafynity.demo.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 채팅방 관리 서비스
@@ -20,6 +24,8 @@ import java.util.Optional;
 public class ChatRoomService {
 
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatSessionRegistry chatSessionRegistry;
+    private final MemberRepository memberRepository;
 
     /** 전체 채팅방 목록 (최신순) */
     public List<ChatRoom> findAll() {
@@ -63,5 +69,34 @@ public class ChatRoomService {
             int current = room.getActiveUsers();
             room.setActiveUsers(Math.max(0, current - 1));
         });
+    }
+
+    /** Redis Set 기반 실시간 활성 유저 수 (SCARD) */
+    public long getActiveUserCount(Long roomId) {
+        return chatSessionRegistry.getActiveUserCount(roomId);
+    }
+
+    /** Redis SMEMBERS → userId Set → nickname 목록으로 변환 */
+    public List<String> getActiveUserNicknames(Long roomId) {
+        Set<String> userIdStrs = chatSessionRegistry.getActiveUserIds(roomId);
+        if (userIdStrs.isEmpty()) return List.of();
+        List<Long> ids = userIdStrs.stream().map(Long::parseLong).toList();
+        return memberRepository.findAllById(ids).stream()
+                .map(Member::getNickname)
+                .collect(Collectors.toList());
+    }
+
+    /** Redis 전체 스캔 → roomId → userId Set */
+    public java.util.Map<String, Set<String>> getAllActiveRoomUsers() {
+        return chatSessionRegistry.getAllActiveRoomUsers();
+    }
+
+    /** userId 문자열 Set → nickname 목록 */
+    public List<String> getNicknamesByIds(Set<String> userIdStrs) {
+        if (userIdStrs.isEmpty()) return List.of();
+        List<Long> ids = userIdStrs.stream().map(Long::parseLong).toList();
+        return memberRepository.findAllById(ids).stream()
+                .map(Member::getNickname)
+                .collect(Collectors.toList());
     }
 }
