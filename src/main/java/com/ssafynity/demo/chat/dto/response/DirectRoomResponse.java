@@ -1,6 +1,9 @@
-package com.ssafynity.demo.dto.response;
+package com.ssafynity.demo.chat.dto.response;
 
-import com.ssafynity.demo.domain.DirectRoom;
+import com.ssafynity.demo.chat.domain.DirectMessage;
+import com.ssafynity.demo.chat.domain.DirectRoom;
+import com.ssafynity.demo.domain.Member;
+import com.ssafynity.demo.dto.response.MemberResponse;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -37,9 +40,9 @@ public class DirectRoomResponse {
 
     public static DirectRoomResponse from(
             DirectRoom room,
-            com.ssafynity.demo.domain.Member otherMemberEntity,
-            java.util.List<com.ssafynity.demo.domain.Member> memberEntities,
-            com.ssafynity.demo.domain.DirectMessage lastMsg) {
+            Member otherMemberEntity,
+            List<Member> memberEntities,
+            DirectMessage lastMsg) {
         return DirectRoomResponse.builder()
                 .id(room.getId())
                 .type(room.getType())

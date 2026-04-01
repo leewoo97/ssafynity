@@ -1,7 +1,7 @@
-package com.ssafynity.demo.repository;
+package com.ssafynity.demo.chat.repository;
 
-import com.ssafynity.demo.domain.DirectMessage;
-import com.ssafynity.demo.domain.DirectRoom;
+import com.ssafynity.demo.chat.domain.DirectMessage;
+import com.ssafynity.demo.chat.domain.DirectRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -1,5 +1,7 @@
 package com.ssafynity.demo.service;
 
+import com.ssafynity.demo.chat.domain.ChatRoom;
+import com.ssafynity.demo.chat.service.ChatRoomService;
 import com.ssafynity.demo.domain.*;
 import com.ssafynity.demo.repository.*;
 import lombok.RequiredArgsConstructor;

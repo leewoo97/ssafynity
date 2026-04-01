@@ -1,5 +1,6 @@
-package com.ssafynity.demo.domain;
+package com.ssafynity.demo.chat.domain;
 
+import com.ssafynity.demo.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

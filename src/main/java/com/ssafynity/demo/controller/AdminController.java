@@ -1,12 +1,12 @@
 package com.ssafynity.demo.controller;
 
 import com.ssafynity.demo.common.response.ApiResponse;
-import com.ssafynity.demo.domain.ChatRoom;
+import com.ssafynity.demo.chat.domain.ChatRoom;
 import com.ssafynity.demo.domain.Member;
 import com.ssafynity.demo.dto.response.MemberResponse;
 import com.ssafynity.demo.dto.response.ReportResponse;
 import com.ssafynity.demo.service.BookmarkService;
-import com.ssafynity.demo.service.ChatRoomService;
+import com.ssafynity.demo.chat.service.ChatRoomService;
 import com.ssafynity.demo.service.CommentService;
 import com.ssafynity.demo.service.MemberService;
 import com.ssafynity.demo.service.PostService;
@@ -78,9 +78,9 @@ public class AdminController {
         Map<String, java.util.Set<String>> activeMap = chatRoomService.getAllActiveRoomUsers();
 
         // DB 채팅방 목록 (이름/설명 용도)
-        Map<Long, com.ssafynity.demo.domain.ChatRoom> roomIndex = chatRoomService.findAll().stream()
+        Map<Long, ChatRoom> roomIndex = chatRoomService.findAll().stream()
                 .collect(java.util.stream.Collectors.toMap(
-                        com.ssafynity.demo.domain.ChatRoom::getId,
+                        ChatRoom::getId,
                         r -> r));
 
         // Redis에 있는 roomId 기준으로 머지
@@ -90,7 +90,7 @@ public class AdminController {
 
         List<Map<String, Object>> result = allRoomIds.stream().map(roomId -> {
             Map<String, Object> m = new LinkedHashMap<>();
-            com.ssafynity.demo.domain.ChatRoom room = roomIndex.get(roomId);
+            ChatRoom room = roomIndex.get(roomId);
             m.put("id", roomId);
             m.put("name", room != null ? room.getName() : "방 #" + roomId);
             m.put("description", room != null && room.getDescription() != null ? room.getDescription() : "");

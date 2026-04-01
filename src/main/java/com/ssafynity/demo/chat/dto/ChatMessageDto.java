@@ -1,4 +1,4 @@
-package com.ssafynity.demo.dto;
+package com.ssafynity.demo.chat.dto;
 
 import lombok.*;
 

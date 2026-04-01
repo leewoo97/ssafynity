@@ -1,9 +1,9 @@
-package com.ssafynity.demo.service;
+package com.ssafynity.demo.chat.service;
 
 import com.ssafynity.demo.chat.ChatSessionRegistry;
-import com.ssafynity.demo.domain.ChatRoom;
+import com.ssafynity.demo.chat.domain.ChatRoom;
+import com.ssafynity.demo.chat.repository.ChatRoomRepository;
 import com.ssafynity.demo.domain.Member;
-import com.ssafynity.demo.repository.ChatRoomRepository;
 import com.ssafynity.demo.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

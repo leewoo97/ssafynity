@@ -1,36 +1,38 @@
-package com.ssafynity.demo.domain;
+package com.ssafynity.demo.chat.domain;
 
+import com.ssafynity.demo.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
-/**
- * 1:1 DM 또는 그룹 채팅방 엔티티
- * type: DM (1:1) | GROUP (그룹)
- */
 @Entity
-@Table(name = "direct_room")
+@Table(name = "chat_room")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DirectRoom {
+public class ChatRoom {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** DM | GROUP */
-    @Column(nullable = false, length = 10)
-    private String type;
-
-    /** 그룹 채팅방 이름 (DM이면 null) */
+    @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    /** 채팅방 생성자 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id")
     private Member creator;
+
+    /** 현재 참여자 수 (실시간 업데이트) */
+    @Builder.Default
+    @Column(nullable = false)
+    private int activeUsers = 0;
 
     private LocalDateTime createdAt;
 

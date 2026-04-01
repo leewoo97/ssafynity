@@ -1,7 +1,7 @@
 package com.ssafynity.demo.chat;
 
-import com.ssafynity.demo.dto.ChatMessageDto;
-import com.ssafynity.demo.service.ChatRoomService;
+import com.ssafynity.demo.chat.dto.ChatMessageDto;
+import com.ssafynity.demo.chat.service.ChatRoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;

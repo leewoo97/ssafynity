@@ -1,15 +1,17 @@
-package com.ssafynity.demo.controller;
+package com.ssafynity.demo.chat.controller;
 
+import com.ssafynity.demo.chat.domain.DirectMessage;
+import com.ssafynity.demo.chat.domain.DirectRoom;
+import com.ssafynity.demo.chat.dto.request.GroupChatRequest;
+import com.ssafynity.demo.chat.dto.response.DirectMessageResponse;
+import com.ssafynity.demo.chat.dto.response.DirectRoomResponse;
+import com.ssafynity.demo.chat.service.DirectMessageService;
+import com.ssafynity.demo.common.exception.BusinessException;
+import com.ssafynity.demo.common.exception.ErrorCode;
 import com.ssafynity.demo.common.response.ApiResponse;
-import com.ssafynity.demo.domain.DirectMessage;
-import com.ssafynity.demo.domain.DirectRoom;
 import com.ssafynity.demo.domain.Member;
-import com.ssafynity.demo.dto.request.GroupChatRequest;
-import com.ssafynity.demo.dto.response.DirectMessageResponse;
-import com.ssafynity.demo.dto.response.DirectRoomResponse;
 import com.ssafynity.demo.dto.response.MemberResponse;
 import com.ssafynity.demo.security.CustomUserDetails;
-import com.ssafynity.demo.service.DirectMessageService;
 import com.ssafynity.demo.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -76,11 +78,9 @@ public class DmController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Member me = memberService.getById(userDetails.getId());
         DirectRoom room = directMessageService.findById(roomId)
-                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
-                        com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DM_ROOM_NOT_FOUND));
         if (!directMessageService.isMember(room, me)) {
-            throw new com.ssafynity.demo.common.exception.BusinessException(
-                    com.ssafynity.demo.common.exception.ErrorCode.DM_ACCESS_DENIED);
+            throw new BusinessException(ErrorCode.DM_ACCESS_DENIED);
         }
         Member other = "GROUP".equals(room.getType()) ? null : directMessageService.getOtherMember(room, me);
         List<Member> members = "GROUP".equals(room.getType()) ? directMessageService.getMemberList(room) : null;
@@ -95,11 +95,9 @@ public class DmController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Member me = memberService.getById(userDetails.getId());
         DirectRoom room = directMessageService.findById(roomId)
-                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
-                        com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DM_ROOM_NOT_FOUND));
         if (!directMessageService.isMember(room, me)) {
-            throw new com.ssafynity.demo.common.exception.BusinessException(
-                    com.ssafynity.demo.common.exception.ErrorCode.DM_ACCESS_DENIED);
+            throw new BusinessException(ErrorCode.DM_ACCESS_DENIED);
         }
         List<DirectMessageResponse> result = directMessageService.getMessages(room).stream()
                 .map(msg -> DirectMessageResponse.from(msg, directMessageService.getUnreadCount(room, msg)))
@@ -114,8 +112,7 @@ public class DmController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Member me = memberService.getById(userDetails.getId());
         DirectRoom room = directMessageService.findById(roomId)
-                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
-                        com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DM_ROOM_NOT_FOUND));
         directMessageService.leaveRoom(room, me);
         return ResponseEntity.ok(ApiResponse.ok());
     }
@@ -127,8 +124,7 @@ public class DmController {
             @PathVariable Long memberId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         DirectRoom room = directMessageService.findById(roomId)
-                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
-                        com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DM_ROOM_NOT_FOUND));
         Member newMember = memberService.getById(memberId);
         directMessageService.addMember(room, newMember);
         return ResponseEntity.ok(ApiResponse.ok());
@@ -144,8 +140,7 @@ public class DmController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Member me = memberService.getById(userDetails.getId());
         DirectRoom room = directMessageService.findById(roomId)
-                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
-                        com.ssafynity.demo.common.exception.ErrorCode.DM_ROOM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DM_ROOM_NOT_FOUND));
         if (directMessageService.isMember(room, me)) {
             directMessageService.markAsRead(room, me);
         }

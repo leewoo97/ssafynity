@@ -1,6 +1,6 @@
-package com.ssafynity.demo.repository;
+package com.ssafynity.demo.chat.repository;
 
-import com.ssafynity.demo.domain.ChatRoom;
+import com.ssafynity.demo.chat.domain.ChatRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

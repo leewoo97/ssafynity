@@ -1,4 +1,4 @@
-package com.ssafynity.demo.dto.request;
+package com.ssafynity.demo.chat.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.Getter;

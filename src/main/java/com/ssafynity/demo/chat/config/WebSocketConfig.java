@@ -1,4 +1,4 @@
-package com.ssafynity.demo.config;
+package com.ssafynity.demo.chat.config;
 
 import com.ssafynity.demo.security.CustomUserDetails;
 import com.ssafynity.demo.security.CustomUserDetailsService;

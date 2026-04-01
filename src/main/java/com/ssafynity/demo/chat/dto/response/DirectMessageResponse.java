@@ -1,6 +1,6 @@
-package com.ssafynity.demo.dto.response;
+package com.ssafynity.demo.chat.dto.response;
 
-import com.ssafynity.demo.domain.DirectMessage;
+import com.ssafynity.demo.chat.domain.DirectMessage;
 import lombok.Builder;
 import lombok.Getter;
 

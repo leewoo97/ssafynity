@@ -1,13 +1,15 @@
-package com.ssafynity.demo.controller;
+package com.ssafynity.demo.chat.controller;
 
+import com.ssafynity.demo.chat.domain.ChatRoom;
+import com.ssafynity.demo.chat.dto.ChatMessageDto;
+import com.ssafynity.demo.chat.dto.response.ChatRoomResponse;
+import com.ssafynity.demo.chat.service.ChatMessageService;
+import com.ssafynity.demo.chat.service.ChatRoomService;
+import com.ssafynity.demo.common.exception.BusinessException;
+import com.ssafynity.demo.common.exception.ErrorCode;
 import com.ssafynity.demo.common.response.ApiResponse;
-import com.ssafynity.demo.domain.ChatRoom;
 import com.ssafynity.demo.domain.Member;
-import com.ssafynity.demo.dto.ChatMessageDto;
-import com.ssafynity.demo.dto.response.ChatRoomResponse;
 import com.ssafynity.demo.security.CustomUserDetails;
-import com.ssafynity.demo.service.ChatMessageService;
-import com.ssafynity.demo.service.ChatRoomService;
 import com.ssafynity.demo.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -37,8 +39,7 @@ public class ChatRoomController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ChatRoomResponse>> detail(@PathVariable Long id) {
         ChatRoom room = chatRoomService.findById(id)
-                .orElseThrow(() -> new com.ssafynity.demo.common.exception.BusinessException(
-                        com.ssafynity.demo.common.exception.ErrorCode.CHAT_ROOM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
         return ResponseEntity.ok(ApiResponse.ok(ChatRoomResponse.from(room)));
     }
 

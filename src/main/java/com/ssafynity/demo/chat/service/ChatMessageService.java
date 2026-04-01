@@ -1,11 +1,11 @@
-package com.ssafynity.demo.service;
+package com.ssafynity.demo.chat.service;
 
-import com.ssafynity.demo.domain.ChatMessage;
-import com.ssafynity.demo.domain.ChatRoom;
+import com.ssafynity.demo.chat.domain.ChatMessage;
+import com.ssafynity.demo.chat.domain.ChatRoom;
+import com.ssafynity.demo.chat.dto.ChatMessageDto;
+import com.ssafynity.demo.chat.repository.ChatMessageRepository;
+import com.ssafynity.demo.chat.repository.ChatRoomRepository;
 import com.ssafynity.demo.domain.Member;
-import com.ssafynity.demo.dto.ChatMessageDto;
-import com.ssafynity.demo.repository.ChatMessageRepository;
-import com.ssafynity.demo.repository.ChatRoomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,7 +1,13 @@
-package com.ssafynity.demo.service;
+package com.ssafynity.demo.chat.service;
 
-import com.ssafynity.demo.domain.*;
-import com.ssafynity.demo.repository.*;
+import com.ssafynity.demo.chat.domain.DirectMessage;
+import com.ssafynity.demo.chat.domain.DirectRoom;
+import com.ssafynity.demo.chat.domain.DirectRoomMember;
+import com.ssafynity.demo.chat.repository.DirectMessageRepository;
+import com.ssafynity.demo.chat.repository.DirectRoomMemberRepository;
+import com.ssafynity.demo.chat.repository.DirectRoomRepository;
+import com.ssafynity.demo.domain.Member;
+import com.ssafynity.demo.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
